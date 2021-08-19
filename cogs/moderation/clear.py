@@ -9,10 +9,8 @@ from discord.ext.commands import (
     has_permissions,
     max_concurrency,
 )
-from discord.ext.commands.core import check
 
 from bot import Omnitron
-from data.utils import get_guild_pre
 
 
 class Moderation(Cog):
@@ -33,7 +31,7 @@ class Moderation(Cog):
     ):
         if nbr_msgs <= 0:
             return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - Please provide a number greater than 0! `${get_guild_pre(self.bot, ctx.message)[0]}help {ctx.command.name}` for more details.",
+                f"ℹ️ - {ctx.author.mention} - Please provide a number greater than 0! `${self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}help {ctx.command.name}` for more details.",
                 delete_after=10,
             )
 

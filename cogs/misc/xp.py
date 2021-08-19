@@ -6,14 +6,7 @@ from numpy import isnan
 from pandas import DataFrame
 
 from bot import Omnitron
-from data.utils import (
-    check_moderator,
-    get_embed_from_ctx,
-    get_guild_pre,
-    is_mod,
-    to_lower,
-)
-from data.xp import Xp_class
+from data import Utils, Xp_class
 
 
 class Miscellaneous(Cog):
@@ -40,7 +33,9 @@ class Miscellaneous(Cog):
 
         if ctx.invoked_subcommand is None:  # If no subcommand is passed
             await ctx.send(
-                embed=get_embed_from_ctx(self.bot, ctx, title="Server's xp commands")
+                embed=self.bot.utils_class.get_embed_from_ctx(
+                    ctx, title="Server's xp commands"
+                )
             )
 
     """ GROUP'S COMMAND(S) """
@@ -53,9 +48,9 @@ class Miscellaneous(Cog):
         description="This option manages member's levels",
     )
     @max_concurrency(1, per=BucketType.guild)
-    @check_moderator()
+    @Utils.check_moderator()
     async def xp_levels_command(
-        self, ctx: Context, option: to_lower, member: Member, value: int = None
+        self, ctx: Context, option: Utils.to_lower, member: Member, value: int = None
     ):
         """Command that manages member's levels
 
@@ -154,7 +149,7 @@ class Miscellaneous(Cog):
                 )
         else:
             return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
+                f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
                 delete_after=20,
             )
 
@@ -191,7 +186,7 @@ class Miscellaneous(Cog):
         ) < len(self.bot.configs[ctx.guild.id]["xp"]["prestiges"]):
             if "prestige_pending" in db_user:
                 return await ctx.reply(
-                    f"⛔ - {ctx.author.mention} - You cannot create two prestige pass-through procedures simultaneously. See `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
+                    f"⛔ - {ctx.author.mention} - You cannot create two prestige pass-through procedures simultaneously. See `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
                     delete_after=20,
                 )
             else:
@@ -204,7 +199,7 @@ class Miscellaneous(Cog):
             self.bot.configs[ctx.guild.id]["xp"]["prestiges"]
         ):
             return await ctx.reply(
-                f"⛔ - {ctx.author.mention} - You are not yet level `{self.bot.configs[ctx.guild.id]['xp']['max_lvl']}`, so you can't pass a prestige level yet! (current level: `{db_user['level']}`) (next prestige level: `@{self.bot.configs[ctx.guild.id]['xp']['prestiges'][db_user['prestige'] + 1 or 1].name}`). `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
+                f"⛔ - {ctx.author.mention} - You are not yet level `{self.bot.configs[ctx.guild.id]['xp']['max_lvl']}`, so you can't pass a prestige level yet! (current level: `{db_user['level']}`) (next prestige level: `@{self.bot.configs[ctx.guild.id]['xp']['prestiges'][db_user['prestige'] + 1 or 1].name}`). `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
                 delete_after=20,
             )
         else:
@@ -275,7 +270,9 @@ class Miscellaneous(Cog):
         description="Display the top 10 members of the server or your own rank (possibility to display the rank of the moderators)!",
     )
     @max_concurrency(1)
-    async def leaderboard_command(self, ctx: Context, *, options: to_lower = None):
+    async def leaderboard_command(
+        self, ctx: Context, *, options: Utils.to_lower = None
+    ):
         """Command that displays the top 10 members of the server with the highest xp
 
         Keyword arguments:
@@ -307,14 +304,14 @@ class Miscellaneous(Cog):
                     all = True
                 x = 1
                 for df_user in df_users.index.values:
-                    if all or is_mod(ctx.author, self.bot):
+                    if all or self.bot.utils_class.is_mod(ctx.author, self.bot):
                         print(type(df_user))
                         print(df_user)
                         print(type(ctx.author.id))
                         print(ctx.author.id)
                         if df_user == ctx.author.id:
                             print("user:", df_user, "rank:", x)
-                            if all or is_mod(ctx.author, self.bot):
+                            if all or self.bot.utils_class.is_mod(ctx.author, self.bot):
                                 add = "of the server *(including moderators)*"
                             await ctx.send(
                                 f"{ctx.author.mention} - You are in the `{x}{'st' if x == 1 else ('nd' if x == 2 else 'th')}` place {add}! Keep it up! - **Prestige:** {df_users['prestige'][df_user] if not isnan(df_users['prestige'][df_user]) else 0} - **Level:** {df_users['level'][df_user]} - **XP:** {df_users['xp'][df_user]}"
@@ -335,7 +332,7 @@ class Miscellaneous(Cog):
                 for df_user in df_users.index.values:
                     if x > 10:
                         break
-                    if all or not is_mod(
+                    if all or not self.bot.utils_class.is_mod(
                         await ctx.guild.fetch_member(int(df_user)), self.bot
                     ):
                         em.add_field(

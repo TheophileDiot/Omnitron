@@ -2,7 +2,6 @@ from datetime import datetime
 from discord.ext.commands import Cog, command, Context
 
 from bot import Omnitron
-from data.utils import duration
 
 
 class Miscellaneous(Cog):
@@ -17,7 +16,7 @@ class Miscellaneous(Cog):
     )
     async def uptime_command(self, ctx: Context):
         await ctx.send(
-            f"ℹ️ - I have been connected since: `{duration((datetime.now() - self.start_time).total_seconds())}`"
+            f"ℹ️ - I have been connected since: `{self.bot.utils_class.duration((datetime.now() - self.start_time).total_seconds())}`"
         )
 
 

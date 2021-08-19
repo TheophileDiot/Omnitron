@@ -3,11 +3,11 @@ from discord.errors import NotFound
 from math import floor, ceil
 from random import randint
 
-from data.utils import get_guild_pre, have_xp_bonus
+from bot import Omnitron
 
 
 class Xp_class:
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: Omnitron) -> None:
         self.bot = bot
 
     """ METHODS """
@@ -111,7 +111,7 @@ class Xp_class:
             )
         )
 
-        if have_xp_bonus(member, self.bot):
+        if self.bot.utils_class.have_xp_bonus(member):
             xp_gain = self.calculate_bonus(member, xp_gain)
 
         if (db_user["xp"] + xp_gain) < 5 * (db_user["level"] ^ 2) + 50 * db_user[
@@ -131,7 +131,7 @@ class Xp_class:
                     await self.bot.configs[member.guild.id]["xp"][
                         "notify_channel"
                     ].send(
-                        f"🎉 - {member.mention} - You've just reached level `int({self.bot.configs[member.guild.id]['xp']['max_lvl']})`, you have reached the maximum level! You can now pass a prestige with the command `{get_guild_pre(self.bot, member)[0]}prestige`! - 🎉"
+                        f"🎉 - {member.mention} - You've just reached level `int({self.bot.configs[member.guild.id]['xp']['max_lvl']})`, you have reached the maximum level! You can now pass a prestige with the command `{self.bot.utils_class.get_guild_pre(member)[0]}prestige`! - 🎉"
                     )
                 else:
                     await self.bot.configs[member.guild.id]["xp"][

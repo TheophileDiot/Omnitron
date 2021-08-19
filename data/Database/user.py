@@ -1,9 +1,8 @@
 from collections import OrderedDict
-from data.utils import duration, to_lower
 from datetime import datetime
 from math import ceil
 
-from data.utils import resolve_guild_path
+from data import Utils
 
 
 class User:
@@ -98,7 +97,7 @@ class User:
 
     """ CREATION & DELETION """
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     def create_user(self, guild_id: int, _id: int, name: str) -> None:
         self.model.create(
             f"{self.path}/{_id}",
@@ -112,7 +111,7 @@ class User:
             },
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     def delete_user(self, guild_id: int, _id: int) -> None:
         # self.model.delete(f"logs/xp/{_id}")
         # self.model.delete(f"logs/level/{_id}")
@@ -121,7 +120,7 @@ class User:
 
     """ SANCTIONS """
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def warn_user(
         self, guild_id: int, _id: int, at: float, by: str, reason: str = None
@@ -139,17 +138,17 @@ class User:
             },
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def get_warns(self, guild_id: int, _id: int) -> OrderedDict:
         return self.model.get(f"{self.path}/{_id}/warns")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def clear_warns(self, guild_id: int, _id: int) -> None:
         self.model.delete(f"{self.path}/{_id}/warns")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def mute_user(
         self,
@@ -176,24 +175,24 @@ class User:
         )
         self.model.update(f"{self.path}/{_id}", args={"muted": True})
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def unmute_user(self, guild_id: int, _id: int) -> None:
         self.model.update(f"{self.path}/{_id}", args={"muted": False})
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def clear_mutes(self, guild_id: int, _id: int) -> None:
         self.model.delete(f"{self.path}/{_id}/mutes")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def get_last_mute(self, guild_id: int, _id: int) -> dict:
         path = f"{self.path}/{_id}/mutes"
         mutes = [mute for mute in self.model.get(f"{path}")]
         return mutes[-1] if len(mutes) > 0 else {}
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def ban_user(
         self, guild_id: int, _id: int, _duration, at: float, by: str, reason: str = None
@@ -214,7 +213,7 @@ class User:
             },
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def unban_user(
         self, guild_id: int, _id: int, at: float, by: str, reason: str = None
@@ -231,7 +230,7 @@ class User:
             },
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def kick_user(
         self, guild_id: int, _id: int, at: float, by: str, reason: str = None
@@ -248,14 +247,14 @@ class User:
 
     """ XP """
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def add_xp(self, guild_id: int, _id: int, value: int) -> None:
         path = f"{self.path}/{_id}"
         xp = (self.model.get(f"{path}"))["xp"]
         self.model.update(f"{self.path}/{_id}", args={"xp": xp + value})
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     @__check_user_level
     def add_levels(
@@ -266,7 +265,7 @@ class User:
         self.model.update(f"{self.path}/{_id}", args={"level": level + value})
         return (warn, value, level + value)
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     @__check_user_level_remove
     def remove_levels(
@@ -277,12 +276,12 @@ class User:
         self.model.update(f"{self.path}/{_id}", args={"level": level - value})
         return (warn, value, level - value)
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def set_levels(self, guild_id: int, _id: int, level: int) -> None:
         self.model.update(f"{self.path}/{_id}", args={"level": level})
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     @__check_user_prestige
     def add_prestige(
@@ -301,7 +300,7 @@ class User:
         )
         return warn
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def remove_prestige(self, guild_id: int, _id: int, xp: int, value: int = 1) -> None:
         db_user = self.get_user(guild_id, _id)
@@ -316,7 +315,7 @@ class User:
             },
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def prepare_prestige(self, guild_id: int, _id: int, confirmation_id: int) -> bool:
         self.model.create(
@@ -324,33 +323,33 @@ class User:
             args={"confirmation_id": confirmation_id},
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def cancel_prestige(self, guild_id: int, _id: int) -> None:
         self.model.delete(f"{self.path}/{_id}/prestige_pending")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def clear_xp(self, guild_id: int, _id: int) -> None:
         self.model.update(f"{self.path}/{_id}", args={"xp": 0})
 
     """ OTHERS """
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def set_identification(self, guild_id: int, _id: int, value: bool = False) -> None:
         self.model.update(f"{self.path}/{_id}", args={"identified": value})
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def get_user(self, guild_id: int, _id: int) -> OrderedDict:
         return self.model.get(f"{self.path}/{_id}")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     def get_users(self, guild_id: int) -> OrderedDict:
         return self.model.get(f"{self.path}")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def new_invite(self, guild_id: int, _id: int, at: float, content: str) -> None:
         self.model.create(
@@ -362,24 +361,24 @@ class User:
             },
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def get_invites(self, guild_id: int, _id: int) -> None:
         return self.model.get(f"{self.path}/{_id}/invit_links")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def clear_invites(self, guild_id: int, _id: int) -> None:
         self.model.delete(f"{self.path}/{_id}/invit_links")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
     def set_game_score(
-        self, guild_id: int, _id: int, game: to_lower, score: int
+        self, guild_id: int, _id: int, game: Utils.to_lower, score: int
     ) -> None:
         self.model.create(f"{self.path}/{_id}/games", args={game: score})
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     @__check_user_exists
-    def get_game_score(self, guild_id: int, _id: int, game: to_lower) -> int:
+    def get_game_score(self, guild_id: int, _id: int, game: Utils.to_lower) -> int:
         return self.model.get(f"{self.path}/{_id}/games/{game}") or 0
