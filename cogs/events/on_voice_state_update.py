@@ -1,4 +1,4 @@
-from discord import Member, VoiceState
+from discord import Member, VoiceState, channel
 from discord.ext.commands import Cog
 
 from bot import Omnitron
@@ -26,10 +26,28 @@ class Events(Cog):
         if after.channel:
             if _id not in self.voice_intervals:
                 if self.bot.configs[member.guild.id]["xp"]["is_on"]:
-                    self.voice_intervals[_id] = self.bot.utils_class.task_launcher(
-                        self.vocal_interval, (member,), minutes=7
-                    )
-            elif member.voice.channel == member.guild.afk_channel:
+                    if (
+                        "xp_gain_channels" in self.bot.configs[member.guild.id]
+                        and after.channel.id
+                        in self.bot.configs[member.guild.id]["xp_gain_channels"][
+                            "VoiceChannel"
+                        ]
+                        or not self.bot.configs[member.guild.id]["xp_gain_channels"][
+                            "VoiceChannel"
+                        ]
+                    ):
+                        self.voice_intervals[_id] = self.bot.utils_class.task_launcher(
+                            self.vocal_interval, (member,), minutes=7
+                        )
+            elif (
+                member.voice.channel == member.guild.afk_channel
+                or self.bot.configs[member.guild.id]["xp_gain_channels"]["VoiceChannel"]
+                and "xp_gain_channels" in self.bot.configs[member.guild.id]
+                and after.channel.id
+                not in self.bot.configs[member.guild.id]["xp_gain_channels"][
+                    "VoiceChannel"
+                ]
+            ):
                 self.voice_intervals.pop(_id).cancel()
         else:
             if _id in self.voice_intervals:
@@ -43,6 +61,7 @@ class Events(Cog):
 
     async def vocal_interval(self, member: Member):
         """This method manage the vocal xp cooldown"""
+        print("gain")
         await self.xp_class.manage_xp(member, "vocal")
 
 

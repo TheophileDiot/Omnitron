@@ -98,6 +98,29 @@ class Config:
     def get_music_channels(self, guild_id: int) -> OrderedDict:
         return self.model.get(f"{self.path}/music_channels")
 
+    """ GUILD XP GAIN CHANNELS """
+
+    @Utils.resolve_guild_path
+    def add_xp_gain_channel(
+        self, guild_id: int, channel_id: int, channel_name: str, channel_type: str
+    ) -> None:
+        self.model.create(
+            f"{self.path}/xp_gain_channels/{channel_id}",
+            args={"name": channel_name, "type": channel_type},
+        )
+
+    @Utils.resolve_guild_path
+    def remove_xp_gain_channel(self, guild_id: int, channel_id: int) -> None:
+        self.model.delete(f"{self.path}/xp_gain_channels/{channel_id}")
+
+    @Utils.resolve_guild_path
+    def purge_xp_gain_channels(self, guild_id: int) -> None:
+        self.model.delete(f"{self.path}/xp_gain_channels")
+
+    @Utils.resolve_guild_path
+    def get_xp_gain_channels(self, guild_id: int) -> OrderedDict:
+        return self.model.get(f"{self.path}/xp_gain_channels")
+
     """ PREFIX """
 
     @Utils.resolve_guild_path

@@ -101,7 +101,21 @@ class Events(Cog):
                     int(c) for c in music_channels.keys()
                 ]
 
-            print(self.bot.configs[guild.id])
+            xp_gain_channels = self.bot.config_repo.get_xp_gain_channels(guild.id)
+            if xp_gain_channels:
+                text_channels = []
+                voice_channels = []
+
+                for k, v in xp_gain_channels.items():
+                    if v["type"] == "TextChannel":
+                        text_channels.append(int(k))
+                    else:
+                        voice_channels.append(int(k))
+
+                self.bot.configs[guild.id]["xp_gain_channels"] = {
+                    "TextChannel": text_channels,
+                    "VoiceChannel": voice_channels,
+                }
 
         # This ensures the client isn't overwritten during cog reloads.
         if not hasattr(self.bot, "lavalink"):
