@@ -24,12 +24,79 @@ class Config:
         self.model.delete(f"{self.path}/moderators/{mod_id}")
 
     @Utils.resolve_guild_path
-    def purge_moderator(self, guild_id: int) -> None:
+    def purge_moderators(self, guild_id: int) -> None:
         self.model.delete(f"{self.path}/moderators")
 
     @Utils.resolve_guild_path
     def get_moderators(self, guild_id: int) -> OrderedDict:
         return self.model.get(f"{self.path}/moderators")
+
+    """ GUILD DJS """
+
+    @Utils.resolve_guild_path
+    def add_dj(self, guild_id: int, dj_id: int, dj_name: str, dj_type: str) -> None:
+        self.model.create(
+            f"{self.path}/djs/{dj_id}",
+            args={"name": dj_name, "type": dj_type},
+        )
+
+    @Utils.resolve_guild_path
+    def remove_dj(self, guild_id: int, dj_id: int) -> None:
+        self.model.delete(f"{self.path}/djs/{dj_id}")
+
+    @Utils.resolve_guild_path
+    def purge_djs(self, guild_id: int) -> None:
+        self.model.delete(f"{self.path}/djs")
+
+    @Utils.resolve_guild_path
+    def get_djs(self, guild_id: int) -> OrderedDict:
+        return self.model.get(f"{self.path}/djs")
+
+    """ GUILD COMMANDS CHANNELS """
+
+    @Utils.resolve_guild_path
+    def add_commands_channel(
+        self, guild_id: int, channel_id: int, channel_name: str
+    ) -> None:
+        self.model.create(
+            f"{self.path}/commands_channels/{channel_id}",
+            args={"name": channel_name},
+        )
+
+    @Utils.resolve_guild_path
+    def remove_commands_channel(self, guild_id: int, channel_id: int) -> None:
+        self.model.delete(f"{self.path}/commands_channels/{channel_id}")
+
+    @Utils.resolve_guild_path
+    def purge_commands_channels(self, guild_id: int) -> None:
+        self.model.delete(f"{self.path}/commands_channels")
+
+    @Utils.resolve_guild_path
+    def get_commands_channels(self, guild_id: int) -> OrderedDict:
+        return self.model.get(f"{self.path}/commands_channels")
+
+    """ GUILD MUSIC CHANNELS """
+
+    @Utils.resolve_guild_path
+    def add_music_channel(
+        self, guild_id: int, channel_id: int, channel_name: str
+    ) -> None:
+        self.model.create(
+            f"{self.path}/music_channels/{channel_id}",
+            args={"name": channel_name},
+        )
+
+    @Utils.resolve_guild_path
+    def remove_music_channel(self, guild_id: int, channel_id: int) -> None:
+        self.model.delete(f"{self.path}/music_channels/{channel_id}")
+
+    @Utils.resolve_guild_path
+    def purge_music_channels(self, guild_id: int) -> None:
+        self.model.delete(f"{self.path}/music_channels")
+
+    @Utils.resolve_guild_path
+    def get_music_channels(self, guild_id: int) -> OrderedDict:
+        return self.model.get(f"{self.path}/music_channels")
 
     """ PREFIX """
 

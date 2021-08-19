@@ -1,6 +1,6 @@
 from asyncio import sleep
 from collections import OrderedDict
-from discord import Message, Member, Embed
+from discord import Embed, Guild, Message, Member
 from discord.ext.tasks import loop
 from discord.ext.commands import Context, check
 from discord.ext.commands.errors import BadArgument
@@ -28,7 +28,16 @@ class Utils:
 
     def is_mod(self, member: Member, bot: Omnitron) -> bool:
         return (
-            set(member.roles) & set(bot.moderators)
+            set(member.roles) & set(bot.moderators[member.guild.id])
+            or member.id in set(bot.moderators[member.guild.id])
+            or member.guild_permissions.administrator
+        )
+
+    def is_dj(self, member: Member, bot: Omnitron) -> bool:
+        return (
+            not bot.djs[member.guild.id]
+            or set(member.roles) & set(bot.djs[member.guild.id])
+            or member.id in set(bot.djs[member.guild.id])
             or member.guild_permissions.administrator
         )
 
@@ -212,6 +221,28 @@ class Utils:
             )
             return False
 
+    def get_guild_pre(self, arg: Union[Message, Member], *args) -> list:
+        try:
+            prefix = self.configs[arg.guild.id]["prefix"]
+        except Exception:
+            prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
+
+        return [prefix, prefix.lower(), prefix.upper()]
+
+    async def clear_playlist(self, guild: Guild):
+        player = self.bot.lavalink.player_manager.get(guild.id)
+
+        if player:
+            # Clear the queue to ensure old tracks don't start playing
+            # when someone else queues something.
+            player.queue.clear()
+            # Stop the current track so Lavalink consumes less resources.
+            await player.stop()
+
+        # Disconnect from the voice channel.
+        await guild.change_voice_state(channel=None)
+        self.bot.playlists[guild.id].clear()
+
     @staticmethod
     def to_lower(argument):
         if argument.isdigit():
@@ -244,10 +275,10 @@ class Utils:
 
         return check(predicate)
 
-    def get_guild_pre(self, arg: Union[Message, Member], *args) -> list:
-        try:
-            prefix = self.configs[arg.guild.id]["prefix"]
-        except Exception:
-            prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
+    @classmethod
+    def check_dj(self):
+        def predicate(ctx: Context, *args, **kwargs):
+            ctx.bot.last_check = "dj"
+            return self.is_dj(self, ctx.author, ctx.bot)
 
-        return [prefix, prefix.lower(), prefix.upper()]
+        return check(predicate)

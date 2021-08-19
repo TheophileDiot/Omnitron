@@ -23,6 +23,7 @@ class Miscellaneous(Cog):
         usage="(sub-command)",
         description="This command contains every xp realted commands",
     )
+    @Utils.check_bot_starting()
     async def xp_command(self, ctx: Context):
         """Group containing every xp commands
 
@@ -269,7 +270,7 @@ class Miscellaneous(Cog):
         usage="(me) (all)",
         description="Display the top 10 members of the server or your own rank (possibility to display the rank of the moderators)!",
     )
-    @max_concurrency(1)
+    @max_concurrency(1, per=BucketType.guild)
     async def leaderboard_command(
         self, ctx: Context, *, options: Utils.to_lower = None
     ):

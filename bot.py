@@ -26,7 +26,9 @@ from discord.ext.commands.errors import (
 from dotenv import load_dotenv
 from itertools import chain
 from logging import basicConfig, INFO, error, info
-from os import getenv, listdir, makedirs, name, path, system
+from multiprocessing import Process
+from subprocess import PIPE, call
+from os import getenv, listdir, makedirs, name, path, system, remove
 from traceback import format_exc
 
 
@@ -42,6 +44,12 @@ class Omnitron(Bot):
             self_bot=False,
             **kwargs,
         )
+        [remove(f) for f in listdir(".") if f.startswith("hs_err_pid")]
+        [remove(path.join("temp", "musics", f)) for f in listdir("temp/musics")]
+        with open(path.join("logs", "spring.log"), "w"):
+            pass
+        with open(path.join("temp", "musics.txt"), "w"):
+            pass
         dirs = chain.from_iterable(
             [
                 [
@@ -67,6 +75,11 @@ class Omnitron(Bot):
         await self.init()
         print("Database successfully initialized.")
         info("Database loaded")
+        # create a process for each image
+        process = Process(target=self.start_lavalink)
+        process.start()  # start the process
+        print("Lavalink successfully initialized.")
+        info("Lavalink started")
 
     async def on_ready(self):
         self.color = Colour(BOT_COLOR) or self.user.color
@@ -126,6 +139,11 @@ class Omnitron(Bot):
                     f"⛔ - {ctx.author.mention} - You must be moderator of this server to use this command!",
                     delete_after=15,
                 )
+            elif self.last_check == "dj":
+                await ctx.reply(
+                    f"⛔ - {ctx.author.mention} - You must be a dj in this server to use this command!",
+                    delete_after=15,
+                )
             else:
                 raise _error
         else:
@@ -180,6 +198,14 @@ class Omnitron(Bot):
                 f"ℹ️ - This command doesn't exist or is deactivated! Command: `{message.content[len(prefix) - 1::]}`",
                 delete_after=15,
             )
+        elif (
+            "commands_channels" in self.configs[ctx.guild.id]
+            and ctx.channel.id not in self.configs[ctx.guild.id]["commands_channels"]
+        ):
+            return await ctx.reply(
+                f"⛔ - Commands are not allowed in this channel!",
+                delete_after=15,
+            )
 
         await self.invoke(ctx)
 
@@ -191,6 +217,8 @@ class Omnitron(Bot):
         self.user_repo = User(self.model, self)
         self.configs = {}
         self.moderators = {}
+        self.djs = {}
+        self.playlists = {}
 
     def load_extensions(self, cogs: Context = None, path: str = "cogs."):
         """Loads the default set of extensions or a seperate one if given"""
@@ -202,6 +230,11 @@ class Omnitron(Bot):
                 print(f"LoadError: {extension}\n" f"{type(e).__name__}: {e}")
                 error(f"LoadError: {extension}\n" f"{type(e).__name__}: {e}")
         info("All cogs loaded")
+
+    @staticmethod
+    def start_lavalink():
+        """starts lavalink."""
+        call(["java", "-jar", "data/Lavalink.jar"], stdout=PIPE, stderr=PIPE)
 
     @staticmethod
     def get_ownerid():
@@ -245,6 +278,12 @@ if __name__ == "__main__":
 
     if not path.exists("logs"):  # Create logs folder if it doesn't exist
         makedirs("logs")
+    if not path.exists("temp"):
+        makedirs("temp")
+        info("temp dir created")
+    if not path.exists("temp/musics"):
+        makedirs("temp/musics")
+        info("temp/musics dir created")
 
     basicConfig(
         filename=f"logs/{date.today().strftime('%d-%m-%Y_')}app.log",

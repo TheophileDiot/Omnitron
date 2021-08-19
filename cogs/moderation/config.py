@@ -1,4 +1,5 @@
 from discord import Member, Role, TextChannel
+from discord.channel import VoiceChannel
 from discord.ext.commands import Context, Cog, group
 from discord.ext.commands.errors import (
     BadArgument,
@@ -29,6 +30,7 @@ class Moderation(Cog):
         usage="(sub-command)",
         description="This command manage the server's configuration",
     )
+    @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_command(self, ctx: Context):
         if ctx.invoked_subcommand is None:
@@ -140,7 +142,7 @@ class Moderation(Cog):
                         )
 
                     self.bot.config_repo.purge_moderators(ctx.guild.id)
-                    self.bot.moderators[ctx.guild.id].empty()
+                    self.bot.moderators[ctx.guild.id] = {}
                     await ctx.send(
                         f"ℹ️ - Removed all the moderators from the moderators list."
                     )
@@ -190,6 +192,115 @@ class Moderation(Cog):
 
     @config_command.command(
         pass_context=True,
+        name="djs",
+        aliases=["players"],
+        brief="🧑‍🎤",
+        description="This option manage the server's djs (role & members) (if there is no dj then everyone can use music commands)",
+        usage="add|remove|purge @role|@member",
+    )
+    async def config_djs_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        dj: Union[Role, Member] = None,
+    ):
+        if option:
+            try:
+                if option in ("add", "remove"):
+                    if not dj:
+                        raise MissingRequiredArgument(
+                            param=Parameter(name="dj", kind=Parameter.KEYWORD_ONLY)
+                        )
+                    elif isinstance(dj, Member) and dj.bot:
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - You can't add a bot user to the djs list!",
+                            delete_after=20,
+                        )
+
+                    if option == "add":
+                        if dj.id in set(self.bot.djs[ctx.guild.id]):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - `@{dj}` {'role' if isinstance(dj, Role) else 'member'} is already in the djs list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.add_dj(
+                            ctx.guild.id, dj.id, f"{dj}", type(dj).__name__
+                        )
+                        self.bot.djs[ctx.guild.id].append(dj.id)
+                        await ctx.send(
+                            f"ℹ️ - Added `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list!."
+                        )
+                    elif option == "remove":
+                        if dj.id not in set(self.bot.djs[ctx.guild.id]):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - `@{dj}` {'role' if isinstance(dj, Role) else 'member'} is already not in the djs list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.remove_dj(ctx.guild.id, dj.id)
+                        del self.bot.djs[ctx.guild.id][
+                            self.bot.djs[ctx.guild.id].index(dj.id)
+                        ]
+                        await ctx.send(
+                            f"ℹ️ - Removed `@{(await ctx.guild.fetch_member(int(dj.id))) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                        )
+                elif option == "purge":
+                    if not self.bot.djs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - No djs (members & roles) have been added to the list yet!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.purge_djs(ctx.guild.id)
+                    self.bot.djs[ctx.guild.id] = {}
+                    await ctx.send(f"ℹ️ - Removed all the djs from the djs list!.")
+                else:
+                    await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            except MissingRequiredArgument as mre:
+                raise MissingRequiredArgument(param=mre.param)
+            except BadUnionArgument as bua:
+                raise BadUnionArgument(
+                    param=bua.param, converters=bua.converters, errors=bua.errors
+                )
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
+        else:
+            server_djs = self.bot.config_repo.get_djs(ctx.guild.id).values()
+            if not server_djs:
+                return await ctx.reply(
+                    f"ℹ️ - {ctx.author.mention} - No djs (members & roles) have been added to the list yet!",
+                    delete_after=20,
+                )
+            server_djs_roles = []
+            server_djs_members = []
+            for m in server_djs:
+                if m["type"] == "Role":
+                    server_djs_roles.append(m["name"])
+                else:
+                    server_djs_members.append(m["name"])
+            await ctx.send(
+                f"**ℹ️ - Here's the list of the server's djs:**\n\n"
+                + (
+                    f"Members: {', '.join(f'`{m}`' for m in server_djs_members)}\n"
+                    if server_djs_members
+                    else ""
+                )
+                + (
+                    f"Roles: {', '.join(f'`{r}`' for r in server_djs_roles)}\n"
+                    if server_djs_roles
+                    else ""
+                )
+            )
+
+    @config_command.command(
+        pass_context=True,
         name="prefix",
         aliases=["prfx"],
         brief="❗",
@@ -230,6 +341,220 @@ class Moderation(Cog):
                 f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}`!"
             )
             await msg.add_reaction("👀")
+
+    @config_command.command(
+        pass_context=True,
+        name="commands_channels",
+        aliases=["command_channels", "command_channel", "cmds_chans"],
+        brief="🕹️",
+        description="This option manage the server's commands channels  (if there is no commands channel then commands can be used everywhere)",
+        usage="add|remove|purge #channel",
+    )
+    async def config_prefix_command(
+        self, ctx: Context, option: Utils.to_lower = None, channel: TextChannel = None
+    ):
+        if option:
+            try:
+                if option in ("add", "remove"):
+                    if not channel:
+                        raise MissingRequiredArgument(
+                            param=Parameter(name="channel", kind=Parameter.KEYWORD_ONLY)
+                        )
+
+                    if option == "add":
+                        if "commands_channels" in self.bot.configs[
+                            ctx.guild.id
+                        ] and channel.id in set(
+                            self.bot.configs[ctx.guild.id]["commands_channels"]
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already in the commands channels list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.add_commands_channel(
+                            ctx.guild.id, channel.id, f"{channel}"
+                        )
+
+                        if "commands_channels" not in self.bot.configs[ctx.guild.id]:
+                            self.bot.configs[ctx.guild.id]["commands_channels"] = []
+
+                        self.bot.configs[ctx.guild.id]["commands_channels"].append(
+                            channel.id
+                        )
+                        await ctx.send(
+                            f"ℹ️ - Added {channel.mention} to the commands channels list!."
+                        )
+                    elif option == "remove":
+                        if "commands_channels" in self.bot.configs[
+                            ctx.guild.id
+                        ] and channel.id not in set(
+                            self.bot.configs[ctx.guild.id]["commands_channels"]
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already not in the commands channels list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.remove_commands_channel(
+                            ctx.guild.id, channel.id
+                        )
+                        del self.bot.configs[ctx.guild.id]["commands_channels"][
+                            self.bot.configs[ctx.guild.id]["commands_channels"].index(
+                                channel.id
+                            )
+                        ]
+                        await ctx.send(
+                            f"ℹ️ - Removed {channel.mention} from the commands channels list!."
+                        )
+                elif option == "purge":
+                    if "commands_channels" not in self.bot.configs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - No commands channels have been added to the list yet!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.purge_commands_channels(ctx.guild.id)
+                    del self.bot.configs[ctx.guild.id]["commands_channels"]
+                    await ctx.send(
+                        f"ℹ️ - Removed all the commands channels from the list!."
+                    )
+                else:
+                    await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            except MissingRequiredArgument as mre:
+                raise MissingRequiredArgument(param=mre.param)
+            except BadUnionArgument as bua:
+                raise BadUnionArgument(
+                    param=bua.param, converters=bua.converters, errors=bua.errors
+                )
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} {channel.mention} to the commands channels list! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
+        else:
+            server_commands_channels = self.bot.config_repo.get_commands_channels(
+                ctx.guild.id
+            ).keys()
+            if not server_commands_channels:
+                return await ctx.reply(
+                    f"ℹ️ - {ctx.author.mention} - No commands channels have been added to the list yet!",
+                    delete_after=20,
+                )
+            await ctx.send(
+                f"**ℹ️ - Here's the list of the server's commands channels:** {', '.join([ctx.guild.get_channel(int(c)).mention for c in server_commands_channels])}"
+            )
+
+    @config_command.command(
+        pass_context=True,
+        name="music_channels",
+        aliases=["music_channel" "music_chans"],
+        brief="🎶",
+        description="This option manage the server's music channels  (if there is no music channel then music can be listened everywhere)",
+        usage="add|remove|purge (#voice_channel|<voice_channel_name>)",
+    )
+    async def config_prefix_command(
+        self, ctx: Context, option: Utils.to_lower = None, channel: VoiceChannel = None
+    ):
+        if option:
+            try:
+                if option in ("add", "remove"):
+                    if not channel:
+                        raise MissingRequiredArgument(
+                            param=Parameter(
+                                name="voice_channel", kind=Parameter.KEYWORD_ONLY
+                            )
+                        )
+
+                    if option == "add":
+                        if "music_channels" in self.bot.configs[
+                            ctx.guild.id
+                        ] and channel.id in set(
+                            self.bot.configs[ctx.guild.id]["music_channels"]
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already in the music channels list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.add_music_channel(
+                            ctx.guild.id, channel.id, f"{channel}"
+                        )
+
+                        if "music_channels" not in self.bot.configs[ctx.guild.id]:
+                            self.bot.configs[ctx.guild.id]["music_channels"] = []
+
+                        self.bot.configs[ctx.guild.id]["music_channels"].append(
+                            channel.id
+                        )
+                        await ctx.send(
+                            f"ℹ️ - Added {channel.mention} to the music channels list!."
+                        )
+                    elif option == "remove":
+                        if "music_channels" in self.bot.configs[
+                            ctx.guild.id
+                        ] and channel.id not in set(
+                            self.bot.configs[ctx.guild.id]["music_channels"]
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already not in the music channels list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.remove_music_channel(
+                            ctx.guild.id, channel.id
+                        )
+                        del self.bot.configs[ctx.guild.id]["music_channels"][
+                            self.bot.configs[ctx.guild.id]["music_channels"].index(
+                                channel.id
+                            )
+                        ]
+                        await ctx.send(
+                            f"ℹ️ - Removed {channel.mention} from the music channels list!."
+                        )
+                elif option == "purge":
+                    if "music_channels" not in self.bot.configs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - No music channels have been added to the list yet!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.purge_music_channels(ctx.guild.id)
+                    del self.bot.configs[ctx.guild.id]["music_channels"]
+                    await ctx.send(
+                        f"ℹ️ - Removed all the music channels from the list!."
+                    )
+                else:
+                    await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            except MissingRequiredArgument as mre:
+                raise MissingRequiredArgument(param=mre.param)
+            except BadUnionArgument as bua:
+                raise BadUnionArgument(
+                    param=bua.param, converters=bua.converters, errors=bua.errors
+                )
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} {channel.mention} to the music channels list! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
+        else:
+            server_music_channels = self.bot.config_repo.get_music_channels(
+                ctx.guild.id
+            ).keys()
+            if not server_music_channels:
+                return await ctx.reply(
+                    f"ℹ️ - {ctx.author.mention} - No music channels have been added to the list yet!",
+                    delete_after=20,
+                )
+            await ctx.send(
+                f"**ℹ️ - Here's the list of the server's music channels:** {', '.join([ctx.guild.get_channel(int(c)).mention for c in server_music_channels])}"
+            )
 
     """ MAIN GROUP'S SECURITY COMMAND(S) """
 

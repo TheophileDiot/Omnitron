@@ -1,5 +1,8 @@
 from collections import OrderedDict
+from typing import Union
 from discord.ext.commands import Cog
+from lavalink import add_event_hook, Client
+from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
 
 from bot import Omnitron
 
@@ -79,7 +82,58 @@ class Events(Cog):
                 if isinstance(prevent_invites, OrderedDict)
                 else None
             )
+
+            self.bot.playlists[guild.id] = []
+
+            self.bot.djs[guild.id] = list(
+                [int(k) for k in self.bot.config_repo.get_djs(guild.id).keys()]
+            )  # Initialize moderators list for every guilds
+
+            commands_channels = self.bot.config_repo.get_commands_channels(guild.id)
+            if commands_channels:
+                self.bot.configs[guild.id]["commands_channels"] = [
+                    int(c) for c in commands_channels.keys()
+                ]
+
+            music_channels = self.bot.config_repo.get_music_channels(guild.id)
+            if music_channels:
+                self.bot.configs[guild.id]["music_channels"] = [
+                    int(c) for c in music_channels.keys()
+                ]
+
+            print(self.bot.configs[guild.id])
+
+        # This ensures the client isn't overwritten during cog reloads.
+        if not hasattr(self.bot, "lavalink"):
+            self.bot.lavalink = Client(self.bot.user.id)
+            # Host, Port, Password, Region, Name
+            self.bot.lavalink.add_node(
+                "127.0.0.1", 2333, "youshallnotpass", "eu", "default-node"
+            )
+            self.bot.add_listener(
+                self.bot.lavalink.voice_update_handler, "on_socket_response"
+            )
+
+        add_event_hook(self.track_hook)
+
         self.bot.starting = False
+
+    """ METHOD(S) """
+
+    async def track_hook(self, event: Union[TrackEndEvent, QueueEndEvent]):
+        if isinstance(event, QueueEndEvent):
+            # When this track_hook receives a "QueueEndEvent" from lavalink.py
+            # it indicates that there are no tracks left in the player's queue.
+            # To save on resources, we can tell the bot to disconnect from the voicechannel.
+            guild_id = int(event.player.guild_id)
+            guild = await self.bot.fetch_guild(guild_id)
+            await self.bot.utils_class.clear_playlist(guild)
+            await guild.change_voice_state(channel=None)
+        elif isinstance(event, TrackEndEvent):
+            guild_id = int(event.player.guild_id)
+            del self.bot.playlists[guild_id][0]
+        elif isinstance(event, NodeConnectedEvent):
+            print("Lavalink node connected!")
 
 
 def setup(bot: Omnitron):
