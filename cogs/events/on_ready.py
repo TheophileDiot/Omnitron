@@ -101,8 +101,6 @@ class Events(Cog):
                     int(c) for c in music_channels.keys()
                 ]
 
-            print(self.bot.configs[guild.id])
-
         # This ensures the client isn't overwritten during cog reloads.
         if not hasattr(self.bot, "lavalink"):
             self.bot.lavalink = Client(self.bot.user.id)
