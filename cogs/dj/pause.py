@@ -14,6 +14,7 @@ class Dj(Cog):
         self.bot = bot
 
     @command(name="pause", description="Pause the current music!")
+    @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
     async def pause_command(self, ctx: Context):

@@ -2,7 +2,7 @@ from discord import Member, VoiceState
 from discord.ext.commands import Cog
 
 from bot import Omnitron
-from data import Xp_class
+from data import Utils, Xp_class
 
 
 class Events(Cog):
@@ -14,6 +14,7 @@ class Events(Cog):
     """ EVENT """
 
     @Cog.listener()
+    @Utils.check_bot_starting()
     async def on_voice_state_update(
         self, member: Member, before: VoiceState, after: VoiceState
     ):

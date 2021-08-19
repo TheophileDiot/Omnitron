@@ -19,6 +19,7 @@ class Dj(Cog):
         usage="(number of skip(s))",
         description="Pause the current music!",
     )
+    @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
     async def skip_command(self, ctx: Context, skips: int = 1):

@@ -48,6 +48,8 @@ class Omnitron(Bot):
         [remove(path.join("temp", "musics", f)) for f in listdir("temp/musics")]
         with open(path.join("logs", "spring.log"), "w"):
             pass
+        with open(path.join("temp", "musics.txt"), "w"):
+            pass
         dirs = chain.from_iterable(
             [
                 [
@@ -194,6 +196,14 @@ class Omnitron(Bot):
         if ctx.command is None:
             return await ctx.reply(
                 f"ℹ️ - This command doesn't exist or is deactivated! Command: `{message.content[len(prefix) - 1::]}`",
+                delete_after=15,
+            )
+        elif (
+            "commands_channels" in self.configs[ctx.guild.id]
+            and ctx.channel.id not in self.configs[ctx.guild.id]["commands_channels"]
+        ):
+            return await ctx.reply(
+                f"⛔ - Commands are not allowed in this channel!",
                 delete_after=15,
             )
 

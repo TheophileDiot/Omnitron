@@ -23,6 +23,7 @@ class Miscellaneous(Cog):
         usage="(sub-command)",
         description="This command contains every xp realted commands",
     )
+    @Utils.check_bot_starting()
     async def xp_command(self, ctx: Context):
         """Group containing every xp commands
 

@@ -89,6 +89,20 @@ class Events(Cog):
                 [int(k) for k in self.bot.config_repo.get_djs(guild.id).keys()]
             )  # Initialize moderators list for every guilds
 
+            commands_channels = self.bot.config_repo.get_commands_channels(guild.id)
+            if commands_channels:
+                self.bot.configs[guild.id]["commands_channels"] = [
+                    int(c) for c in commands_channels.keys()
+                ]
+
+            music_channels = self.bot.config_repo.get_music_channels(guild.id)
+            if music_channels:
+                self.bot.configs[guild.id]["music_channels"] = [
+                    int(c) for c in music_channels.keys()
+                ]
+
+            print(self.bot.configs[guild.id])
+
         # This ensures the client isn't overwritten during cog reloads.
         if not hasattr(self.bot, "lavalink"):
             self.bot.lavalink = Client(self.bot.user.id)

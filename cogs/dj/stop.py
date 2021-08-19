@@ -18,6 +18,7 @@ class Dj(Cog):
         aliases=["end", "leave", "disconnect"],
         description="Stop the music in progress!",
     )
+    @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
     async def stop_command(self, ctx: Context):

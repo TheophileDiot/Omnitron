@@ -78,6 +78,15 @@ class Dj(Cog):
                         f"⚠️ - {ctx.author.mention} - Please be in a non-AFK voice channel!",
                         delete_after=20,
                     )
+                elif (
+                    "music_channels" in self.bot.configs[ctx.guild.id]
+                    and ctx.author.voice.channel.id
+                    not in self.bot.configs[ctx.guild.id]["music_channels"]
+                ):
+                    return await ctx.reply(
+                        f"⚠️ - {ctx.author.mention} - Please be in a valid music channel!",
+                        delete_after=20,
+                    )
 
                 player.store("channel", ctx.channel.id)
                 await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
@@ -99,6 +108,7 @@ class Dj(Cog):
         usage="<Youtube_link>|<Title>",
         description="Plays a link or title from a Youtube video! (supports playlists!)",
     )
+    @Utils.check_bot_starting()
     @Utils.check_dj()
     @bot_has_guild_permissions(connect=True, speak=True)
     @max_concurrency(1, per=BucketType.guild)
