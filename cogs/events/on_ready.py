@@ -79,8 +79,6 @@ class Events(Cog):
                 if isinstance(prevent_invites, OrderedDict)
                 else None
             )
-
-            print(self.bot.configs[guild.id])
         self.bot.starting = False
 
 
