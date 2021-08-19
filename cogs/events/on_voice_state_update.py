@@ -2,18 +2,20 @@ from discord import Member, VoiceState
 from discord.ext.commands import Cog
 
 from bot import Omnitron
+from data import Xp_class
 
 
 class Events(Cog):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.voice_intervals = {}
+        self.xp_class = Xp_class(bot)
 
     """ EVENT """
 
     @Cog.listener()
     async def on_voice_state_update(
-        self, member: Member, _: VoiceState, after: VoiceState
+        self, member: Member, before: VoiceState, after: VoiceState
     ):
         if member.bot:
             return
@@ -31,6 +33,10 @@ class Events(Cog):
         else:
             if _id in self.voice_intervals:
                 self.voice_intervals.pop(_id).cancel()
+
+        if not member.bot and after.channel is None:
+            if not [m for m in before.channel.members if not m.bot]:
+                await self.bot.utils_class.clear_playlist(member.guild)
 
     """ METHOD(S) """
 

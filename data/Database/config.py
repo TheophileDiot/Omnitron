@@ -24,12 +24,33 @@ class Config:
         self.model.delete(f"{self.path}/moderators/{mod_id}")
 
     @Utils.resolve_guild_path
-    def purge_moderator(self, guild_id: int) -> None:
+    def purge_moderators(self, guild_id: int) -> None:
         self.model.delete(f"{self.path}/moderators")
 
     @Utils.resolve_guild_path
     def get_moderators(self, guild_id: int) -> OrderedDict:
         return self.model.get(f"{self.path}/moderators")
+
+    """ GUILD DJS """
+
+    @Utils.resolve_guild_path
+    def add_dj(self, guild_id: int, mod_id: int, mod_name: str, mod_type: str) -> None:
+        self.model.create(
+            f"{self.path}/djs/{mod_id}",
+            args={"name": mod_name, "type": mod_type},
+        )
+
+    @Utils.resolve_guild_path
+    def remove_dj(self, guild_id: int, mod_id: int) -> None:
+        self.model.delete(f"{self.path}/djs/{mod_id}")
+
+    @Utils.resolve_guild_path
+    def purge_djs(self, guild_id: int) -> None:
+        self.model.delete(f"{self.path}/djs")
+
+    @Utils.resolve_guild_path
+    def get_djs(self, guild_id: int) -> OrderedDict:
+        return self.model.get(f"{self.path}/djs")
 
     """ PREFIX """
 

@@ -140,7 +140,7 @@ class Moderation(Cog):
                         )
 
                     self.bot.config_repo.purge_moderators(ctx.guild.id)
-                    self.bot.moderators[ctx.guild.id].empty()
+                    self.bot.moderators[ctx.guild.id] = {}
                     await ctx.send(
                         f"ℹ️ - Removed all the moderators from the moderators list."
                     )
@@ -184,6 +184,115 @@ class Moderation(Cog):
                 + (
                     f"Roles: {', '.join(f'`{r}`' for r in server_mods_roles)}\n"
                     if server_mods_roles
+                    else ""
+                )
+            )
+
+    @config_command.command(
+        pass_context=True,
+        name="djs",
+        aliases=["players"],
+        brief="🧑‍🎤",
+        description="This option manage the server's djs (role & members) (if there is no dj then everyone can use music commands)",
+        usage="add|remove|purge @role|@member",
+    )
+    async def config_djs_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        dj: Union[Role, Member] = None,
+    ):
+        if option:
+            try:
+                if option in ("add", "remove"):
+                    if not dj:
+                        raise MissingRequiredArgument(
+                            param=Parameter(name="dj", kind=Parameter.KEYWORD_ONLY)
+                        )
+                    elif isinstance(dj, Member) and dj.bot:
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - You can't add a bot user to the djs list!",
+                            delete_after=20,
+                        )
+
+                    if option == "add":
+                        if dj.id in set(self.bot.djs[ctx.guild.id]):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - `@{dj}` {'role' if isinstance(dj, Role) else 'member'} is already in the djs list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.add_dj(
+                            ctx.guild.id, dj.id, f"{dj}", type(dj).__name__
+                        )
+                        self.bot.djs[ctx.guild.id].append(dj.id)
+                        await ctx.send(
+                            f"ℹ️ - Added `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list!."
+                        )
+                    elif option == "remove":
+                        if dj.id not in set(self.bot.djs[ctx.guild.id]):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - `@{dj}` {'role' if isinstance(dj, Role) else 'member'} is already not in the djs list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.remove_dj(ctx.guild.id, dj.id)
+                        del self.bot.djs[ctx.guild.id][
+                            self.bot.djs[ctx.guild.id].index(dj.id)
+                        ]
+                        await ctx.send(
+                            f"ℹ️ - Removed `@{(await ctx.guild.fetch_member(int(dj.id))) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                        )
+                elif option == "purge":
+                    if not self.bot.djs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - No djs (members & roles) have been added to the list yet!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.purge_djs(ctx.guild.id)
+                    self.bot.djs[ctx.guild.id] = {}
+                    await ctx.send(f"ℹ️ - Removed all the djs from the djs list!.")
+                else:
+                    await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            except MissingRequiredArgument as mre:
+                raise MissingRequiredArgument(param=mre.param)
+            except BadUnionArgument as bua:
+                raise BadUnionArgument(
+                    param=bua.param, converters=bua.converters, errors=bua.errors
+                )
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
+        else:
+            server_djs = self.bot.config_repo.get_djs(ctx.guild.id).values()
+            if not server_djs:
+                return await ctx.reply(
+                    f"ℹ️ - {ctx.author.mention} - No djs (members & roles) have been added to the list yet!",
+                    delete_after=20,
+                )
+            server_djs_roles = []
+            server_djs_members = []
+            for m in server_djs:
+                if m["type"] == "Role":
+                    server_djs_roles.append(m["name"])
+                else:
+                    server_djs_members.append(m["name"])
+            await ctx.send(
+                f"**ℹ️ - Here's the list of the server's djs:**\n\n"
+                + (
+                    f"Members: {', '.join(f'`{m}`' for m in server_djs_members)}\n"
+                    if server_djs_members
+                    else ""
+                )
+                + (
+                    f"Roles: {', '.join(f'`{r}`' for r in server_djs_roles)}\n"
+                    if server_djs_roles
                     else ""
                 )
             )

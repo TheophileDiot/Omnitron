@@ -74,11 +74,28 @@ To get a local copy up and running follow these simple steps.
    ```sh
    git clone https://github.com/TheophileDiot/Omnitron.git
    ```
-2. Install the modules packages
+
+2. (Optional) Create a python virtualenv
+
+   ```sh
+   python3 -m venv env
+   source env/bin/activate
+   ```
+
+3. Install the modules packages
    ```sh
    pip install -r requirements.txt
    ```
 
+4. Create a .env file and put all your environment variables in it, variables needed : `BOT_TOKEN`, `FIREBASE_APIKEY`, `FIREBASE_AUTHDOMAIN`, `FIREBASE_DATABASEURL`, `FIREBASE_STORAGEBUCKET`, `FIREBASE_USER_EMAIL`, `FIREBASE_USER_PASSWORD` or put them in the data/constants.py file !
+
+### Launch the bot:
+`python bot.py`
+
+### Buildpacks needed for heroku
+* `https://github.com/xrisk/heroku-opus.git`
+* `https://github.com/heroku/heroku-buildpack-apt`
+* `https://github.com/heroku/heroku-buildpack-jvm-common.git`
 
 <!-- ROADMAP -->
 ## Roadmap
