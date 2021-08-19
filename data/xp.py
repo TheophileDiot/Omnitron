@@ -61,11 +61,14 @@ class Xp_class:
                 self.bot.configs[member.guild.id]["xp"]["lvl2role"], reverse=True
             ):
                 if level >= key:
-                    await self.new_level_role(
-                        member,
-                        self.bot.configs[member.guild.id]["xp"]["lvl2role"][key],
-                        _type,
-                    )
+                    if self.bot.configs[member.guild.id]["xp"]["lvl2role"][
+                        key
+                    ] not in set(member.roles):
+                        await self.new_level_role(
+                            member,
+                            self.bot.configs[member.guild.id]["xp"]["lvl2role"][key],
+                            _type,
+                        )
                     break
 
     def calculate_bonus(self, member: Member, value: int):

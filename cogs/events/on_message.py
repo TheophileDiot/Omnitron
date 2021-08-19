@@ -27,11 +27,21 @@ class Events(Cog):
             if "prevent_invites" in self.bot.configs[message.guild.id]:
                 await self.bot.utils_class.check_invite(ctx)
             if self.bot.configs[message.guild.id]["xp"]["is_on"]:
-                _id = f"{message.guild.id}.{message.author.id}"
-                if _id not in self.limitation:
-                    await self.xp_class.manage_xp(message.author, "message")
-                    self.limitation.append(_id)
-                    await self.cooldown_messages(_id)
+                if (
+                    "xp_gain_channels" in self.bot.configs[message.guild.id]
+                    and message.channel.id
+                    in self.bot.configs[message.guild.id]["xp_gain_channels"][
+                        "TextChannel"
+                    ]
+                    or not self.bot.configs[message.guild.id]["xp_gain_channels"][
+                        "TextChannel"
+                    ]
+                ):
+                    _id = f"{message.guild.id}.{message.author.id}"
+                    if _id not in self.limitation:
+                        await self.xp_class.manage_xp(message.author, "message")
+                        self.limitation.append(_id)
+                        await self.cooldown_messages(_id)
         except KeyError:
             if tries < 3:
                 await sleep(5)

@@ -24,7 +24,7 @@ class Miscellaneous(Cog):
         description="This command contains every xp realted commands",
     )
     @Utils.check_bot_starting()
-    async def xp_command(self, ctx: Context):
+    async def xp_group(self, ctx: Context):
         """Group containing every xp commands
 
         Keyword arguments:
@@ -41,7 +41,7 @@ class Miscellaneous(Cog):
 
     """ GROUP'S COMMAND(S) """
 
-    @xp_command.command(
+    @xp_group.command(
         name="levels",
         aliases=["lvl", "lvls"],
         brief="🆙",
@@ -160,7 +160,7 @@ class Miscellaneous(Cog):
             "set_lvl",
         )
 
-    @xp_command.command(
+    @xp_group.command(
         name="prestige",
         aliases=["prstg"],
         brief="🌟",
@@ -208,7 +208,7 @@ class Miscellaneous(Cog):
                 f"✅ - {ctx.author.mention} - You have reached the maximum prestige level, so you cannot gain any more prestige levels! Congratulations!"
             )
 
-    @xp_command.command(
+    @xp_group.command(
         name="info",
         aliases=["infos"],
         brief="ℹ️",
@@ -263,7 +263,7 @@ class Miscellaneous(Cog):
                 + f"! {' Keep it up!' if member.id == ctx.author.id else ''}"
             )
 
-    @xp_command.command(
+    @xp_group.command(
         name="leaderboard",
         aliases=["ranking", "top"],
         brief="👑",
