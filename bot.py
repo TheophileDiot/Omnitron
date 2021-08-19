@@ -29,30 +29,12 @@ from logging import basicConfig, INFO, error, info
 from os import getenv, listdir, makedirs, name, path, system
 from traceback import format_exc
 
-from data.constants import BOT_TOKEN, BOT_PREFIX, BOT_COLOR, OWNER_ID
-from data.Database import Main, Config, User
-from data.model import Model
-from data.utils import check_bot_starting, get_guild_pre
-
-load_dotenv(path.join(".", ".env"))  # Load data from the .env file
-
-if not path.exists("logs"):  # Create logs folder if it doesn't exist
-    makedirs("logs")
-
-basicConfig(
-    filename=f"logs/{date.today().strftime('%d-%m-%Y_')}app.log",
-    filemode="a",
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%d-%m-%y %H:%M:%S",
-    level=INFO,
-)  # Configure the logging
-
 
 class Omnitron(Bot):
     def __init__(self, **kwargs):
         """Initialize the bot"""
         super().__init__(
-            command_prefix=get_guild_pre or BOT_PREFIX,
+            command_prefix=Utils.get_guild_pre or BOT_PREFIX,
             intents=self.get_intents(),
             help_command=None,
             case_insensitive=True,
@@ -72,11 +54,7 @@ class Omnitron(Bot):
                 and f not in ("__init__", "__pycache__")
             ]
         )
-        self._extensions = [f for f in dirs] + [
-            f.replace(".py", "")
-            for f in listdir("cogs")
-            if path.isfile(path.join("cogs", f))
-        ]
+        self._extensions = [f for f in dirs]
         self.load_extensions()
         self.session = ClientSession(loop=self.loop)
 
@@ -99,7 +77,7 @@ class Omnitron(Bot):
         """Override default command error handler to log errors and prevent the bot from crashing."""
         if isinstance(_error, MissingRequiredArgument):
             await ctx.reply(
-                f"ℹ️ - The `{ctx.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{get_guild_pre(self, ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                f"ℹ️ - The `{ctx.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
                 delete_after=20,
             )
         elif isinstance(_error, MissingPermissions):
@@ -134,12 +112,12 @@ class Omnitron(Bot):
             )
         elif isinstance(_error, BadArgument):
             await ctx.reply(
-                f"⚠️ - Please provide valid arguments! `{get_guild_pre(self, ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                f"⚠️ - Please provide valid arguments! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
                 delete_after=20,
             )
         elif isinstance(_error, BadUnionArgument):
             await ctx.reply(
-                f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{get_guild_pre(self, ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
                 delete_after=20,
             )
         elif isinstance(_error, CheckFailure):
@@ -177,33 +155,29 @@ class Omnitron(Bot):
                 delete_after=20,
             )
 
-    @check_bot_starting()
     async def on_message(self, message: Message):
-        """This event is called whenever a message is sent in any channel the bot can see."""
-        await self.wait_until_ready()
-
         if message.is_system() or message.author.bot or not message.guild:
             return
 
         try:
-            prefix = get_guild_pre(self, message)
+            prefix = self.utils_class.get_guild_pre(message)
             has_prefix = message.content[: len(prefix[0])] in prefix
         except Exception:
             return
 
         if has_prefix:
-            await self.process_commands(message)
+            await self.process_commands(message, prefix)
 
-    """ METHODS """
+    """ METHOD(S) """
 
-    async def process_commands(self, message: Message):
+    async def process_commands(self, message: Message, prefix: str):
         """This function processes the commands that the user has sent"""
         await self.wait_until_ready()
         ctx = await self.get_context(message=message)
 
         if ctx.command is None:
             return await ctx.reply(
-                f"ℹ️ - This command doesn't exist or is deactivated! Command: `{message.content[len(get_guild_pre(self, message)) - 1::]}`",
+                f"ℹ️ - This command doesn't exist or is deactivated! Command: `{message.content[len(prefix) - 1::]}`",
                 delete_after=15,
             )
 
@@ -211,6 +185,7 @@ class Omnitron(Bot):
 
     async def init(self):
         """When the bot is starting, init the database methods"""
+        self.utils_class = Utils(self)
         self.main_repo = Main(self.model)
         self.config_repo = Config(self.model)
         self.user_repo = User(self.model, self)
@@ -256,6 +231,29 @@ class Omnitron(Bot):
 
 
 if __name__ == "__main__":
+    from data import (
+        Model,
+        Utils,
+        BOT_TOKEN,
+        BOT_PREFIX,
+        BOT_COLOR,
+        OWNER_ID,
+    )
+    from data.Database import Main, Config, User
+
+    load_dotenv(path.join(".", ".env"))  # Load data from the .env file
+
+    if not path.exists("logs"):  # Create logs folder if it doesn't exist
+        makedirs("logs")
+
+    basicConfig(
+        filename=f"logs/{date.today().strftime('%d-%m-%Y_')}app.log",
+        filemode="a",
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%d-%m-%y %H:%M:%S",
+        level=INFO,
+    )  # Configure the logging
+
     system("cls" if name == "nt" else "clear")
     print("Omnitron is starting...")
     loop = get_event_loop()

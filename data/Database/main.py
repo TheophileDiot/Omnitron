@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from data.utils import resolve_guild_path
+from data import Utils
 
 
 class Main:
@@ -10,7 +10,7 @@ class Main:
 
     """ CREATE & DELETE """
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     def create_guild(
         self, guild_id: int, guild_name: str, guild_owner: str, present: bool = True
     ) -> None:
@@ -23,19 +23,19 @@ class Main:
             args={"prefix": "o!", "xp": {"is_on": False, "max_lvl": 100}},
         )
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     def kicked_from_guild(self, guild_id: int, present: bool = False) -> None:
         self.model.update(self.path, args={"present": present})
 
     """ GETTERS & SETTERS """
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     def get_guild(self, guild_id: int) -> OrderedDict or None:
         return self.model.get(self.path) or None
 
     def get_guilds(self) -> OrderedDict:
         return self.model.get("guilds/")
 
-    @resolve_guild_path
+    @Utils.resolve_guild_path
     def update_guild(self, guild_id: int, updates: dict) -> None:
         self.model.update(self.path, args=updates)

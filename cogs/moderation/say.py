@@ -2,7 +2,7 @@ from discord.ext.commands import Context, Cog, command
 from discord.permissions import Permissions
 
 from bot import Omnitron
-from data.utils import check_moderator
+from data import Utils
 
 
 class Moderation(Cog):
@@ -15,7 +15,7 @@ class Moderation(Cog):
         usage='#channel "message"',
         description="Send a message to a specified salon or the current one!",
     )
-    @check_moderator()
+    @Utils.check_moderator()
     async def say_command(self, ctx: Context, *args: str):
         bot_member = await ctx.guild.fetch_member(self.bot.user.id)
         channel = ctx.channel

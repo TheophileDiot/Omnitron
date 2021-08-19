@@ -9,15 +9,7 @@ from inspect import Parameter
 from typing import Union
 
 from bot import Omnitron
-from data.utils import (
-    check_moderator,
-    duration,
-    get_embed_from_ctx,
-    get_guild_pre,
-    parse_duration,
-    to_lower,
-)
-from data.xp import Xp_class
+from data import Utils, Xp_class
 
 BOOL2VAL = {True: "ON", False: "OFF"}
 
@@ -37,11 +29,13 @@ class Moderation(Cog):
         usage="(sub-command)",
         description="This command manage the server's configuration",
     )
-    @check_moderator()
+    @Utils.check_moderator()
     async def config_command(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(
-                embed=get_embed_from_ctx(self.bot, ctx, title="Server's configuration")
+                embed=self.bot.utils_class.get_embed_from_ctx(
+                    ctx, title="Server's configuration"
+                )
             )
 
     """ MAIN GROUP'S GROUP(S) """
@@ -56,8 +50,7 @@ class Moderation(Cog):
     async def config_security_command(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(
-                embed=get_embed_from_ctx(
-                    self.bot,
+                embed=self.bot.utils_class.get_embed_from_ctx(
                     ctx,
                     title=f"{ctx.command.brief} Server's security configuration",
                 )
@@ -74,8 +67,7 @@ class Moderation(Cog):
     async def config_xp_command(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(
-                embed=get_embed_from_ctx(
-                    self.bot,
+                embed=self.bot.utils_class.get_embed_from_ctx(
                     ctx,
                     title=f"{ctx.command.brief} Server's experience configuration",
                 )
@@ -92,7 +84,10 @@ class Moderation(Cog):
         usage="add|remove|purge @role|@member",
     )
     async def config_moderators_command(
-        self, ctx: Context, option: to_lower = None, mod: Union[Role, Member] = None
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        mod: Union[Role, Member] = None,
     ):
         if option:
             try:
@@ -151,7 +146,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -202,7 +197,7 @@ class Moderation(Cog):
         usage="(set|reset) (<prefix>)",
     )
     async def config_prefix_command(
-        self, ctx: Context, option: to_lower = None, prefix: str = None
+        self, ctx: Context, option: Utils.to_lower = None, prefix: str = None
     ):
         if option:
             try:
@@ -220,7 +215,7 @@ class Moderation(Cog):
                     await ctx.send(f"ℹ️ - Bot prefix reseted to `o!`.")
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -232,7 +227,7 @@ class Moderation(Cog):
                 )
         else:
             msg = await ctx.send(
-                f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{get_guild_pre(self.bot, ctx.message)[0]}`!"
+                f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}`!"
             )
             await msg.add_reaction("👀")
 
@@ -247,7 +242,10 @@ class Moderation(Cog):
         usage="(on|update|off) (#channel)",
     )
     async def config_security_prevent_invites_command(
-        self, ctx: Context, option: to_lower = None, notify_channel: TextChannel = None
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        notify_channel: TextChannel = None,
     ):
         if option:
             try:
@@ -258,7 +256,7 @@ class Moderation(Cog):
                     val = False
                 else:
                     return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
@@ -311,7 +309,7 @@ class Moderation(Cog):
     async def config_security_mute_on_join_command(
         self,
         ctx: Context,
-        option: to_lower = None,
+        option: Utils.to_lower = None,
         _duration: int = None,
         duration_type: str = None,
         muted_role: Role = None,
@@ -326,7 +324,7 @@ class Moderation(Cog):
                     val = False
                 else:
                     return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
@@ -336,7 +334,7 @@ class Moderation(Cog):
                     return await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - The mute on join is already `{BOOL2VAL[val]}`!"
                         + (
-                            f" Parameters: 'duration': `{duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'muted_role': `@{self.bot.configs[ctx.guild.id]['mute_on_join']['muted_role'].name}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                            f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'muted_role': `@{self.bot.configs[ctx.guild.id]['mute_on_join']['muted_role'].name}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
                             if "mute_on_join" in self.bot.configs[ctx.guild.id]
                             else ""
                         ),
@@ -364,7 +362,7 @@ class Moderation(Cog):
                         )
 
                     old_duration = f"{_duration} {duration_type}"
-                    _duration = await parse_duration(
+                    _duration = await self.bot.utils_class.parse_duration(
                         self.bot, _duration, duration_type, ctx
                     )
                     if not _duration:
@@ -410,7 +408,7 @@ class Moderation(Cog):
             await ctx.send(
                 f"ℹ️ - {ctx.author.mention} - The mute on join is currently `{BOOL2VAL['mute_on_join' in self.bot.configs[ctx.guild.id]]}` in this guild!"
                 + (
-                    f" Parameters: 'duration': `{duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'muted_role': `@{self.bot.configs[ctx.guild.id]['mute_on_join']['muted_role'].name}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                    f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'muted_role': `@{self.bot.configs[ctx.guild.id]['mute_on_join']['muted_role'].name}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
                     if "mute_on_join" in self.bot.configs[ctx.guild.id]
                     else ""
                 )
@@ -425,7 +423,9 @@ class Moderation(Cog):
         description="This option turn the server's experience feature on or off",
         usage="(on|off)",
     )
-    async def config_xp_switch_command(self, ctx: Context, option: to_lower = None):
+    async def config_xp_switch_command(
+        self, ctx: Context, option: Utils.to_lower = None
+    ):
         if option:
             try:
                 val = False
@@ -435,7 +435,7 @@ class Moderation(Cog):
                     val = False
                 else:
                     return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
@@ -469,7 +469,7 @@ class Moderation(Cog):
     async def config_xp_boost_command(
         self,
         ctx: Context,
-        option: to_lower = None,
+        option: Utils.to_lower = None,
         boosted: Union[Role, Member] = None,
         bonus: int = 20,
     ):
@@ -557,7 +557,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -645,7 +645,10 @@ class Moderation(Cog):
         usage="set|remove #channel",
     )
     async def config_xp_max_lvl_command(
-        self, ctx: Context, option: to_lower = None, xp_channel: TextChannel = None
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        xp_channel: TextChannel = None,
     ):
         try:
             if option:
@@ -678,7 +681,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             else:
@@ -704,7 +707,11 @@ class Moderation(Cog):
         usage="add|update|remove|purge <level value> @role",
     )
     async def config_xp_lvl2role_command(
-        self, ctx: Context, option: to_lower = None, lvl: int = None, role: Role = None
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        lvl: int = None,
+        role: Role = None,
     ):
         if option:
             try:
@@ -825,7 +832,7 @@ class Moderation(Cog):
                         await member.remove_roles(*roles)
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -867,7 +874,7 @@ class Moderation(Cog):
     async def config_xp_prestiges_command(
         self,
         ctx: Context,
-        option: to_lower = None,
+        option: Utils.to_lower = None,
         role: Role = None,
         prestige: int = None,
     ):
@@ -1033,7 +1040,7 @@ class Moderation(Cog):
                         await self.xp_class.manage_prestige(member, "purged_prestiges")
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:

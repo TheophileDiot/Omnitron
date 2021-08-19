@@ -2,7 +2,7 @@ from discord import Embed
 from discord.ext.commands import Cog, command, Context, Group
 
 from bot import Omnitron
-from data.utils import get_guild_pre, to_lower
+from data import Utils
 
 
 class Miscellaneous(Cog):
@@ -16,7 +16,7 @@ class Miscellaneous(Cog):
         description="Show every bot's command or infos about a specific one",
     )
     async def help_command(
-        self, ctx: Context, _command: to_lower = None, *args: to_lower
+        self, ctx: Context, _command: Utils.to_lower = None, *args: Utils.to_lower
     ):
         em = Embed(colour=self.bot.color)
 
@@ -35,15 +35,15 @@ class Miscellaneous(Cog):
                                 _command = _command.all_commands[arg]
                             except KeyError:
                                 return await ctx.reply(
-                                    f"⛔ - {ctx.author.mention} - This command isn't available! command: `{_command.qualified_name} {arg}`! `{get_guild_pre(self, ctx.message)[0]}help {_command.qualified_name}` to get more help.",
+                                    f"⛔ - {ctx.author.mention} - This command isn't available! command: `{_command.qualified_name} {arg}`! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {_command.qualified_name}` to get more help.",
                                     delete_after=20,
                                 )
 
                 em.description = (
-                    f"The bot prefix is: `{get_guild_pre(self.bot, ctx.message)[0]}`\n\n"
+                    f"The bot prefix is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`\n\n"
                     + f"**Command:** {_command.qualified_name.lower()}\n"
                     + f"**Description:** {_command.description or 'No description.'}\n"
-                    + f"**Usage:** {f'{get_guild_pre(self.bot, ctx.message)[0]}`{_command.qualified_name}` ' + ' '.join([f'`{u}`' for u in _command.usage.split(' ')]) if _command.usage else 'No usage.'}\n"
+                    + f"**Usage:** {f'{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`{_command.qualified_name}` ' + ' '.join([f'`{u}`' for u in _command.usage.split(' ')]) if _command.usage else 'No usage.'}\n"
                     + f"**Aliases:** {', '.join([f'`{c}`' for c in _command.aliases]) if _command.aliases else 'None.'}"
                 )
 
@@ -62,7 +62,7 @@ class Miscellaneous(Cog):
                     delete_after=20,
                 )
         else:
-            em.description = f"Here are all the available commands for {ctx.guild.me.display_name}\nThe bot prefix is: `{get_guild_pre(self.bot, ctx.message)[0]}`"
+            em.description = f"Here are all the available commands for {ctx.guild.me.display_name}\nThe bot prefix is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`"
 
             cogs = {c: [] for c in self.bot.cogs if c != "Events"}
             for cmd in self.bot.commands:
