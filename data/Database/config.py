@@ -289,3 +289,35 @@ class Config:
     @Utils.resolve_guild_path
     def get_tickets(self, guild_id: int) -> bool:
         return self.model.get(f"{self.path}/tickets") or False
+
+    """ SELECT TO ROLE """
+
+    @Utils.resolve_guild_path
+    def add_select2role(
+        self, guild_id: int, title: str, role_name: str, role_id: int
+    ) -> None:
+        self.model.create(
+            f"{self.path}/select2role/selects/{title}",
+            args={"name": role_name, "role_id": role_id},
+        )
+
+    @Utils.resolve_guild_path
+    def get_select2role(self, guild_id: int) -> OrderedDict:
+        return self.model.get(f"{self.path}/select2role")
+
+    @Utils.resolve_guild_path
+    def remove_select2role(self, guild_id: int, title: str) -> None:
+        self.model.delete(f"{self.path}/select2role/selects/{title}")
+
+    @Utils.resolve_guild_path
+    def purge_select2role(self, guild_id: int) -> None:
+        self.model.delete(f"{self.path}/select2role/selects")
+
+    @Utils.resolve_guild_path
+    def set_select2role_channel(
+        self, guild_id: int, channel_id: int, roles_msg_id: int
+    ) -> None:
+        self.model.update(
+            f"{self.path}/select2role",
+            args={"channel_id": channel_id, "roles_msg_id": roles_msg_id},
+        )

@@ -29,7 +29,7 @@ class Moderation(Cog):
         tickets = self.bot.ticket_repo.get_tickets(ctx.guild.id)
         if not tickets or str(ctx.channel.id) not in [ticket for ticket in tickets]:
             return await ctx.reply(
-                f"⛔ - {ctx.author.mention} - You cannot use this command outside a ticket channel! `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                f"⛔ - {ctx.author.mention} - You cannot use this command outside a ticket channel! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.qualified_name}` to get more help!",
                 delete_after=20,
             )
         ticket = tickets[str(ctx.channel.id)]
