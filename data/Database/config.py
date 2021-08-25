@@ -1,4 +1,5 @@
-from typing import Union, OrderedDict
+from collections import OrderedDict
+from typing import Union
 
 from data import Utils
 
@@ -131,6 +132,16 @@ class Config:
     def get_prefix(self, guild_id: int) -> str:
         return self.model.get(f"{self.path}/prefix") or "o!"
 
+    """ POLLS """
+
+    @Utils.resolve_guild_path
+    def set_polls_channel(self, guild_id: int, channel_id: int) -> None:
+        self.model.update(f"{self.path}", args={"polls_channel": channel_id})
+
+    @Utils.resolve_guild_path
+    def get_polls_channel(self, guild_id: int) -> int:
+        return self.model.get(f"{self.path}/polls_channel")
+
     """ XP """
 
     @Utils.resolve_guild_path
@@ -259,3 +270,22 @@ class Config:
     @Utils.resolve_guild_path
     def get_mute_on_join(self, guild_id: int) -> bool:
         return self.model.get(f"{self.path}/mute_on_join") or None
+
+    """ TICKETS """
+
+    @Utils.resolve_guild_path
+    def set_tickets(
+        self, guild_id: int, val: bool, channel_id: int, category_id: int
+    ) -> None:
+        self.model.update(
+            f"{self.path}/tickets",
+            args={"tickets_channel_id": channel_id, "tickets_category_id": category_id},
+        )
+
+    @Utils.resolve_guild_path
+    def remove_tickets(self, guild_id: int) -> None:
+        self.model.delete(f"{self.path}/tickets")
+
+    @Utils.resolve_guild_path
+    def get_tickets(self, guild_id: int) -> bool:
+        return self.model.get(f"{self.path}/tickets") or False

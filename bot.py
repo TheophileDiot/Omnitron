@@ -23,9 +23,10 @@ from discord.ext.commands.errors import (
     BadUnionArgument,
     CheckFailure,
 )
+from dislash import InteractionClient
 from dotenv import load_dotenv
 from itertools import chain
-from logging import basicConfig, INFO, error, info
+from logging import basicConfig, DEBUG, error, info
 from multiprocessing import Process
 from subprocess import PIPE, call
 from os import getenv, listdir, makedirs, name, path, system, remove
@@ -83,8 +84,7 @@ class Omnitron(Bot):
 
     async def on_ready(self):
         self.color = Colour(BOT_COLOR) or self.user.color
-        print("Omnitron is ready.")
-        info("Omnitron successfully started")
+        InteractionClient(self)
 
     async def on_command_error(self, ctx: Context, _error):
         """Override default command error handler to log errors and prevent the bot from crashing."""
@@ -201,6 +201,7 @@ class Omnitron(Bot):
         elif (
             "commands_channels" in self.configs[ctx.guild.id]
             and ctx.channel.id not in self.configs[ctx.guild.id]["commands_channels"]
+            and not ctx.author.guild_permissions.administrator
         ):
             return await ctx.reply(
                 f"⛔ - Commands are not allowed in this channel!",
@@ -214,6 +215,8 @@ class Omnitron(Bot):
         self.utils_class = Utils(self)
         self.main_repo = Main(self.model)
         self.config_repo = Config(self.model)
+        self.poll_repo = Poll(self.model)
+        self.ticket_repo = Ticket(self.model)
         self.user_repo = User(self.model, self)
         self.configs = {}
         self.moderators = {}
@@ -272,7 +275,7 @@ if __name__ == "__main__":
         BOT_COLOR,
         OWNER_ID,
     )
-    from data.Database import Main, Config, User
+    from data.Database import Main, Config, Poll, Ticket, User
 
     load_dotenv(path.join(".", ".env"))  # Load data from the .env file
 
@@ -290,7 +293,7 @@ if __name__ == "__main__":
         filemode="a",
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%d-%m-%y %H:%M:%S",
-        level=INFO,
+        level=DEBUG,
     )  # Configure the logging
 
     system("cls" if name == "nt" else "clear")

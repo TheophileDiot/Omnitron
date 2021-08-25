@@ -15,6 +15,7 @@ class Events(Cog):
         """When a reaction is added, if the user have a prestige pending then handle it according to the reaction added"""
         if payload.member.bot:
             return
+
         db_user = self.bot.user_repo.get_user(payload.guild_id, payload.user_id)
 
         if (
