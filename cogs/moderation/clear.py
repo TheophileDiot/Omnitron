@@ -31,7 +31,7 @@ class Moderation(Cog):
     ):
         if nbr_msgs <= 0:
             return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - Please provide a number greater than 0! `${self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}help {ctx.command.name}` for more details.",
+                f"ℹ️ - {ctx.author.mention} - Please provide a number greater than 0! `${self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.name}` for more details.",
                 delete_after=10,
             )
 

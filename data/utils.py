@@ -134,22 +134,38 @@ class Utils:
         em.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
         em.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
 
-        for cmd in ctx.command.commands:
+        cmds = OrderedDict(
+            sorted(
+                {
+                    c.name: {
+                        "brief": c.brief,
+                        "description": c.description,
+                        "aliases": c.aliases,
+                        "usage": c.usage,
+                        "commands": c.commands
+                        if "all_commands" in vars(c).keys() and c.commands
+                        else None,
+                    }
+                    for c in set(ctx.command.commands)
+                }.items()
+            )
+        )
+        for name, cmd in cmds.items():
             em.add_field(
-                name=f"{cmd.brief} {cmd.name}",
-                value=f"{cmd.description}"
+                name=f"{cmd['brief']} {name}",
+                value=f"{cmd['description']}"
                 + (
                     f"\n**Alias"
-                    + ("es" if len(cmd.aliases) > 1 else "")
+                    + ("es" if len(cmd["aliases"]) > 1 else "")
                     + "**: "
-                    + ", ".join([f"`{a}`" for a in cmd.aliases])
-                    if cmd.aliases
+                    + ", ".join([f"`{a}`" for a in cmd["aliases"]])
+                    if cmd["aliases"]
                     else ""
                 )
-                + (f"\n**Usage**: `{cmd.usage}`" if cmd.usage else "")
+                + (f"\n**Usage**: `{cmd['usage']}`" if cmd["usage"] else "")
                 + (
-                    f"\n**Sub-commands:** {', '.join([f'`{cmd.name}`' for cmd in cmd.commands])}"
-                    if "all_commands" in vars(cmd).keys() and cmd.commands
+                    f"\n**Sub-commands:** {', '.join([f'`{cmd.name}`' for cmd in cmd['commands']])}"
+                    if cmd["commands"]
                     else ""
                 ),
                 inline=True,
@@ -215,9 +231,9 @@ class Utils:
             # Stop the current track so Lavalink consumes less resources.
             await player.stop()
 
-        # Disconnect from the voice channel.
-        await guild.change_voice_state(channel=None)
-        self.bot.playlists[guild.id].clear()
+            # Disconnect from the voice channel.
+            await guild.change_voice_state(channel=None)
+            self.bot.playlists[guild.id].clear()
 
     async def poll_completion(self, *args):
         await self.bot.wait_until_ready()
@@ -456,13 +472,16 @@ class Utils:
             )
 
         polls = bot.poll_repo.get_polls(guild.id)
-        bot.configs[guild.id]["polls"] = {}
-        for poll in polls:
-            if poll == "old":
-                continue
-            bot.configs[guild.id]["polls"][int(poll)] = bot.utils_class.task_launcher(
-                bot.utils_class.poll_completion, (guild, polls[poll]), count=1
-            )
+        if len(polls) > 1 and "old" in polls:
+            bot.configs[guild.id]["polls"] = {}
+            for poll in polls:
+                if poll == "old":
+                    continue
+                bot.configs[guild.id]["polls"][
+                    int(poll)
+                ] = bot.utils_class.task_launcher(
+                    bot.utils_class.poll_completion, (guild, polls[poll]), count=1
+                )
 
         """ TICKETS """
 
@@ -476,6 +495,29 @@ class Utils:
                     int(tickets["tickets_category_id"])
                 ),
             }
+
+        """ SELECT TO ROLE """
+
+        select2role = bot.config_repo.get_select2role(guild.id)
+        if select2role:
+            bot.configs[guild.id]["select2role"] = {}
+
+            if "selects" in select2role:
+                bot.configs[guild.id]["select2role"]["selects"] = {
+                    key: guild.get_role(value["role_id"])
+                    for key, value in select2role["selects"].items()
+                }
+
+            if "channel_id" in select2role:
+                bot.configs[guild.id]["select2role"]["channel"] = guild.get_channel(
+                    int(select2role["channel_id"])
+                )
+
+                bot.configs[guild.id]["select2role"]["roles_msg_id"] = select2role[
+                    "roles_msg_id"
+                ]
+
+        print(bot.configs[guild.id])
 
     @classmethod
     def check_moderator(self):

@@ -16,11 +16,13 @@ class Moderation(Cog):
         description="Send a message to a specified salon or the current one!",
     )
     @Utils.check_moderator()
-    async def say_command(self, ctx: Context, *args: str):
+    async def say_command(self, ctx: Context, *, args: str):
+        print(args)
         bot_member = await ctx.guild.fetch_member(self.bot.user.id)
         channel = ctx.channel
         if ctx.message.channel_mentions:
             channel = ctx.message.channel_mentions[0]
+            args = " ".join(args.split(" ")[1::])
             if (
                 not ctx.author.permissions_in(channel).view_channel
                 or not ctx.author.permissions_in(channel).send_messages
@@ -37,11 +39,11 @@ class Moderation(Cog):
                     f"⛔ - I don't have the necessary perms to send a message in this channel ({channel})! Required perms: `{', '.join([Permissions.view_channel, Permissions.send_messages])}`",
                     delete_after=20,
                 )
-            args = " ".join(args[1::])
 
         if bot_member.permissions_in(ctx.channel).manage_messages:
             await ctx.message.delete()
-        await channel.send(" ".join(args))
+
+        await channel.send(args)
 
 
 def setup(bot):

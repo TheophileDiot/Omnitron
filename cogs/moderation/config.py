@@ -13,10 +13,10 @@ from discord.ext.commands.errors import (
     BadUnionArgument,
     MissingRequiredArgument,
 )
-from dislash import ActionRow, Button
+from dislash import ActionRow, Button, SelectMenu, SelectOption
 from inspect import Parameter
 from time import time
-from typing import Union
+from typing import Tuple, Union
 
 from bot import Omnitron
 from data import Utils, Xp_class
@@ -110,57 +110,70 @@ class Moderation(Cog):
         name="moderators",
         aliases=["mods"],
         brief="🔨",
-        description="This option manage the server's moderators (role & members)",
+        description="This option manage the server's moderators (role & members) (can add/remove multiple at a time)",
         usage="add|remove|purge @role|@member",
     )
     async def config_moderators_command(
         self,
         ctx: Context,
         option: Utils.to_lower = None,
-        mod: Union[Role, Member] = None,
+        *mods: Union[Role, Member],
     ):
         if option:
             try:
                 if option in ("add", "remove"):
-                    if not mod:
+                    if not mods:
                         raise MissingRequiredArgument(
                             param=Parameter(
-                                name="moderator", kind=Parameter.KEYWORD_ONLY
+                                name="moderators", kind=Parameter.KEYWORD_ONLY
                             )
                         )
-                    elif isinstance(mod, Member) and mod.bot:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - You can't add a bot user to the moderators list!",
+
+                    _mods = mods
+                    mods = list(mods)
+                    dropped_mods = []
+                    bot_mods = []
+                    for mod in _mods:
+                        if option == "add":
+                            if mod.id in set(self.bot.moderators[ctx.guild.id]):
+                                del mods[mods.index(mod)]
+                                dropped_mods.append(mod)
+                                continue
+                            elif isinstance(mod, Member) and mod.bot:
+                                del mods[mods.index(mod)]
+                                bot_mods.append(mod)
+                                continue
+
+                            self.bot.config_repo.add_moderator(
+                                ctx.guild.id, mod.id, f"{mod}", type(mod).__name__
+                            )
+                            self.bot.moderators[ctx.guild.id].append(mod.id)
+                        elif option == "remove":
+                            if mod.id not in set(self.bot.moderators[ctx.guild.id]):
+                                del mods[mods.index(mod)]
+                                dropped_mods.append(mod)
+                                continue
+
+                            self.bot.config_repo.remove_moderator(ctx.guild.id, mod.id)
+                            del self.bot.moderators[ctx.guild.id][
+                                self.bot.moderators[ctx.guild.id].index(mod.id)
+                            ]
+
+                    if bot_mods:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{mod}`' for mod in bot_mods])} {'is a' if len(bot_mods) == 1 else 'are'} bot user{'s' if len(bot_mods) > 1 else ''} so you can't add {'them' if len(bot_mods) > 1 else 'him'} in the moderators list!",
                             delete_after=20,
                         )
 
-                    if option == "add":
-                        if mod.id in set(self.bot.moderators[ctx.guild.id]):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - `@{mod}` {'role' if isinstance(mod, Role) else 'member'} is already in the moderators list!",
-                                delete_after=20,
-                            )
-
-                        self.bot.config_repo.add_moderator(
-                            ctx.guild.id, mod.id, f"{mod}", type(mod).__name__
+                    if dropped_mods:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in dropped_mods])} {'is' if len(dropped_mods) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the moderators list!",
+                            delete_after=20,
                         )
-                        self.bot.moderators[ctx.guild.id].append(mod.id)
-                        await ctx.send(
-                            f"ℹ️ - Added `@{mod}` {'role' if isinstance(mod, Role) else 'member'} to the moderators list."
-                        )
-                    elif option == "remove":
-                        if mod.id not in set(self.bot.moderators[ctx.guild.id]):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - `@{mod}` {'role' if isinstance(mod, Role) else 'member'} is already not in the moderators list!",
-                                delete_after=20,
-                            )
 
-                        self.bot.config_repo.remove_moderator(ctx.guild.id, mod.id)
-                        del self.bot.moderators[ctx.guild.id][
-                            self.bot.moderators[ctx.guild.id].index(mod.id)
-                        ]
+                    if mods:
                         await ctx.send(
-                            f"ℹ️ - Removed `@{(await ctx.guild.fetch_member(int(mod.id))) if isinstance(mod, Member) else ctx.guild.get_role(int(mod.id))}` {'role' if isinstance(mod, Role) else 'member'} from the moderators list."
+                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in mods])} {'to' if option == 'add' else 'from'} the moderators list!."
                         )
                 elif option == "purge":
                     if not self.bot.moderators[ctx.guild.id]:
@@ -176,7 +189,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -223,55 +236,71 @@ class Moderation(Cog):
         name="djs",
         aliases=["players"],
         brief="🧑‍🎤",
-        description="This option manage the server's djs (role & members) (if there is no dj then everyone can use music commands)",
+        description="This option manage the server's djs (role & members) (if there is no dj then everyone can use music commands) (can add/remove multiple at a time)",
         usage="add|remove|purge @role|@member",
     )
     async def config_djs_command(
         self,
         ctx: Context,
         option: Utils.to_lower = None,
-        dj: Union[Role, Member] = None,
+        *djs: Union[Role, Member],
     ):
         if option:
             try:
                 if option in ("add", "remove"):
-                    if not dj:
+                    if not djs:
                         raise MissingRequiredArgument(
-                            param=Parameter(name="dj", kind=Parameter.KEYWORD_ONLY)
+                            param=Parameter(name="djs", kind=Parameter.KEYWORD_ONLY)
                         )
-                    elif isinstance(dj, Member) and dj.bot:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - You can't add a bot user to the djs list!",
+
+                    _djs = djs
+                    djs = list(djs)
+                    dropped_djs = []
+                    bot_djs = []
+                    for dj in _djs:
+                        if option == "add":
+                            if dj.id in set(self.bot.djs[ctx.guild.id]):
+                                del djs[djs.index(dj)]
+                                dropped_djs.append(dj)
+                                continue
+                            elif isinstance(dj, Member) and dj.bot:
+                                del djs[djs.index(dj)]
+                                bot_djs.append(dj)
+                                continue
+
+                            self.bot.config_repo.add_dj(
+                                ctx.guild.id, dj.id, f"{dj}", type(dj).__name__
+                            )
+                            self.bot.djs[ctx.guild.id].append(dj.id)
+                        elif option == "remove":
+                            if dj.id not in set(self.bot.djs[ctx.guild.id]):
+                                del djs[djs.index(dj)]
+                                dropped_djs.append(dj)
+                                continue
+
+                            self.bot.config_repo.remove_dj(ctx.guild.id, dj.id)
+                            del self.bot.djs[ctx.guild.id][
+                                self.bot.djs[ctx.guild.id].index(dj.id)
+                            ]
+                            await ctx.send(
+                                f"ℹ️ - Removed `@{(await ctx.guild.fetch_member(int(dj.id))) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                            )
+
+                    if bot_djs:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{dj}`' for dj in bot_djs])} {'is a' if len(bot_djs) == 1 else 'are'} bot user{'s' if len(bot_djs) > 1 else ''} so you can't add {'them' if len(bot_djs) > 1 else 'him'} in the djs list!",
                             delete_after=20,
                         )
 
-                    if option == "add":
-                        if dj.id in set(self.bot.djs[ctx.guild.id]):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - `@{dj}` {'role' if isinstance(dj, Role) else 'member'} is already in the djs list!",
-                                delete_after=20,
-                            )
-
-                        self.bot.config_repo.add_dj(
-                            ctx.guild.id, dj.id, f"{dj}", type(dj).__name__
+                    if dropped_djs:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in dropped_djs])} {'is' if len(dropped_djs) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the djs list!",
+                            delete_after=20,
                         )
-                        self.bot.djs[ctx.guild.id].append(dj.id)
-                        await ctx.send(
-                            f"ℹ️ - Added `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list!."
-                        )
-                    elif option == "remove":
-                        if dj.id not in set(self.bot.djs[ctx.guild.id]):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - `@{dj}` {'role' if isinstance(dj, Role) else 'member'} is already not in the djs list!",
-                                delete_after=20,
-                            )
 
-                        self.bot.config_repo.remove_dj(ctx.guild.id, dj.id)
-                        del self.bot.djs[ctx.guild.id][
-                            self.bot.djs[ctx.guild.id].index(dj.id)
-                        ]
+                    if djs:
                         await ctx.send(
-                            f"ℹ️ - Removed `@{(await ctx.guild.fetch_member(int(dj.id))) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in djs])} {'to' if option == 'add' else 'from'} the djs list!."
                         )
                 elif option == "purge":
                     if not self.bot.djs[ctx.guild.id]:
@@ -285,7 +314,7 @@ class Moderation(Cog):
                     await ctx.send(f"ℹ️ - Removed all the djs from the djs list!.")
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -354,7 +383,7 @@ class Moderation(Cog):
                     await ctx.send(f"ℹ️ - Bot prefix reseted to `o!`.")
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -366,7 +395,7 @@ class Moderation(Cog):
                 )
         else:
             msg = await ctx.send(
-                f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}`!"
+                f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`!"
             )
             await msg.add_reaction("👀")
 
@@ -394,7 +423,7 @@ class Moderation(Cog):
                     val = False
                 else:
                     return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
@@ -534,11 +563,11 @@ class Moderation(Cog):
                 raise MissingRequiredArgument(param=mre.param)
             except BadArgument:
                 raise BadArgument
-            # except Exception as e:
-            #     await ctx.reply(
-            #         f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
-            #         delete_after=20,
-            #     )
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
         else:
             await ctx.send(
                 f"ℹ️ - {ctx.author.mention} - The tickets are currently `{BOOL2VAL['tickets' in self.bot.configs[ctx.guild.id]]}` in this guild!"
@@ -549,6 +578,291 @@ class Moderation(Cog):
                     if "tickets" in self.bot.configs[ctx.guild.id]
                     else ""
                 )
+            )
+
+    @config_group.command(
+        pass_context=True,
+        name="select_to_role",
+        aliases=["select_2_role", "select2role"],
+        brief="🥸",
+        description="This option manage the server's server_2_role feature!",
+        usage='add|update|remove|purge "Title" @role',
+    )
+    async def config_select_2_role_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        title: str = None,
+        role: Role = None,
+    ):
+        if option:
+            try:
+                if option in ("add", "update", "remove"):
+                    if not title:
+                        raise MissingRequiredArgument(
+                            param=Parameter(name="title", kind=Parameter.KEYWORD_ONLY)
+                        )
+
+                    if option == "add" or option == "update":
+                        if not role:
+                            raise MissingRequiredArgument(
+                                param=Parameter(
+                                    name="role", kind=Parameter.KEYWORD_ONLY
+                                )
+                            )
+
+                        if (
+                            "select2role" in self.bot.configs[ctx.guild.id]
+                            and "selects"
+                            in self.bot.configs[ctx.guild.id]["select2role"]
+                            and title
+                            in set(
+                                self.bot.configs[ctx.guild.id]["select2role"]["selects"]
+                            )
+                            and option != "update"
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - The title `{title}` is already assigned to a role! Value: `@{self.bot.configs[ctx.guild.id]['select2role']['selects'][title]}`",
+                                delete_after=20,
+                            )
+                        elif (
+                            "select2role" in self.bot.configs[ctx.guild.id]
+                            and "selects"
+                            in self.bot.configs[ctx.guild.id]["select2role"]
+                            and role
+                            in set(
+                                self.bot.configs[ctx.guild.id]["select2role"][
+                                    "selects"
+                                ].values()
+                            )
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
+                                delete_after=20,
+                            )
+                        elif "lvl2role" in self.bot.configs[ctx.guild.id][
+                            "xp"
+                        ] and role in set(
+                            self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
+                                delete_after=20,
+                            )
+                        elif "prestiges" in self.bot.configs[ctx.guild.id][
+                            "xp"
+                        ] and role in set(
+                            self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.add_select2role(
+                            ctx.guild.id, title, f"{role}", role.id
+                        )
+
+                        if "select2role" not in self.bot.configs[ctx.guild.id]:
+                            self.bot.configs[ctx.guild.id]["select2role"] = {
+                                "selects": {}
+                            }
+                        elif (
+                            "selects"
+                            not in self.bot.configs[ctx.guild.id]["select2role"]
+                        ):
+                            self.bot.configs[ctx.guild.id]["select2role"][
+                                "selects"
+                            ] = {}
+
+                        self.bot.configs[ctx.guild.id]["select2role"]["selects"][
+                            title
+                        ] = role
+
+                        await ctx.send(
+                            f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the title `{title}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the select to role list."
+                        )
+                    elif option == "remove":
+                        if (
+                            "select2role" not in self.bot.configs[ctx.guild.id]
+                            or "selects"
+                            not in self.bot.configs[ctx.guild.id]["select2role"]
+                            or title
+                            not in set(
+                                self.bot.configs[ctx.guild.id]["select2role"]["selects"]
+                            )
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - The title `{title}` is already not in the select to role list!",
+                                delete_after=20,
+                            )
+
+                        self.bot.config_repo.remove_select2role(ctx.guild.id, title)
+                        role = self.bot.configs[ctx.guild.id]["select2role"][
+                            "selects"
+                        ].pop(title)
+                        await ctx.send(
+                            f"ℹ️ - Removed the title `{title}` which was corresponding to the role `@{role}` from the select to role list."
+                        )
+
+                        if not self.bot.configs[ctx.guild.id]["select2role"]["selects"]:
+                            del self.bot.configs[ctx.guild.id]["select2role"]["selects"]
+
+                        members = set(ctx.guild.members)
+                        for member in members:
+                            if member.bot:
+                                continue
+                            await member.remove_roles(role)
+                elif option == "purge":
+                    if (
+                        "select2role" not in self.bot.configs[ctx.guild.id]
+                        or "selects"
+                        not in self.bot.configs[ctx.guild.id]["select2role"]
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - The select to role list is already empty!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.purge_select2role(ctx.guild.id)
+                    roles = set(
+                        self.bot.configs[ctx.guild.id]["select2role"][
+                            "selects"
+                        ].values()
+                    )
+                    del self.bot.configs[ctx.guild.id]["select2role"]["selects"]
+                    await ctx.send(
+                        f"ℹ️ - Removed all the titles from the select to role list."
+                    )
+
+                    members = set(ctx.guild.members)
+                    for member in members:
+                        if member.bot:
+                            continue
+                        await member.remove_roles(*roles)
+                else:
+                    return await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+
+                if "channel" in self.bot.configs[ctx.guild.id]["select2role"]:
+                    try:
+                        roles_msg = await self.bot.configs[ctx.guild.id]["select2role"][
+                            "channel"
+                        ].fetch_message(
+                            self.bot.configs[ctx.guild.id]["select2role"][
+                                "roles_msg_id"
+                            ]
+                        )
+                    except NotFound:
+                        roles_msg = None
+
+                    em = Embed(
+                        colour=self.bot.color,
+                        title="Roles",
+                        description="Here are the server's select to role available, choose one or more roles you wish to be assigned.\n\n**If you want the role to be removed, deselect the corresponding role!**",
+                    )
+
+                    em.set_thumbnail(url=ctx.guild.icon_url)
+                    em.set_footer(
+                        text=self.bot.user.name, icon_url=self.bot.user.avatar_url
+                    )
+                    em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+
+                    options = []
+                    if (
+                        "select2role" in self.bot.configs[ctx.guild.id]
+                        and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
+                    ):
+                        em.add_field(
+                            name="Available roles:",
+                            value="\n".join(
+                                [
+                                    f"{title}: `@{role.name}`"
+                                    for title, role in self.bot.configs[ctx.guild.id][
+                                        "select2role"
+                                    ]["selects"].items()
+                                ]
+                            ),
+                        )
+
+                        for title, role in self.bot.configs[ctx.guild.id][
+                            "select2role"
+                        ]["selects"].items():
+                            options.append(
+                                SelectOption(
+                                    label=title, value=role.name, default=False
+                                )
+                            )
+                    else:
+                        em.add_field(
+                            name="Information", value="For now no roles are available!"
+                        )
+
+                    if roles_msg:
+                        await roles_msg.edit(
+                            content=None,
+                            embed=em,
+                            components=[
+                                SelectMenu(
+                                    options=options,
+                                    custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                    placeholder="Choose one or more role!",
+                                    min_values=0,
+                                    max_values=len(options),
+                                )
+                            ]
+                            if options
+                            else None,
+                        )
+                    else:
+                        self.bot.configs[ctx.guild.id]["select2role"][
+                            "roles_msg_id"
+                        ] = (
+                            await self.bot.configs[ctx.guild.id]["select2role"][
+                                "channel"
+                            ].send(
+                                content=None,
+                                embed=em,
+                                components=[
+                                    SelectMenu(
+                                        options=options,
+                                        custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                        placeholder="Choose one or more role!",
+                                        min_values=0,
+                                        max_values=len(options),
+                                    )
+                                ]
+                                if options
+                                else None,
+                            )
+                        ).id
+            except MissingRequiredArgument as mre:
+                raise MissingRequiredArgument(param=mre.param)
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
+        else:
+            if (
+                "select2role" not in self.bot.configs[ctx.guild.id]
+                or "selects" not in self.bot.configs[ctx.guild.id]["select2role"]
+            ):
+                return await ctx.reply(
+                    f"ℹ️ - {ctx.author.mention} - No select to role have been added to the list yet!",
+                    delete_after=20,
+                )
+
+            server_select_2_role = self.bot.configs[ctx.guild.id]["select2role"][
+                "selects"
+            ]
+            roles_mess = ""
+            for key in sorted(server_select_2_role):
+                roles_mess += f"`{key}` = `@{server_select_2_role[key]}`\n"
+            await ctx.send(
+                f"**ℹ️ - Here's the list of the server's select to role:**\n\n{roles_mess}"
             )
 
     """ MAIN GROUP'S SECURITY COMMAND(S) """
@@ -576,7 +890,7 @@ class Moderation(Cog):
                     val = False
                 else:
                     return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
@@ -644,7 +958,7 @@ class Moderation(Cog):
                     val = False
                 else:
                     return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
@@ -755,7 +1069,7 @@ class Moderation(Cog):
                     val = False
                 else:
                     return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
@@ -877,7 +1191,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -946,6 +1260,12 @@ class Moderation(Cog):
                 self.bot.config_repo.set_xp_max_lvl(ctx.guild.id, max_lvl)
                 self.bot.configs[ctx.guild.id]["xp"]["max_lvl"] = max_lvl
                 await ctx.send(f"ℹ️ - The max level is now `{max_lvl}` in this guild!")
+
+                members = set(ctx.guild.members)
+                for member in members:
+                    db_user = self.bot.user_repo.get_user(ctx.guild.id, member.id)
+                    if int(db_user["level"]) > max_lvl:
+                        self.bot.user_repo.set_levels(ctx.guild.id, member.id, max_lvl)
             else:
                 await ctx.send(
                     f"ℹ️ - The current server's max level is: `{self.bot.configs[ctx.guild.id]['xp']['max_lvl']}`"
@@ -1020,6 +1340,21 @@ class Moderation(Cog):
                                 f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
                                 delete_after=20,
                             )
+                        elif (
+                            "select2role" in self.bot.configs[ctx.guild.id]
+                            and "selects"
+                            in self.bot.configs[ctx.guild.id]["select2role"]
+                            and role
+                            in set(
+                                self.bot.configs[ctx.guild.id]["select2role"][
+                                    "selects"
+                                ].values()
+                            )
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
+                                delete_after=20,
+                            )
 
                         self.bot.config_repo.add_xp_lvl2role(
                             ctx.guild.id, lvl, f"{role}", role.id
@@ -1090,7 +1425,7 @@ class Moderation(Cog):
                         await member.remove_roles(*roles)
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1159,6 +1494,20 @@ class Moderation(Cog):
                     ):
                         return await ctx.reply(
                             f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
+                            delete_after=20,
+                        )
+                    elif (
+                        "select2role" in self.bot.configs[ctx.guild.id]
+                        and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
+                        and role
+                        in set(
+                            self.bot.configs[ctx.guild.id]["select2role"][
+                                "selects"
+                            ].values()
+                        )
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
                             delete_after=20,
                         )
 
@@ -1298,7 +1647,7 @@ class Moderation(Cog):
                         await self.xp_class.manage_prestige(member, "purged_prestiges")
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1336,65 +1685,80 @@ class Moderation(Cog):
         name="commands_channels",
         aliases=["command_channels", "command_channel", "cmds_chans"],
         brief="🕹️",
-        description="This option manage the server's commands channels  (if there is no commands channel then commands can be used everywhere)",
-        usage="add|remove|purge #channel",
+        description="This option manage the server's commands channels  (if there is no commands channel then commands can be used everywhere) (can add/remove multiple at a time)",
+        usage="add|remove|purge (#channels)",
     )
-    async def config_commands_channels_command(
-        self, ctx: Context, option: Utils.to_lower = None, channel: TextChannel = None
+    async def config_channels_commands_channels_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        *channels: TextChannel,
     ):
         if option:
             try:
                 if option in ("add", "remove"):
-                    if not channel:
+                    if not channels:
                         raise MissingRequiredArgument(
-                            param=Parameter(name="channel", kind=Parameter.KEYWORD_ONLY)
+                            param=Parameter(
+                                name="channels", kind=Parameter.KEYWORD_ONLY
+                            )
                         )
 
-                    if option == "add":
-                        if "commands_channels" in self.bot.configs[
-                            ctx.guild.id
-                        ] and channel.id in set(
-                            self.bot.configs[ctx.guild.id]["commands_channels"]
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already in the commands channels list!",
-                                delete_after=20,
+                    _channels = channels
+                    channels = list(channels)
+                    dropped_channels = []
+                    for channel in _channels:
+                        if option == "add":
+                            if "commands_channels" in self.bot.configs[
+                                ctx.guild.id
+                            ] and channel.id in set(
+                                self.bot.configs[ctx.guild.id]["commands_channels"]
+                            ):
+                                del channels[channels.index(channel)]
+                                dropped_channels.append(channel)
+                                continue
+
+                            self.bot.config_repo.add_commands_channel(
+                                ctx.guild.id, channel.id, f"{channel}"
                             )
 
-                        self.bot.config_repo.add_commands_channel(
-                            ctx.guild.id, channel.id, f"{channel}"
-                        )
+                            if (
+                                "commands_channels"
+                                not in self.bot.configs[ctx.guild.id]
+                            ):
+                                self.bot.configs[ctx.guild.id]["commands_channels"] = []
 
-                        if "commands_channels" not in self.bot.configs[ctx.guild.id]:
-                            self.bot.configs[ctx.guild.id]["commands_channels"] = []
-
-                        self.bot.configs[ctx.guild.id]["commands_channels"].append(
-                            channel.id
-                        )
-                        await ctx.send(
-                            f"ℹ️ - Added {channel.mention} to the commands channels list!."
-                        )
-                    elif option == "remove":
-                        if "commands_channels" in self.bot.configs[
-                            ctx.guild.id
-                        ] and channel.id not in set(
-                            self.bot.configs[ctx.guild.id]["commands_channels"]
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already not in the commands channels list!",
-                                delete_after=20,
-                            )
-
-                        self.bot.config_repo.remove_commands_channel(
-                            ctx.guild.id, channel.id
-                        )
-                        del self.bot.configs[ctx.guild.id]["commands_channels"][
-                            self.bot.configs[ctx.guild.id]["commands_channels"].index(
+                            self.bot.configs[ctx.guild.id]["commands_channels"].append(
                                 channel.id
                             )
-                        ]
+                        elif option == "remove":
+                            if "commands_channels" in self.bot.configs[
+                                ctx.guild.id
+                            ] and channel.id not in set(
+                                self.bot.configs[ctx.guild.id]["commands_channels"]
+                            ):
+                                del channels[channels.index(channel)]
+                                dropped_channels.append(channel)
+                                continue
+
+                            self.bot.config_repo.remove_commands_channel(
+                                ctx.guild.id, channel.id
+                            )
+                            del self.bot.configs[ctx.guild.id]["commands_channels"][
+                                self.bot.configs[ctx.guild.id][
+                                    "commands_channels"
+                                ].index(channel.id)
+                            ]
+
+                    if dropped_channels:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the commands channels list!",
+                            delete_after=20,
+                        )
+
+                    if channels:
                         await ctx.send(
-                            f"ℹ️ - Removed {channel.mention} from the commands channels list!."
+                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the commands channels list!."
                         )
                 elif option == "purge":
                     if "commands_channels" not in self.bot.configs[ctx.guild.id]:
@@ -1410,7 +1774,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1442,67 +1806,85 @@ class Moderation(Cog):
         name="music_channels",
         aliases=["music_channel" "music_chans"],
         brief="🎶",
-        description="This option manage the server's music channels  (if there is no music channel then music can be listened everywhere)",
-        usage="add|remove|purge (#voice_channel|<voice_channel_name>)",
+        description="This option manage the server's music channels  (if there is no music channel then music can be listened everywhere) (can add/remove multiple at a time)",
+        usage="add|remove|purge (#voice_channels|<voice_channels_name>)",
     )
-    async def config_music_channels_command(
-        self, ctx: Context, option: Utils.to_lower = None, channel: VoiceChannel = None
+    async def config_channels_music_channels_command(
+        self, ctx: Context, option: Utils.to_lower = None, *channels: VoiceChannel
     ):
         if option:
             try:
                 if option in ("add", "remove"):
-                    if not channel:
+                    if not channels:
                         raise MissingRequiredArgument(
                             param=Parameter(
-                                name="voice_channel", kind=Parameter.KEYWORD_ONLY
+                                name="voice_channels", kind=Parameter.KEYWORD_ONLY
                             )
                         )
 
-                    if option == "add":
-                        if "music_channels" in self.bot.configs[
-                            ctx.guild.id
-                        ] and channel.id in set(
-                            self.bot.configs[ctx.guild.id]["music_channels"]
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already in the music channels list!",
-                                delete_after=20,
+                    _channels = channels
+                    channels = list(channels)
+                    dropped_channels = []
+                    afk_channel = None
+                    for channel in _channels:
+                        if option == "add":
+                            if "music_channels" in self.bot.configs[
+                                ctx.guild.id
+                            ] and channel.id in set(
+                                self.bot.configs[ctx.guild.id]["music_channels"]
+                            ):
+                                del channels[channels.index(channel)]
+                                dropped_channels.append(channel)
+                                continue
+                            elif channel == ctx.guild.afk_channel:
+                                del channels[channels.index(channel)]
+                                afk_channel = channel
+                                continue
+
+                            self.bot.config_repo.add_music_channel(
+                                ctx.guild.id, channel.id, f"{channel}"
                             )
 
-                        self.bot.config_repo.add_music_channel(
-                            ctx.guild.id, channel.id, f"{channel}"
-                        )
+                            if "music_channels" not in self.bot.configs[ctx.guild.id]:
+                                self.bot.configs[ctx.guild.id]["music_channels"] = []
 
-                        if "music_channels" not in self.bot.configs[ctx.guild.id]:
-                            self.bot.configs[ctx.guild.id]["music_channels"] = []
-
-                        self.bot.configs[ctx.guild.id]["music_channels"].append(
-                            channel.id
-                        )
-                        await ctx.send(
-                            f"ℹ️ - Added {channel.mention} to the music channels list!."
-                        )
-                    elif option == "remove":
-                        if "music_channels" in self.bot.configs[
-                            ctx.guild.id
-                        ] and channel.id not in set(
-                            self.bot.configs[ctx.guild.id]["music_channels"]
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already not in the music channels list!",
-                                delete_after=20,
-                            )
-
-                        self.bot.config_repo.remove_music_channel(
-                            ctx.guild.id, channel.id
-                        )
-                        del self.bot.configs[ctx.guild.id]["music_channels"][
-                            self.bot.configs[ctx.guild.id]["music_channels"].index(
+                            self.bot.configs[ctx.guild.id]["music_channels"].append(
                                 channel.id
                             )
-                        ]
+                        elif option == "remove":
+                            if "music_channels" in self.bot.configs[
+                                ctx.guild.id
+                            ] and channel.id not in set(
+                                self.bot.configs[ctx.guild.id]["music_channels"]
+                            ):
+                                del channels[channels.index(channel)]
+                                dropped_channels.append(channel)
+                                continue
+
+                            self.bot.config_repo.remove_music_channel(
+                                ctx.guild.id, channel.id
+                            )
+                            del self.bot.configs[ctx.guild.id]["music_channels"][
+                                self.bot.configs[ctx.guild.id]["music_channels"].index(
+                                    channel.id
+                                )
+                            ]
+
+                    if afk_channel:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the music channels list!",
+                            delete_after=20,
+                        )
+
+                    if dropped_channels:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the music channels list!",
+                            delete_after=20,
+                        )
+
+                    if channels:
                         await ctx.send(
-                            f"ℹ️ - Removed {channel.mention} from the music channels list!."
+                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the music channels list!."
                         )
                 elif option == "purge":
                     if "music_channels" not in self.bot.configs[ctx.guild.id]:
@@ -1518,7 +1900,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1550,80 +1932,100 @@ class Moderation(Cog):
         name="xp_gain_channels",
         aliases=["xp_gain_channel"],
         brief="🌌",
-        description="This option manage the server's xp gain channels (voice & text)  (if there is no xp gain channels then xp can be gained everywhere)",
+        description="This option manage the server's xp gain channels (voice & text)  (if there is no xp gain channels then xp can be gained everywhere) (can add/remove multiple at a time)",
         usage="add|remove|purge (#voice_channel|<voice_channel_name>)|#TextChannel",
     )
-    async def config_xp_gain_channels_command(
+    async def config_channels_xp_gain_channels_command(
         self,
         ctx: Context,
         option: Utils.to_lower = None,
-        channel: Union[VoiceChannel, TextChannel] = None,
+        *channels: Union[VoiceChannel, TextChannel],
     ):
         if option:
             try:
                 if option in ("add", "remove"):
-                    if not channel:
+                    if not channels:
                         raise MissingRequiredArgument(
-                            param=Parameter(name="channel", kind=Parameter.KEYWORD_ONLY)
+                            param=Parameter(
+                                name="channels", kind=Parameter.KEYWORD_ONLY
+                            )
                         )
 
-                    if option == "add":
-                        if "xp_gain_channels" in self.bot.configs[
-                            ctx.guild.id
-                        ] and channel.id in set(
-                            self.bot.configs[ctx.guild.id]["xp_gain_channels"][
-                                type(channel).__name__
-                            ]
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already in the xp gain channels list!",
-                                delete_after=20,
+                    _channels = channels
+                    channels = list(channels)
+                    dropped_channels = []
+                    afk_channel = None
+                    for channel in _channels:
+                        if option == "add":
+                            if "xp_gain_channels" in self.bot.configs[
+                                ctx.guild.id
+                            ] and channel.id in set(
+                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                    type(channel).__name__
+                                ]
+                            ):
+                                del channels[channels.index(channel)]
+                                dropped_channels.append(channel)
+                                continue
+                            elif channel == ctx.guild.afk_channel:
+                                del channels[channels.index(channel)]
+                                afk_channel = channel
+                                continue
+
+                            self.bot.config_repo.add_xp_gain_channel(
+                                ctx.guild.id,
+                                channel.id,
+                                f"{channel}",
+                                type(channel).__name__,
                             )
 
-                        self.bot.config_repo.add_xp_gain_channel(
-                            ctx.guild.id,
-                            channel.id,
-                            f"{channel}",
-                            type(channel).__name__,
-                        )
+                            if "xp_gain_channels" not in self.bot.configs[ctx.guild.id]:
+                                self.bot.configs[ctx.guild.id]["xp_gain_channels"] = {
+                                    "TextChannel": [],
+                                    "VoiceChannel": [],
+                                }
 
-                        if "xp_gain_channels" not in self.bot.configs[ctx.guild.id]:
-                            self.bot.configs[ctx.guild.id]["xp_gain_channels"] = {
-                                "TextChannel": [],
-                                "VoiceChannel": [],
-                            }
-
-                        self.bot.configs[ctx.guild.id]["xp_gain_channels"][
-                            type(channel).__name__
-                        ].append(channel.id)
-                        await ctx.send(
-                            f"ℹ️ - Added {channel.mention} to the xp gain channels list!."
-                        )
-                    elif option == "remove":
-                        if "xp_gain_channels" in self.bot.configs[
-                            ctx.guild.id
-                        ] and channel.id not in set(
                             self.bot.configs[ctx.guild.id]["xp_gain_channels"][
                                 type(channel).__name__
-                            ]
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - {channel.mention} is already not in the xp gain channels list!",
-                                delete_after=20,
+                            ].append(channel.id)
+                        elif option == "remove":
+                            if "xp_gain_channels" in self.bot.configs[
+                                ctx.guild.id
+                            ] and channel.id not in set(
+                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                    type(channel).__name__
+                                ]
+                            ):
+                                del channels[channels.index(channel)]
+                                dropped_channels.append(channel)
+                                continue
+
+                            self.bot.config_repo.remove_xp_gain_channel(
+                                ctx.guild.id, channel.id
                             )
-
-                        self.bot.config_repo.remove_xp_gain_channel(
-                            ctx.guild.id, channel.id
-                        )
-                        del self.bot.configs[ctx.guild.id]["xp_gain_channels"][
-                            type(channel).__name__
-                        ][
-                            self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                            del self.bot.configs[ctx.guild.id]["xp_gain_channels"][
                                 type(channel).__name__
-                            ].index(channel.id)
-                        ]
+                            ][
+                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                    type(channel).__name__
+                                ].index(channel.id)
+                            ]
+
+                    if afk_channel:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the xp gain channels list!",
+                            delete_after=20,
+                        )
+
+                    if dropped_channels:
+                        await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the xp gain channels list!",
+                            delete_after=20,
+                        )
+
+                    if channels:
                         await ctx.send(
-                            f"ℹ️ - Removed {channel.mention} from the xp gain channels list!."
+                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the xp gain channels list!."
                         )
                 elif option == "purge":
                     if "xp_gain_channels" not in self.bot.configs[ctx.guild.id]:
@@ -1639,7 +2041,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1695,7 +2097,7 @@ class Moderation(Cog):
         description="This option manage the server's xp channels where every xp event is sent",
         usage="set|remove #channel",
     )
-    async def config_xp_max_lvl_command(
+    async def config_channels_xp_max_lvl_command(
         self,
         ctx: Context,
         option: Utils.to_lower = None,
@@ -1709,6 +2111,15 @@ class Moderation(Cog):
                             param=Parameter(
                                 name="notify_channel", kind=Parameter.KEYWORD_ONLY
                             )
+                        )
+                    elif (
+                        "notify_channel" not in self.bot.configs[ctx.guild.id]["xp"]
+                        and self.bot.configs[ctx.guild.id]["xp"]["notify_channel"]
+                        == xp_channel
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - The server's xp channel is already {xp_channel.mention}!",
+                            delete_after=20,
                         )
 
                     self.bot.config_repo.set_xp_notify_channel(
@@ -1732,7 +2143,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             else:
@@ -1757,7 +2168,7 @@ class Moderation(Cog):
         description="This option manage the server's polls channel where every polls created will be sent",
         usage="set|remove #channel",
     )
-    async def config_polls_command(
+    async def config_channels_polls_command(
         self,
         ctx: Context,
         option: Utils.to_lower = None,
@@ -1817,31 +2228,12 @@ class Moderation(Cog):
                             await poll_msg.delete()
 
                             poll = polls[poll]
-                            buttons_rows = [[]]
-                            x = 0
-
-                            for choice in range(0, len(poll["choices"]), 5):
-                                for c in range(
-                                    choice,
-                                    (choice + 5)
-                                    if choice + 5 <= len(poll["choices"])
-                                    else len(poll["choices"]),
-                                ):
-                                    buttons_rows[x].append(
-                                        Button(
-                                            style=2,
-                                            label=list(poll["choices"].keys())[c],
-                                        )
-                                    )
-                                if c < len(poll["choices"]) - 1:
-                                    x += 1
-                                    buttons_rows.append([])
 
                             poll_msg = await self.bot.configs[ctx.guild.id][
                                 "polls_channel"
                             ].send(
                                 embed=poll_msg.embeds[0],
-                                components=[ActionRow(*row) for row in buttons_rows],
+                                components=poll_msg.components,
                             )
 
                             self.bot.poll_repo.create_poll(
@@ -1877,7 +2269,7 @@ class Moderation(Cog):
                     )
                 else:
                     await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             else:
@@ -1891,6 +2283,164 @@ class Moderation(Cog):
         except Exception as e:
             await ctx.reply(
                 f"⚠️ - {ctx.author.mention} - An error occured while setting the polls channel! please try again in a few seconds! Error type: {type(e)}",
+                delete_after=20,
+            )
+
+    @config_channels_group.command(
+        pass_context=True,
+        name="select_to_role_channel",
+        aliases=["select2role_channel"],
+        brief="🤠",
+        description="This option manage the server's select 2 role channels where the select to role message is sended",
+        usage="set|remove #channel",
+    )
+    async def config_channels_select2role_channel_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        select2role_channel: TextChannel = None,
+    ):
+        try:
+            if option:
+                if option == "set":
+                    if not select2role_channel:
+                        raise MissingRequiredArgument(
+                            param=Parameter(name="channel", kind=Parameter.KEYWORD_ONLY)
+                        )
+                    elif (
+                        "select2role" in self.bot.configs[ctx.guild.id]
+                        and "channel" in self.bot.configs[ctx.guild.id]["select2role"]
+                        and self.bot.configs[ctx.guild.id]["select2role"]["channel"]
+                        == select2role_channel
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - The server's select to role channel is already {select2role_channel.mention}!",
+                            delete_after=20,
+                        )
+
+                    old_channel = None
+                    if "select2role" not in self.bot.configs[ctx.guild.id]:
+                        self.bot.configs[ctx.guild.id]["select2role"] = {}
+                    elif "channel" in self.bot.configs[ctx.guild.id]["select2role"]:
+                        old_channel = self.bot.configs[ctx.guild.id]["select2role"][
+                            "channel"
+                        ]
+
+                    self.bot.configs[ctx.guild.id]["select2role"][
+                        "channel"
+                    ] = select2role_channel
+                    await ctx.send(
+                        f"ℹ️ - The select to role channel is now {select2role_channel.mention} in this guild!"
+                    )
+
+                    if old_channel:
+                        await old_channel.purge(
+                            check=lambda m: m.author.id == self.bot.user.id
+                        )
+
+                    em = Embed(
+                        colour=self.bot.color,
+                        title="Roles",
+                        description="Here are the server's select to role available, choose one or more roles you wish to be assigned.\n\n**If you want the role to be removed, deselect the corresponding role!**",
+                    )
+
+                    em.set_thumbnail(url=ctx.guild.icon_url)
+                    em.set_footer(
+                        text=self.bot.user.name, icon_url=self.bot.user.avatar_url
+                    )
+                    em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+
+                    options = []
+                    if (
+                        "select2role" in self.bot.configs[ctx.guild.id]
+                        and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
+                    ):
+                        em.add_field(
+                            name="Available roles:",
+                            value="\n".join(
+                                [
+                                    f"{title}: `@{role.name}`"
+                                    for title, role in self.bot.configs[ctx.guild.id][
+                                        "select2role"
+                                    ]["selects"].items()
+                                ]
+                            ),
+                        )
+
+                        for title, role in self.bot.configs[ctx.guild.id][
+                            "select2role"
+                        ]["selects"].items():
+                            options.append(
+                                SelectOption(
+                                    label=title, value=role.name, default=False
+                                )
+                            )
+                    else:
+                        em.add_field(
+                            name="Information", value="For now no roles are available!"
+                        )
+
+                    self.bot.configs[ctx.guild.id]["select2role"]["roles_msg_id"] = (
+                        await self.bot.configs[ctx.guild.id]["select2role"][
+                            "channel"
+                        ].send(
+                            content=None,
+                            embed=em,
+                            components=[
+                                SelectMenu(
+                                    options=options,
+                                    custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                    placeholder="Choose one or more role!",
+                                    min_values=0,
+                                    max_values=len(options),
+                                )
+                            ]
+                            if options
+                            else None,
+                        )
+                    ).id
+
+                    self.bot.config_repo.set_select2role_channel(
+                        ctx.guild.id,
+                        select2role_channel.id,
+                        self.bot.configs[ctx.guild.id]["select2role"]["roles_msg_id"],
+                    )
+                elif option == "remove":
+                    if (
+                        "select2role" not in self.bot.configs[ctx.guild.id]
+                        or "channel"
+                        not in self.bot.configs[ctx.guild.id]["select2role"]
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - The server already doesn't have an select to role channel configured!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.set_select2role_channel(ctx.guild.id, None)
+                    await self.bot.configs[ctx.guild.id]["select2role"][
+                        "channel"
+                    ].purge(check=lambda m: m.author.id == self.bot.user.id)
+                    del self.bot.configs[ctx.guild.id]["select2role"]["channel"]
+                    del self.bot.configs[ctx.guild.id]["select2role"]["roles_msg"]
+                    await ctx.send(
+                        f"ℹ️ - This guild doesn't have an select to role channel anymore!"
+                    )
+                else:
+                    await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            else:
+                await ctx.send(
+                    f"ℹ️ - The current server's select to role channel is: {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}"
+                    if "channel" in self.bot.configs[ctx.guild.id]["select2role"]
+                    else f"ℹ️ - The server doesn't have an select to role channel yet!"
+                )
+        except MissingRequiredArgument as mre:
+            raise MissingRequiredArgument(param=mre.param)
+        except Exception as e:
+            await ctx.reply(
+                f"⚠️ - {ctx.author.mention} - An error occured while setting the select to role channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 

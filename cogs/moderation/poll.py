@@ -27,7 +27,7 @@ class Moderation(Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
-                    ctx, title="Server's configuration"
+                    ctx, title="Server's poll feature"
                 )
             )
 
@@ -101,6 +101,10 @@ class Moderation(Cog):
             ctx.guild.id, poll_msg.id, duration_s, time(), buttons_rows
         )
         poll = self.bot.poll_repo.get_poll(ctx.guild.id, poll_msg.id)
+
+        if "polls" not in self.bot.configs[ctx.guild.id]:
+            self.bot.configs[ctx.guild.id]["polls"] = {}
+
         self.bot.configs[ctx.guild.id]["polls"][
             poll_msg.id
         ] = self.bot.utils_class.task_launcher(
@@ -252,6 +256,12 @@ class Moderation(Cog):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_end_command(self, ctx: Context, id_message: int):
+        if "polls_channel" not in self.bot.configs[ctx.guild.id]:
+            return await ctx.reply(
+                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before ending about one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
+                delete_after=20,
+            )
+
         try:
             poll_msg = await self.bot.configs[ctx.guild.id][
                 "polls_channel"
@@ -283,6 +293,12 @@ class Moderation(Cog):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_command(self, ctx: Context, id_message: int):
+        if "polls_channel" not in self.bot.configs[ctx.guild.id]:
+            return await ctx.reply(
+                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before deleting about one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
+                delete_after=20,
+            )
+
         try:
             poll_msg = await self.bot.configs[ctx.guild.id][
                 "polls_channel"

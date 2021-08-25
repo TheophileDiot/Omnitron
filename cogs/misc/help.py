@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from discord import Embed
 from discord.ext.commands import Cog, command, Context, Group
 
@@ -64,9 +65,22 @@ class Miscellaneous(Cog):
         else:
             em.description = f"Here are all the available commands for {ctx.guild.me.display_name}\nThe bot prefix is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`"
 
-            cogs = {c: [] for c in self.bot.cogs if c != "Events"}
-            for cmd in self.bot.commands:
-                cogs[cmd.cog_name].append(cmd)
+            cogs = OrderedDict(
+                sorted(
+                    {cog: [] for cog in set(self.bot.cogs) if cog != "Events"}.items()
+                )
+            )
+            cmds = OrderedDict(
+                sorted(
+                    {
+                        c.name: {"cog_name": c.cog_name, "hidden": c.hidden}
+                        for c in set(self.bot.commands)
+                    }.items()
+                )
+            )
+
+            for k, v in cmds.items():
+                cogs[v["cog_name"]].append([k, v])
 
             for cog, cmds in cogs.items():
                 if cog == "Events":
@@ -74,7 +88,7 @@ class Miscellaneous(Cog):
                 em.add_field(
                     name=cog,
                     value=" ".join(
-                        ["`" + cmd.name + "`" for cmd in cmds if not cmd.hidden]
+                        ["`" + cmd[0] + "`" for cmd in cmds if not cmd[1]["hidden"]]
                     )
                     or "**No commands**",
                     inline=False,

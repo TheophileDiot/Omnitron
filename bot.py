@@ -55,8 +55,10 @@ class Omnitron(Bot):
             [
                 [
                     f"{f}.{_f.replace('.py', '')}"
-                    for _f in listdir(path.join("cogs", f))
                     if path.isfile(path.join("cogs", f, _f))
+                    else f"{f}.{_f}"
+                    for _f in listdir(path.join("cogs", f))
+                    if _f not in ("__pycache__")
                 ]
                 for f in listdir("cogs")
                 if path.isdir(path.join("cogs", f))

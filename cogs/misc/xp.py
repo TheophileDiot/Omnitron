@@ -150,7 +150,7 @@ class Miscellaneous(Cog):
                 )
         else:
             return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
+                f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
                 delete_after=20,
             )
 
@@ -187,7 +187,7 @@ class Miscellaneous(Cog):
         ) < len(self.bot.configs[ctx.guild.id]["xp"]["prestiges"]):
             if "prestige_pending" in db_user:
                 return await ctx.reply(
-                    f"⛔ - {ctx.author.mention} - You cannot create two prestige pass-through procedures simultaneously. See `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
+                    f"⛔ - {ctx.author.mention} - You cannot create two prestige pass-through procedures simultaneously. See `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
                     delete_after=20,
                 )
             else:
@@ -200,7 +200,7 @@ class Miscellaneous(Cog):
             self.bot.configs[ctx.guild.id]["xp"]["prestiges"]
         ):
             return await ctx.reply(
-                f"⛔ - {ctx.author.mention} - You are not yet level `{self.bot.configs[ctx.guild.id]['xp']['max_lvl']}`, so you can't pass a prestige level yet! (current level: `{db_user['level']}`) (next prestige level: `@{self.bot.configs[ctx.guild.id]['xp']['prestiges'][db_user['prestige'] + 1 or 1].name}`). `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
+                f"⛔ - {ctx.author.mention} - You are not yet level `{self.bot.configs[ctx.guild.id]['xp']['max_lvl']}`, so you can't pass a prestige level yet! (current level: `{db_user['level']}`) (next prestige level: `@{self.bot.configs[ctx.guild.id]['xp']['prestiges'][db_user['prestige'] + 1 or 1].name}`). `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` for more details!",
                 delete_after=20,
             )
         else:
