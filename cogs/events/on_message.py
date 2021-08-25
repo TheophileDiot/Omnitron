@@ -21,6 +21,7 @@ class Events(Cog):
         await self.bot.wait_until_ready()
         if message.is_system() or message.author.bot or not message.guild:
             return
+
         ctx = await self.bot.get_context(message=message)
 
         try:

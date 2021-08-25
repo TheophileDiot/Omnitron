@@ -16,10 +16,13 @@ class Events(Cog):
     async def on_member_join(self, member: Member, tries: int = 0):
         """When a member joins a guild, add him to the database and if the mute_on_join option is on then mute him for a limited amount of time"""
         await self.bot.wait_until_ready()
+
         if member.bot:
             return
+
         self.bot.user_repo.create_user(member.guild.id, member.id, f"{member}")
         roles = []
+
         try:
             if "mute_on_join" in self.bot.configs[member.guild.id]:
                 roles += [

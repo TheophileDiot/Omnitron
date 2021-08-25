@@ -1,12 +1,21 @@
-from discord import Member, Role, TextChannel
-from discord.channel import VoiceChannel
+from discord import (
+    CategoryChannel,
+    Embed,
+    Member,
+    NotFound,
+    Role,
+    TextChannel,
+    VoiceChannel,
+)
 from discord.ext.commands import Context, Cog, group
 from discord.ext.commands.errors import (
     BadArgument,
     BadUnionArgument,
     MissingRequiredArgument,
 )
+from dislash import ActionRow, Button
 from inspect import Parameter
+from time import time
 from typing import Union
 
 from bot import Omnitron
@@ -46,6 +55,7 @@ class Moderation(Cog):
         pass_context=True,
         case_insensitive=True,
         name="security",
+        aliases=["secu"],
         brief="🚓",
         description="This option manage the server's security",
     )
@@ -79,6 +89,7 @@ class Moderation(Cog):
         pass_context=True,
         case_insensitive=True,
         name="channels",
+        aliases=["channel"],
         brief="📻",
         usage="(sub-command)",
         description="This option manage the server's special channels",
@@ -358,6 +369,187 @@ class Moderation(Cog):
                 f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}`!"
             )
             await msg.add_reaction("👀")
+
+    @config_group.command(
+        pass_context=True,
+        name="tickets",
+        aliases=["ticket"],
+        brief="📥",
+        description="This option manage the server's tickets channel and category!",
+        usage="(on|update|off) (#channel) (#category|<category_name>)",
+    )
+    async def config_tickets_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        tickets_channel: Union[TextChannel, CategoryChannel] = None,
+        tickets_category: CategoryChannel = None,
+    ):
+        if option:
+            try:
+                val = False
+                if option in ("on", "update"):
+                    val = True
+                elif option == "off":
+                    val = False
+                else:
+                    return await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+
+                if (
+                    "tickets" in self.bot.configs[ctx.guild.id]
+                ) == val and option != "update":
+                    return await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - The tickets are already set to `{BOOL2VAL[val]}`!"
+                        + (
+                            " Parameters: "
+                            + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
+                            + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
+                            if "tickets" in self.bot.configs[ctx.guild.id]
+                            else ""
+                        )
+                    )
+
+                if val:
+                    if not tickets_channel:
+                        raise MissingRequiredArgument(
+                            param=Parameter(
+                                name="tickets_channel", kind=Parameter.KEYWORD_ONLY
+                            )
+                        )
+                    if option != "update" and isinstance(
+                        tickets_channel, CategoryChannel
+                    ):
+                        raise BadArgument
+                    elif not tickets_category and option != "update":
+                        raise MissingRequiredArgument(
+                            param=Parameter(
+                                name="tickets_category", kind=Parameter.KEYWORD_ONLY
+                            )
+                        )
+
+                    if option == "update":
+                        self.bot.config_repo.set_tickets(
+                            ctx.guild.id,
+                            val,
+                            tickets_channel.id
+                            if isinstance(tickets_channel, TextChannel)
+                            else self.bot.configs[ctx.guild.id]["tickets"][
+                                "tickets_channel"
+                            ].id,
+                            tickets_channel.id
+                            if isinstance(tickets_channel, CategoryChannel)
+                            else self.bot.configs[ctx.guild.id]["tickets"][
+                                "tickets_category"
+                            ].id,
+                        )
+
+                        if isinstance(tickets_channel, TextChannel):
+                            await self.bot.configs[ctx.guild.id]["tickets"][
+                                "tickets_channel"
+                            ].purge(check=lambda m: m.author.id == self.bot.user.id)
+
+                        self.bot.configs[ctx.guild.id]["tickets"] = {
+                            "tickets_channel": tickets_channel
+                            if isinstance(tickets_channel, TextChannel)
+                            else self.bot.configs[ctx.guild.id]["tickets"][
+                                "tickets_channel"
+                            ],
+                            "tickets_category": tickets_channel
+                            if isinstance(tickets_channel, CategoryChannel)
+                            else self.bot.configs[ctx.guild.id]["tickets"][
+                                "tickets_category"
+                            ],
+                        }
+
+                    else:
+                        self.bot.config_repo.set_tickets(
+                            ctx.guild.id,
+                            val,
+                            tickets_channel.id,
+                            tickets_category.id,
+                        )
+                        self.bot.configs[ctx.guild.id]["tickets"] = {
+                            "tickets_channel": tickets_channel,
+                            "tickets_category": tickets_category,
+                        }
+
+                    if isinstance(tickets_channel, TextChannel):
+                        em = Embed(
+                            colour=self.bot.color,
+                            title="📥 - Ticket",
+                            description="**To create a ticket please click on the button 📥**\n\nAfter clicking on the button, a private room will be created at the bottom of the ticket category.\n\nYou can only create one ticket at a time.",
+                        )
+
+                        em.set_thumbnail(url=ctx.guild.icon_url)
+                        em.set_footer(
+                            text=self.bot.user.name, icon_url=self.bot.user.avatar_url
+                        )
+
+                        await self.bot.configs[ctx.guild.id]["tickets"][
+                            "tickets_channel"
+                        ].send(
+                            content=None,
+                            embed=em,
+                            components=[
+                                ActionRow(
+                                    Button(
+                                        style=1, emoji="📥", custom_id="ticket_create"
+                                    )
+                                )
+                            ],
+                        )
+                else:
+                    await self.bot.configs[ctx.guild.id]["tickets"][
+                        "tickets_channel"
+                    ].purge(check=lambda m: m.author.id == self.bot.user.id)
+                    channels = set(
+                        self.bot.configs[ctx.guild.id]["tickets"][
+                            "tickets_category"
+                        ].channels
+                    )
+
+                    for channel in channels:
+                        await channel.delete(
+                            reason=f"Tickets turned off by {ctx.author}!"
+                        )
+
+                    self.bot.ticket_repo.purge_tickets(ctx.guild.id)
+                    self.bot.config_repo.remove_tickets(ctx.guild.id)
+                    del self.bot.configs[ctx.guild.id]["tickets"]
+
+                await ctx.send(
+                    f"ℹ️ - The tickets are now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
+                    + (
+                        " Parameters: "
+                        + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
+                        + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
+                        if "tickets" in self.bot.configs[ctx.guild.id]
+                        else ""
+                    )
+                )
+            except MissingRequiredArgument as mre:
+                raise MissingRequiredArgument(param=mre.param)
+            except BadArgument:
+                raise BadArgument
+            # except Exception as e:
+            #     await ctx.reply(
+            #         f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
+            #         delete_after=20,
+            #     )
+        else:
+            await ctx.send(
+                f"ℹ️ - {ctx.author.mention} - The tickets are currently `{BOOL2VAL['tickets' in self.bot.configs[ctx.guild.id]]}` in this guild!"
+                + (
+                    " Parameters: "
+                    + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
+                    + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
+                    if "tickets" in self.bot.configs[ctx.guild.id]
+                    else ""
+                )
+            )
 
     """ MAIN GROUP'S SECURITY COMMAND(S) """
 
@@ -1545,7 +1737,7 @@ class Moderation(Cog):
                     )
             else:
                 await ctx.send(
-                    f"ℹ️ - The current server's xp channel is: `{self.bot.configs[ctx.guild.id]['xp']['notify_channel']}`"
+                    f"ℹ️ - The current server's xp channel is: {self.bot.configs[ctx.guild.id]['xp']['notify_channel'].mention}"
                     if "notify_channel" in self.bot.configs[ctx.guild.id]["xp"]
                     else f"ℹ️ - The server doesn't have an xp channel yet!"
                 )
@@ -1554,6 +1746,151 @@ class Moderation(Cog):
         except Exception as e:
             await ctx.reply(
                 f"⚠️ - {ctx.author.mention} - An error occured while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
+                delete_after=20,
+            )
+
+    @config_channels_group.command(
+        pass_context=True,
+        name="polls_channel",
+        aliases=["polls_chan"],
+        brief="📊",
+        description="This option manage the server's polls channel where every polls created will be sent",
+        usage="set|remove #channel",
+    )
+    async def config_polls_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        polls_channel: TextChannel = None,
+    ):
+        try:
+            if option:
+                if option == "set":
+                    if not polls_channel:
+                        raise MissingRequiredArgument(
+                            param=Parameter(
+                                name="polls_channel", kind=Parameter.KEYWORD_ONLY
+                            )
+                        )
+                    elif (
+                        "polls_channel" in self.bot.configs[ctx.guild.id]
+                        and self.bot.configs[ctx.guild.id]["polls_channel"]
+                        == polls_channel
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - This channel is already the one configured to have polls sent in it!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.set_polls_channel(
+                        ctx.guild.id, polls_channel.id
+                    )
+                    old_polls_channel = (
+                        self.bot.configs[ctx.guild.id]["polls_channel"]
+                        if "polls_channel" in self.bot.configs[ctx.guild.id]
+                        else None
+                    )
+                    self.bot.configs[ctx.guild.id]["polls_channel"] = polls_channel
+                    await ctx.send(
+                        f"ℹ️ - The polls channel is now {polls_channel.mention} in this guild!"
+                    )
+
+                    if old_polls_channel:
+                        polls = self.bot.poll_repo.get_polls(ctx.guild.id)
+
+                        for poll in polls:
+                            if poll == "old":
+                                continue
+
+                            try:
+                                poll_msg = await old_polls_channel.fetch_message(
+                                    int(poll)
+                                )
+                            except NotFound:
+                                continue
+
+                            self.bot.poll_repo.erase_poll(ctx.guild.id, poll)
+                            self.bot.configs[ctx.guild.id]["polls"][
+                                poll_msg.id
+                            ].cancel()
+                            del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
+                            await poll_msg.delete()
+
+                            poll = polls[poll]
+                            buttons_rows = [[]]
+                            x = 0
+
+                            for choice in range(0, len(poll["choices"]), 5):
+                                for c in range(
+                                    choice,
+                                    (choice + 5)
+                                    if choice + 5 <= len(poll["choices"])
+                                    else len(poll["choices"]),
+                                ):
+                                    buttons_rows[x].append(
+                                        Button(
+                                            style=2,
+                                            label=list(poll["choices"].keys())[c],
+                                        )
+                                    )
+                                if c < len(poll["choices"]) - 1:
+                                    x += 1
+                                    buttons_rows.append([])
+
+                            poll_msg = await self.bot.configs[ctx.guild.id][
+                                "polls_channel"
+                            ].send(
+                                embed=poll_msg.embeds[0],
+                                components=[ActionRow(*row) for row in buttons_rows],
+                            )
+
+                            self.bot.poll_repo.create_poll(
+                                ctx.guild.id,
+                                poll_msg.id,
+                                poll["duration_s"] - (time() - poll["created_at_ms"]),
+                                time(),
+                                poll["choices"],
+                                poll["responses"] if "responses" in poll else None,
+                            )
+                            poll = self.bot.poll_repo.get_poll(
+                                ctx.guild.id, poll_msg.id
+                            )
+                            self.bot.configs[ctx.guild.id]["polls"][
+                                poll_msg.id
+                            ] = self.bot.utils_class.task_launcher(
+                                self.bot.utils_class.poll_completion,
+                                (ctx.guild, poll),
+                                count=1,
+                            )
+
+                elif option == "remove":
+                    if "polls_channel" not in self.bot.configs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - The server already doesn't have a polls channel configured!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.set_polls_channel(ctx.guild.id, None)
+                    del self.bot.configs[ctx.guild.id]["polls_channel"]
+                    await ctx.send(
+                        f"ℹ️ - This guild doesn't have a polls channel anymore!"
+                    )
+                else:
+                    await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(self.bot, ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            else:
+                await ctx.send(
+                    f"ℹ️ - The current server's polls channel is: {self.bot.configs[ctx.guild.id]['polls_channel'].mention}"
+                    if "polls_channel" in self.bot.configs[ctx.guild.id]
+                    else f"ℹ️ - The server doesn't have a polls channel yet!"
+                )
+        except MissingRequiredArgument as mre:
+            raise MissingRequiredArgument(param=mre.param)
+        except Exception as e:
+            await ctx.reply(
+                f"⚠️ - {ctx.author.mention} - An error occured while setting the polls channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 

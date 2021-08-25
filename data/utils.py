@@ -157,51 +157,27 @@ class Utils:
 
         return em
 
-    def duration(self, s: int) -> str:
-        seconds = s
-        minutes = floor(seconds / 60)
-        hours = 0
-        days = 0
-
-        if minutes >= 60:
-            hours = floor(minutes / 60)
-            minutes = minutes - hours * 60
-
-        if hours >= 24:
-            days = floor(hours / 24)
-            hours = hours - days * 24
-
-        seconds = floor(seconds % 60)
-        response = ""
-        seperator = ""
-
-        if days > 0:
-            plurial = "s" if days > 1 else ""
-            response = f"{days} day{plurial}"
-            seperator = ", "
-            response += f", {hours}h" if hours > 0 else ""
-        elif hours > 0:
-            response = f"{hours}h"
-            seperator = ", "
-
-        if (days > 0 or hours > 0) and minutes > 0:
-            response += f", {minutes}m"
-        elif minutes > 0:
-            response = f"{minutes}m"
-            seperator = ", "
-
-        if seconds > 0:
-            response += f"{seperator}{seconds}s"
-
-        return response
-
     async def parse_duration(
         self, _duration: int, type_duration: str, ctx: Context
     ) -> bool or int:
         type_duration = self.to_lower(type_duration)
+
         if _duration <= 0:
             await ctx.reply(
                 f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                delete_after=15,
+            )
+            return False
+        elif (
+            ctx.command.parents[0].name if ctx.command.parents else ""
+        ) == "poll" and (
+            _duration <= 600
+            and type_duration == "s"
+            or _duration <= 10
+            and type_duration == "m"
+        ):
+            await ctx.reply(
+                f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
                 delete_after=15,
             )
             return False
@@ -243,6 +219,57 @@ class Utils:
         await guild.change_voice_state(channel=None)
         self.bot.playlists[guild.id].clear()
 
+    async def poll_completion(self, *args):
+        await self.bot.wait_until_ready()
+        guild = args[0]
+        poll = args[1]
+
+        if len(args) < 3 or len(args) > 2 and not args[2]:
+            timeout = poll["duration_s"] - (time() - poll["created_at_ms"])
+
+            if timeout <= 0:
+                timeout = 2
+
+            await sleep(timeout)
+
+        poll = self.bot.poll_repo.get_poll(guild.id, poll["id"])
+
+        if not poll:
+            return
+
+        poll_msg = (
+            await self.bot.configs[guild.id]["polls_channel"].fetch_message(poll["id"])
+        ) or None
+
+        if poll_msg:
+            completion_embed = poll_msg.embeds[0]
+            maxi = max(poll["choices"].values())
+            winners = []
+
+            for key, value in poll["choices"].items():
+                if value == maxi:
+                    winners.append(key)
+
+            fields = []
+
+            for choice in poll["choices"]:
+                fields.append(
+                    f"{'❌' if choice not in winners else '✅'} - choice number {choice.split(' ')[0]} - '{' '.join(choice.split(' ')[2::])}' - {poll['choices'][choice]} votes"
+                )
+
+            if len(winners) > 1:
+                completion_embed.description = "The poll has ended! **Equality!**"
+            else:
+                completion_embed.description = f"The poll has ended! **The choice number {winners[0].split(' ')[0]} : '{' '.join(winners[0].split(' ')[2::])}' wins!**"
+
+            completion_embed.add_field(
+                name="Results:", value="\n".join(fields), inline=False
+            )
+            await poll_msg.edit(content=None, embed=completion_embed, components=[])
+
+        del self.bot.configs[guild.id]["polls"][poll["id"]]
+        self.bot.poll_repo.delete_poll(guild.id, poll["id"])
+
     @staticmethod
     def to_lower(argument):
         if argument.isdigit():
@@ -266,6 +293,189 @@ class Utils:
             return not ctx.bot.starting
 
         return check(predicate)
+
+    @staticmethod
+    def duration(s: int) -> str:
+        seconds = s
+        minutes = floor(seconds / 60)
+        hours = 0
+        days = 0
+
+        if minutes >= 60:
+            hours = floor(minutes / 60)
+            minutes = minutes - hours * 60
+
+        if hours >= 24:
+            days = floor(hours / 24)
+            hours = hours - days * 24
+
+        seconds = floor(seconds % 60)
+        response = ""
+        seperator = ""
+
+        if days > 0:
+            plurial = "s" if days > 1 else ""
+            response = f"{days} day{plurial}"
+            seperator = ", "
+            response += f", {hours}h" if hours > 0 else ""
+        elif hours > 0:
+            response = f"{hours}h"
+            seperator = ", "
+
+        if (days > 0 or hours > 0) and minutes > 0:
+            response += f", {minutes}m"
+        elif minutes > 0:
+            response = f"{minutes}m"
+            seperator = ", "
+
+        if seconds > 0:
+            response += f"{seperator}{seconds}s"
+
+        return response
+
+    @classmethod
+    def init_guild(self, bot: Omnitron, guild: Guild):
+        """DB USERS"""
+
+        db_users = set(bot.user_repo.get_users(guild.id).keys())
+        members = set(
+            [m for m in guild.members if not m.bot and str(m.id) not in db_users]
+        )
+        for member in members:
+            bot.user_repo.create_user(guild.id, member.id, f"{member}")
+
+        """ INIT """
+
+        bot.moderators[guild.id] = list(
+            [int(k) for k in bot.config_repo.get_moderators(guild.id).keys()]
+        )  # Initialize moderators list for every guilds
+
+        """ CONFIG """
+
+        bot.configs[guild.id] = {"prefix": bot.config_repo.get_prefix(guild.id)}
+
+        xp = bot.config_repo.get_xp(guild.id)
+        bot.configs[guild.id]["xp"] = dict(xp)
+
+        if "boosteds" in xp:
+            bot.configs[guild.id]["xp"]["boosteds"] = {
+                key: int(value["bonus"]) for key, value in xp["boosteds"].items()
+            }
+
+        if "lvl2role" in xp:
+            bot.configs[guild.id]["xp"]["lvl2role"] = {
+                int(key): guild.get_role(value["role_id"])
+                for key, value in xp["lvl2role"].items()
+            }
+
+        if "prestiges" in xp:
+            bot.configs[guild.id]["xp"]["prestiges"] = {
+                int(key[2]): guild.get_role(value["role_id"])
+                for key, value in xp["prestiges"].items()
+            }
+
+        if "notify_channel" in xp:
+            bot.configs[guild.id]["xp"]["notify_channel"] = guild.get_channel(
+                xp["notify_channel"]
+            )
+
+        """ MUTE ON JOIN """
+
+        mute_on_join = bot.config_repo.get_mute_on_join(guild.id)
+        if mute_on_join:
+            bot.configs[guild.id]["mute_on_join"] = {
+                "duration": mute_on_join["duration"],
+                "muted_role": guild.get_role(int(mute_on_join["muted_role_id"])),
+            }
+            if "notify_channel_id" in mute_on_join:
+                bot.configs[guild.id]["mute_on_join"][
+                    "notify_channel"
+                ] = guild.get_channel(int(mute_on_join["notify_channel_id"]))
+
+        """ PREVENT INVITES """
+
+        prevent_invites = bot.config_repo.get_invit_prevention(guild.id)
+        bot.configs[guild.id]["prevent_invites"] = (
+            {
+                "notify_channel": guild.get_channel(
+                    int(prevent_invites["notify_channel_id"])
+                )
+            }
+            if isinstance(prevent_invites, OrderedDict)
+            else None
+        )
+
+        """ MUSIC MISC """
+
+        bot.playlists[guild.id] = []
+
+        bot.djs[guild.id] = list(
+            [int(k) for k in bot.config_repo.get_djs(guild.id).keys()]
+        )  # Initialize moderators list for every guilds
+
+        """ COMMANDS CHANNELS """
+
+        commands_channels = bot.config_repo.get_commands_channels(guild.id)
+        if commands_channels:
+            bot.configs[guild.id]["commands_channels"] = [
+                int(c) for c in commands_channels.keys()
+            ]
+
+        """ MUSIC CHANNELS """
+
+        music_channels = bot.config_repo.get_music_channels(guild.id)
+        if music_channels:
+            bot.configs[guild.id]["music_channels"] = [
+                int(c) for c in music_channels.keys()
+            ]
+
+        """ XP GAIN """
+
+        xp_gain_channels = bot.config_repo.get_xp_gain_channels(guild.id)
+        if xp_gain_channels:
+            text_channels = []
+            voice_channels = []
+
+            for k, v in xp_gain_channels.items():
+                if v["type"] == "TextChannel":
+                    text_channels.append(int(k))
+                else:
+                    voice_channels.append(int(k))
+
+            bot.configs[guild.id]["xp_gain_channels"] = {
+                "TextChannel": text_channels,
+                "VoiceChannel": voice_channels,
+            }
+
+        """ POLLS """
+
+        polls_channel = bot.config_repo.get_polls_channel(guild.id)
+        if polls_channel:
+            bot.configs[guild.id]["polls_channel"] = guild.get_channel(
+                int(polls_channel)
+            )
+
+        polls = bot.poll_repo.get_polls(guild.id)
+        bot.configs[guild.id]["polls"] = {}
+        for poll in polls:
+            if poll == "old":
+                continue
+            bot.configs[guild.id]["polls"][int(poll)] = bot.utils_class.task_launcher(
+                bot.utils_class.poll_completion, (guild, polls[poll]), count=1
+            )
+
+        """ TICKETS """
+
+        tickets = bot.config_repo.get_tickets(guild.id)
+        if tickets:
+            bot.configs[guild.id]["tickets"] = {
+                "tickets_channel": guild.get_channel(
+                    int(tickets["tickets_channel_id"])
+                ),
+                "tickets_category": guild.get_channel(
+                    int(tickets["tickets_category_id"])
+                ),
+            }
 
     @classmethod
     def check_moderator(self):

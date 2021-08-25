@@ -14,7 +14,16 @@ class Events(Cog):
     @Utils.check_bot_starting()
     async def on_guild_join(self, guild: Guild):
         """When the bot joins a guild, add it to the database or set his presence to True if the guild was already stored in the database"""
-        self.bot.main_repo.create_guild(guild.id, guild.name, f"{guild.owner}")
+        db_guild = self.bot.main_repo.get_guild(guild.id)
+
+        if not db_guild:
+            self.bot.main_repo.create_guild(guild.id, guild.name, f"{guild.owner}")
+        else:
+            self.bot.main_repo.update_guild(
+                guild.id, {"name": guild.name, "owner": f"{guild.owner}"}
+            )
+
+        Utils.init_guild(self.bot, guild)
         info(f"Joined the guild {guild.name} ({guild.id}), created by {guild.owner}")
 
 

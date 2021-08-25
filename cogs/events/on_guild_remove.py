@@ -15,6 +15,7 @@ class Events(Cog):
     async def on_guild_remove(self, guild: Guild):
         """When the bot get kicked from a guild, set his presence to False it from the database"""
         self.bot.main_repo.kicked_from_guild(guild.id)
+        del self.bot.configs[guild.id]
         info(
             f"Kicked from the guild {guild.name} ({guild.id}), created by {guild.owner}"
         )
