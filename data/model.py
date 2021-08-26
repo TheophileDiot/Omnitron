@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from discord.ext.tasks import loop
 from os import getenv
 from pyrebase import initialize_app
 
@@ -25,16 +26,17 @@ class Model:
         firebase = initialize_app(config)
 
         # Get a reference to the auth service
-        auth = firebase.auth()
+        self.auth = firebase.auth()
 
         # Log the user in
-        self.user = auth.sign_in_with_email_and_password(
+        self.user = self.auth.sign_in_with_email_and_password(
             FIREBASE_USER_EMAIL or getenv("FIREBASE_USER_EMAIL"),
             FIREBASE_USER_PASSWORD or getenv("FIREBASE_USER_PASSWORD"),
         )
 
         # Get a reference to the database service
         self.db = firebase.database()
+        self.refrech_token.start(self)
         return self
 
     @classmethod
@@ -57,3 +59,9 @@ class Model:
         return (
             self.db.child(path).get(token=self.user["idToken"]).val() or OrderedDict()
         )
+
+    """ LOOPS """
+
+    @loop(minutes=58)
+    async def refrech_token(self):
+        self.user = self.auth.refresh(self.user["refreshToken"])
