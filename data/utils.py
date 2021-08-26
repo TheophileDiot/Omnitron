@@ -411,15 +411,16 @@ class Utils:
         """ PREVENT INVITES """
 
         prevent_invites = bot.config_repo.get_invit_prevention(guild.id)
-        bot.configs[guild.id]["prevent_invites"] = (
-            {
-                "notify_channel": guild.get_channel(
-                    int(prevent_invites["notify_channel_id"])
-                )
-            }
-            if isinstance(prevent_invites, OrderedDict)
-            else None
-        )
+        if prevent_invites:
+            bot.configs[guild.id]["prevent_invites"] = (
+                {
+                    "notify_channel": guild.get_channel(
+                        int(prevent_invites["notify_channel_id"])
+                    )
+                }
+                if isinstance(prevent_invites, OrderedDict)
+                else None
+            )
 
         """ MUSIC MISC """
 
