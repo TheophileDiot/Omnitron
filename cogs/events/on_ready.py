@@ -1,4 +1,5 @@
 from typing import Union
+from discord import Activity, ActivityType, activity
 from discord.ext.commands import Cog
 from lavalink import add_event_hook, Client
 from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
@@ -49,6 +50,10 @@ class Events(Cog):
             )
 
         add_event_hook(self.track_hook)
+
+        await self.bot.change_presence(
+            activity=Activity(type=ActivityType.listening, name=f"Ping me for prefix")
+        )
 
         self.bot.starting = False
 
