@@ -2113,7 +2113,7 @@ class Moderation(Cog):
                             )
                         )
                     elif (
-                        "notify_channel" not in self.bot.configs[ctx.guild.id]["xp"]
+                        "notify_channel" in self.bot.configs[ctx.guild.id]["xp"]
                         and self.bot.configs[ctx.guild.id]["xp"]["notify_channel"]
                         == xp_channel
                     ):
@@ -2154,11 +2154,11 @@ class Moderation(Cog):
                 )
         except MissingRequiredArgument as mre:
             raise MissingRequiredArgument(param=mre.param)
-        except Exception as e:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occured while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
-                delete_after=20,
-            )
+        # except Exception as e:
+        #     await ctx.reply(
+        #         f"⚠️ - {ctx.author.mention} - An error occured while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
+        #         delete_after=20,
+        #     )
 
     @config_channels_group.command(
         pass_context=True,
