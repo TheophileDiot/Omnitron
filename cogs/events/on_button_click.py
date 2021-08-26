@@ -64,7 +64,9 @@ class Events(Cog):
                 )
 
             overwrites = {
-                m: PermissionOverwrite(
+                interaction.guild.get_role(int(m))
+                if interaction.guild.get_role(int(m))
+                else interaction.guild.get_member(int(m)): PermissionOverwrite(
                     **{
                         "view_channel": True,
                         "read_messages": True,
