@@ -997,7 +997,7 @@ class Moderation(Cog):
 
                     old_duration = f"{_duration} {duration_type}"
                     _duration = await self.bot.utils_class.parse_duration(
-                        self.bot, _duration, duration_type, ctx
+                        _duration, duration_type, ctx
                     )
                     if not _duration:
                         return
@@ -1033,11 +1033,11 @@ class Moderation(Cog):
                 raise MissingRequiredArgument(param=mre.param)
             except BadArgument:
                 raise BadArgument
-            except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
-                    delete_after=20,
-                )
+            # except Exception as e:
+            #     await ctx.reply(
+            #         f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
+            #         delete_after=20,
+            #     )
         else:
             await ctx.send(
                 f"ℹ️ - {ctx.author.mention} - The mute on join is currently `{BOOL2VAL['mute_on_join' in self.bot.configs[ctx.guild.id]]}` in this guild!"
