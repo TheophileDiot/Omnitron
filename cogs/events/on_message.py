@@ -1,6 +1,6 @@
 from asyncio import sleep
 from discord import Message
-from discord.ext.commands import Cog, Context
+from discord.ext.commands import Cog, Context, context
 
 from bot import Omnitron
 from data import Utils, Xp_class
@@ -47,6 +47,19 @@ class Events(Cog):
             if tries < 3:
                 await sleep(5)
                 await self.on_message(message, tries=tries + 1)
+
+        if (
+            ctx.message.mentions
+            and self.bot.user in ctx.message.mentions
+            and (
+                len(ctx.message.content) == len(f"{self.bot.user.mention}")
+                or len(ctx.message.content) == len(f"{self.bot.user.mention}") + 1
+            )
+        ):
+            msg = await ctx.send(
+                f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`!"
+            )
+            await msg.add_reaction("👀")
 
     """ METHODS """
 
