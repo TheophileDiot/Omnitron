@@ -64,11 +64,20 @@ class Events(Cog):
                 )
 
             overwrites = {
-                m: PermissionOverwrite(**{"view_channel": True})
+                m: PermissionOverwrite(
+                    **{
+                        "view_channel": True,
+                        "read_messages": True,
+                        "send_messages": True,
+                    }
+                )
                 for m in set(self.bot.moderators[interaction.guild.id])
             }
+            overwrites[self.bot.user] = PermissionOverwrite(
+                **{"view_channel": True, "read_messages": True, "send_messages": True}
+            )
             overwrites[interaction.author] = PermissionOverwrite(
-                **{"view_channel": True}
+                **{"view_channel": True, "read_messages": True, "send_messages": True}
             )
             overwrites[interaction.guild.default_role] = PermissionOverwrite(
                 **{"view_channel": False}
