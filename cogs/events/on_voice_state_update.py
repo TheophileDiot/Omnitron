@@ -61,7 +61,6 @@ class Events(Cog):
 
     async def vocal_interval(self, member: Member):
         """This method manage the vocal xp cooldown"""
-        print("gain")
         await self.xp_class.manage_xp(member, "vocal")
 
 
