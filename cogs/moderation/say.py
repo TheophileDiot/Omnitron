@@ -17,7 +17,6 @@ class Moderation(Cog):
     )
     @Utils.check_moderator()
     async def say_command(self, ctx: Context, *, args: str):
-        print(args)
         bot_member = await ctx.guild.fetch_member(self.bot.user.id)
         channel = ctx.channel
         if ctx.message.channel_mentions:
