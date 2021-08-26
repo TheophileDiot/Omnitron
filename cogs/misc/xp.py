@@ -306,12 +306,7 @@ class Miscellaneous(Cog):
                 x = 1
                 for df_user in df_users.index.values:
                     if all or self.bot.utils_class.is_mod(ctx.author, self.bot):
-                        print(type(df_user))
-                        print(df_user)
-                        print(type(ctx.author.id))
-                        print(ctx.author.id)
                         if df_user == ctx.author.id:
-                            print("user:", df_user, "rank:", x)
                             if all or self.bot.utils_class.is_mod(ctx.author, self.bot):
                                 add = "of the server *(including moderators)*"
                             await ctx.send(
