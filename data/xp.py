@@ -114,7 +114,7 @@ class Xp_class:
             )
         )
 
-        if self.bot.utils_class.have_xp_bonus(member):
+        if self.have_xp_bonus(member):
             xp_gain = self.calculate_bonus(member, xp_gain)
 
         if (db_user["xp"] + xp_gain) < 5 * (db_user["level"] ^ 2) + 50 * db_user[
@@ -191,3 +191,11 @@ class Xp_class:
             self.bot.user_repo.get_user(member.guild.id, member.id)["level"],
             "set_lvl",
         )
+
+    def have_xp_bonus(self, member: Member) -> bool:
+        if "boosteds" not in self.bot.configs[member.guild.id]["xp"]:
+            return False
+
+        return set([str(r.id) for r in member.roles]) & set(
+            self.bot.configs[member.guild.id]["xp"]["boosteds"]
+        ) or str(member.id) in set(self.bot.configs[member.guild.id]["xp"]["boosteds"])

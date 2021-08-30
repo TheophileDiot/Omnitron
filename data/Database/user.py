@@ -102,6 +102,7 @@ class User:
         self.model.create(
             f"{self.path}/{_id}",
             args={
+                "id": _id,
                 "name": name,
                 "muted": False,
                 "identified": False,
@@ -165,7 +166,7 @@ class User:
         self.model.create(
             f"{path}/{x}",
             args={
-                "duration": duration(_duration),
+                "duration": self.bot.utils_class.duration(_duration),
                 "duration_s": _duration,
                 "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
                 "at_ms": at,
@@ -201,7 +202,7 @@ class User:
             f"logs/ban/{_id}",
             args={
                 "id": _id,
-                "duration": duration(_duration)
+                "duration": self.bot.utils_class.duration(_duration)
                 if isinstance(_duration, int)
                 else "all Eternity",
                 "duration_s": _duration if isinstance(_duration, int) else "infinite",

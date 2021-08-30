@@ -16,7 +16,7 @@ from discord.ext.commands.errors import (
 from dislash import ActionRow, Button, SelectMenu, SelectOption
 from inspect import Parameter
 from time import time
-from typing import Tuple, Union
+from typing import Union
 
 from bot import Omnitron
 from data import Utils, Xp_class
@@ -865,6 +865,78 @@ class Moderation(Cog):
                 f"**ℹ️ - Here's the list of the server's select to role:**\n\n{roles_mess}"
             )
 
+    @config_group.command(
+        pass_context=True,
+        name="muted_role",
+        aliases=["mute_role"],
+        brief="🤐",
+        description="This option manage the server's muted role",
+        usage="set|remove @role",
+    )
+    async def config_djs_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        muted: Role = None,
+    ):
+        if option:
+            try:
+                if option == "set":
+                    if not muted:
+                        raise MissingRequiredArgument(
+                            param=Parameter(
+                                name="muted_role", kind=Parameter.KEYWORD_ONLY
+                            )
+                        )
+                    elif (
+                        "muted_role" in self.bot.configs[ctx.guild.id]
+                        and self.bot.configs[ctx.guild.id]["muted_role"] == muted
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - This role is already the one configured has the muted role!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.set_muted_role(ctx.guild.id, muted.id)
+                    self.bot.configs[ctx.guild.id]["muted_role"] = muted
+
+                    await ctx.send(
+                        f"ℹ️ - The muted role is now `@{muted}` in this guild!"
+                    )
+                elif option == "remove":
+                    if "muted_role" not in self.bot.configs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - The server already doesn't have a muted role configured!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.set_muted_role(ctx.guild.id, None)
+                    del self.bot.configs[ctx.guild.id]["muted_role"]
+
+                    await ctx.send(
+                        f"ℹ️ - The muted role is now removed from this guild!"
+                    )
+                else:
+                    return await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            except MissingRequiredArgument as mre:
+                raise MissingRequiredArgument(param=mre.param)
+            except BadArgument:
+                raise BadArgument
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while configuring the muted_role! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
+        else:
+            await ctx.send(
+                f"ℹ️ - The current server's muted role is: `@{self.bot.configs[ctx.guild.id]['muted_role']}`"
+                if "muted_role" in self.bot.configs[ctx.guild.id]
+                else f"ℹ️ - The server doesn't have a muted role yet!"
+            )
+
     """ MAIN GROUP'S SECURITY COMMAND(S) """
 
     @config_security_group.command(
@@ -900,15 +972,20 @@ class Moderation(Cog):
                     return await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - The invites prevention is already set to `{BOOL2VAL[val]}`!"
                         + f" Parameters: 'notify_channel': {self.bot.configs[ctx.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['prevent_invites'] else '`No channel specified.`'}"
+                        if "prevent_invites" in self.bot.configs[ctx.guild.id]
+                        else ""
                     )
 
                 if val:
                     self.bot.config_repo.set_invit_prevention(
-                        ctx.guild.id, val, notify_channel.id if notify_channel else None
+                        ctx.guild.id, notify_channel.id if notify_channel else None
                     )
-                    self.bot.configs[ctx.guild.id]["prevent_invites"] = (
-                        {"notify_channel": notify_channel} if notify_channel else {}
-                    )
+                    self.bot.configs[ctx.guild.id]["prevent_invites"] = {"is_on": True}
+
+                    if notify_channel:
+                        self.bot.configs[ctx.guild.id]["prevent_invites"][
+                            "notify_channel"
+                        ] = notify_channel
                 else:
                     self.bot.config_repo.remove_invit_prevention(ctx.guild.id)
                     del self.bot.configs[ctx.guild.id]["prevent_invites"]
@@ -930,6 +1007,8 @@ class Moderation(Cog):
             await ctx.send(
                 f"ℹ️ - {ctx.author.mention} - The invites prevention is currently `{BOOL2VAL['prevent_invites' in self.bot.configs[ctx.guild.id]]}` in this guild!"
                 + f" Parameters: 'notify_channel': {self.bot.configs[ctx.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['prevent_invites'] else '`No channel specified.`'}"
+                if "prevent_invites" in self.bot.configs[ctx.guild.id]
+                else ""
             )
 
     @config_security_group.command(
@@ -938,7 +1017,7 @@ class Moderation(Cog):
         aliases=["m_on_j"],
         brief="🔇",
         description="This option manage if users are muted during a certain amount of time when joining the server and then notify it at the end if a channel is specified! (default duration = 10 min) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
-        usage="(on|update|off) (<duration_value> <duration_type> @muted_role #channel)",
+        usage="(on|update|off) (<duration_value> <duration_type> #channel)",
     )
     async def config_security_mute_on_join_command(
         self,
@@ -946,9 +1025,14 @@ class Moderation(Cog):
         option: Utils.to_lower = None,
         _duration: int = None,
         duration_type: str = None,
-        muted_role: Role = None,
         notify_channel: TextChannel = None,
     ):
+        if "muted_role" not in self.bot.configs[ctx.guild.id]:
+            return await ctx.reply(
+                f"⚠️ - {ctx.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}config muted_role` to set one!",
+                delete_after=20,
+            )
+
         if option:
             try:
                 val = False
@@ -968,7 +1052,7 @@ class Moderation(Cog):
                     return await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - The mute on join is already `{BOOL2VAL[val]}`!"
                         + (
-                            f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'muted_role': `@{self.bot.configs[ctx.guild.id]['mute_on_join']['muted_role'].name}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                            f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
                             if "mute_on_join" in self.bot.configs[ctx.guild.id]
                             else ""
                         ),
@@ -988,12 +1072,6 @@ class Moderation(Cog):
                                 name="duration_type", kind=Parameter.KEYWORD_ONLY
                             )
                         )
-                    elif not muted_role:
-                        raise MissingRequiredArgument(
-                            param=Parameter(
-                                name="muted_role", kind=Parameter.KEYWORD_ONLY
-                            )
-                        )
 
                     old_duration = f"{_duration} {duration_type}"
                     _duration = await self.bot.utils_class.parse_duration(
@@ -1005,12 +1083,10 @@ class Moderation(Cog):
                     self.bot.config_repo.set_mute_on_join(
                         ctx.guild.id,
                         _duration,
-                        muted_role.id,
                         notify_channel.id if notify_channel else None,
                     )
                     self.bot.configs[ctx.guild.id]["mute_on_join"] = {
                         "duration": _duration,
-                        "muted_role": muted_role,
                     }
 
                     if notify_channel:
@@ -1024,7 +1100,7 @@ class Moderation(Cog):
                 await ctx.send(
                     f"ℹ️ - The mute on join is now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
                     + (
-                        f" Parameters: 'duration': `{old_duration}`, 'muted_role': `@{muted_role.name}`, 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
+                        f" Parameters: 'duration': `{old_duration}`, 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
                         if val
                         else ""
                     )
@@ -1033,16 +1109,16 @@ class Moderation(Cog):
                 raise MissingRequiredArgument(param=mre.param)
             except BadArgument:
                 raise BadArgument
-            # except Exception as e:
-            #     await ctx.reply(
-            #         f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
-            #         delete_after=20,
-            #     )
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
         else:
             await ctx.send(
                 f"ℹ️ - {ctx.author.mention} - The mute on join is currently `{BOOL2VAL['mute_on_join' in self.bot.configs[ctx.guild.id]]}` in this guild!"
                 + (
-                    f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'muted_role': `@{self.bot.configs[ctx.guild.id]['mute_on_join']['muted_role'].name}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                    f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
                     if "mute_on_join" in self.bot.configs[ctx.guild.id]
                     else ""
                 )
@@ -1756,6 +1832,9 @@ class Moderation(Cog):
                             delete_after=20,
                         )
 
+                        if not self.bot.configs[ctx.guild.id]["commands_channels"]:
+                            del self.bot.configs[ctx.guild.id]["commands_channels"]
+
                     if channels:
                         await ctx.send(
                             f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the commands channels list!."
@@ -1876,6 +1955,9 @@ class Moderation(Cog):
                             delete_after=20,
                         )
 
+                        if not self.bot.configs[ctx.guild.id]["music_channels"]:
+                            del self.bot.configs[ctx.guild.id]["music_channels"]
+
                     if dropped_channels:
                         await ctx.reply(
                             f"ℹ️ - {ctx.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the music channels list!",
@@ -1980,10 +2062,17 @@ class Moderation(Cog):
                             )
 
                             if "xp_gain_channels" not in self.bot.configs[ctx.guild.id]:
-                                self.bot.configs[ctx.guild.id]["xp_gain_channels"] = {
-                                    "TextChannel": [],
-                                    "VoiceChannel": [],
-                                }
+                                self.bot.configs[ctx.guild.id]["xp_gain_channels"] = {}
+
+                            if (
+                                type(channel).__name__
+                                not in self.bot.configs[ctx.guild.id][
+                                    "xp_gain_channels"
+                                ]
+                            ):
+                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                    type(channel).__name__
+                                ] = []
 
                             self.bot.configs[ctx.guild.id]["xp_gain_channels"][
                                 type(channel).__name__
@@ -2016,6 +2105,16 @@ class Moderation(Cog):
                             f"ℹ️ - {ctx.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the xp gain channels list!",
                             delete_after=20,
                         )
+
+                        if not self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                            type(channel).__name__
+                        ]:
+                            del self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                type(channel).__name__
+                            ]
+
+                        if not self.bot.configs[ctx.guild.id]["xp_gain_channels"]:
+                            del self.bot.configs[ctx.guild.id]["xp_gain_channels"]
 
                     if dropped_channels:
                         await ctx.reply(
@@ -2154,11 +2253,11 @@ class Moderation(Cog):
                 )
         except MissingRequiredArgument as mre:
             raise MissingRequiredArgument(param=mre.param)
-        # except Exception as e:
-        #     await ctx.reply(
-        #         f"⚠️ - {ctx.author.mention} - An error occured while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
-        #         delete_after=20,
-        #     )
+        except Exception as e:
+            await ctx.reply(
+                f"⚠️ - {ctx.author.mention} - An error occured while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
+                delete_after=20,
+            )
 
     @config_channels_group.command(
         pass_context=True,
@@ -2412,7 +2511,7 @@ class Moderation(Cog):
                         not in self.bot.configs[ctx.guild.id]["select2role"]
                     ):
                         return await ctx.reply(
-                            f"ℹ️ - The server already doesn't have an select to role channel configured!",
+                            f"ℹ️ - The server already doesn't have a select to role channel configured!",
                             delete_after=20,
                         )
 
@@ -2423,7 +2522,7 @@ class Moderation(Cog):
                     del self.bot.configs[ctx.guild.id]["select2role"]["channel"]
                     del self.bot.configs[ctx.guild.id]["select2role"]["roles_msg"]
                     await ctx.send(
-                        f"ℹ️ - This guild doesn't have an select to role channel anymore!"
+                        f"ℹ️ - This guild doesn't have a select to role channel anymore!"
                     )
                 else:
                     await ctx.reply(
@@ -2433,14 +2532,86 @@ class Moderation(Cog):
             else:
                 await ctx.send(
                     f"ℹ️ - The current server's select to role channel is: {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}"
-                    if "channel" in self.bot.configs[ctx.guild.id]["select2role"]
-                    else f"ℹ️ - The server doesn't have an select to role channel yet!"
+                    if "select2role" in self.bot.configs[ctx.guild.id]
+                    and "channel" in self.bot.configs[ctx.guild.id]["select2role"]
+                    else f"ℹ️ - The server doesn't have a select to role channel yet!"
                 )
         except MissingRequiredArgument as mre:
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
             await ctx.reply(
                 f"⚠️ - {ctx.author.mention} - An error occured while setting the select to role channel! please try again in a few seconds! Error type: {type(e)}",
+                delete_after=20,
+            )
+
+    @config_channels_group.command(
+        pass_context=True,
+        name="mods_channel",
+        aliases=["mod_channel"],
+        brief="🔱",
+        description="This option manage the server's mods channel where all the error messages and other informations are sent",
+        usage="set|remove #channel",
+    )
+    async def config_channels_mods_channel_command(
+        self,
+        ctx: Context,
+        option: Utils.to_lower = None,
+        mods_channel: TextChannel = None,
+    ):
+        try:
+            if option:
+                if option == "set":
+                    if not mods_channel:
+                        raise MissingRequiredArgument(
+                            param=Parameter(name="channel", kind=Parameter.KEYWORD_ONLY)
+                        )
+                    elif (
+                        "mods_channel" in self.bot.configs[ctx.guild.id]
+                        and self.bot.configs[ctx.guild.id]["mods_channel"]
+                        == mods_channel
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - The server's mods channel is already {mods_channel.mention}!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.set_mods_channel(
+                        ctx.guild.id,
+                        mods_channel.id,
+                    )
+                    self.bot.configs[ctx.guild.id]["mods_channel"] = mods_channel
+                    await ctx.send(
+                        f"ℹ️ - The mods channel is now {mods_channel.mention} in this guild!"
+                    )
+
+                elif option == "remove":
+                    if "mods_channel" not in self.bot.configs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - The server already doesn't have a mods channel configured!",
+                            delete_after=20,
+                        )
+
+                    self.bot.config_repo.set_mods_channel(ctx.guild.id, None)
+                    del self.bot.configs[ctx.guild.id]["mods_channel"]
+                    await ctx.send(
+                        f"ℹ️ - This guild doesn't have a mods channel anymore!"
+                    )
+                else:
+                    await ctx.reply(
+                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                        delete_after=20,
+                    )
+            else:
+                await ctx.send(
+                    f"ℹ️ - The current server's mods channel is: {self.bot.configs[ctx.guild.id]['mods_channel'].mention}"
+                    if "mods_channel" in self.bot.configs[ctx.guild.id]
+                    else f"ℹ️ - The server doesn't have a mods channel yet!"
+                )
+        except MissingRequiredArgument as mre:
+            raise MissingRequiredArgument(param=mre.param)
+        except Exception as e:
+            await ctx.reply(
+                f"⚠️ - {ctx.author.mention} - An error occured while setting the mods channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 

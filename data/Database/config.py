@@ -233,11 +233,10 @@ class Config:
     """ INVIT PREVENTION """
 
     @Utils.resolve_guild_path
-    def set_invit_prevention(
-        self, guild_id: int, val: bool, channel_id: Union[int, None]
-    ) -> None:
+    def set_invit_prevention(self, guild_id: int, channel_id: int) -> None:
         self.model.update(
-            f"{self.path}/prevent_invites", args={"notify_channel_id": channel_id}
+            f"{self.path}/prevent_invites",
+            args={"notify_channel_id": channel_id, "is_on": True},
         )
 
     @Utils.resolve_guild_path
@@ -252,13 +251,12 @@ class Config:
 
     @Utils.resolve_guild_path
     def set_mute_on_join(
-        self, guild_id: int, duration: float, role_id: int, channel_id: Union[int, None]
+        self, guild_id: int, duration: float, channel_id: Union[int, None]
     ) -> None:
         self.model.update(
             f"{self.path}/mute_on_join",
             args={
                 "duration": duration,
-                "muted_role_id": role_id,
                 "notify_channel_id": channel_id,
             },
         )
@@ -321,3 +319,23 @@ class Config:
             f"{self.path}/select2role",
             args={"channel_id": channel_id, "roles_msg_id": roles_msg_id},
         )
+
+    """ MUTED ROLE """
+
+    @Utils.resolve_guild_path
+    def set_muted_role(self, guild_id: int, role_id: Union[int, None]) -> None:
+        self.model.update(f"{self.path}", args={"muted_role": role_id})
+
+    @Utils.resolve_guild_path
+    def get_muted_role(self, guild_id: int) -> int:
+        return self.model.get(f"{self.path}/muted_role")
+
+    """ MODS CHANNEL """
+
+    @Utils.resolve_guild_path
+    def set_mods_channel(self, guild_id: int, channel_id: Union[int, None]) -> None:
+        self.model.update(f"{self.path}", args={"mods_channel_id": channel_id})
+
+    @Utils.resolve_guild_path
+    def get_mods_channel(self, guild_id: int) -> int:
+        return self.model.get(f"{self.path}/mods_channel_id")

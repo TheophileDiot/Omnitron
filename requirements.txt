@@ -38,6 +38,5 @@ requests-toolbelt==0.7.0
 rsa==4.7.2
 six==1.16.0
 tomli==1.2.1
-typing-extensions==3.10.0.0
 yarl==1.5.1
 youtube-dl==2021.6.6

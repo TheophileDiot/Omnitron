@@ -25,9 +25,7 @@ class Events(Cog):
 
         try:
             if "mute_on_join" in self.bot.configs[member.guild.id]:
-                roles += [
-                    self.bot.configs[member.guild.id]["mute_on_join"]["muted_role"]
-                ]
+                roles += [self.bot.configs[member.guild.id]["muted_role"]]
                 await member.add_roles(*roles, reason="Has just joined the server.")
                 self.bot.user_repo.mute_user(
                     member.guild.id,
@@ -40,7 +38,6 @@ class Events(Cog):
                 self.bot.utils_class.task_launcher(
                     self.bot.utils_class.mute_completion,
                     (
-                        self,
                         self.bot.user_repo.get_user(member.guild.id, member.id),
                         member.guild.id,
                     ),

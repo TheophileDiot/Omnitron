@@ -1,6 +1,6 @@
 from asyncio import sleep
 from collections import OrderedDict
-from discord import Embed, Guild, Message, Member
+from discord import Embed, Forbidden, Guild, HTTPException, Message, Member, NotFound
 from discord.ext.tasks import loop
 from discord.ext.commands import Context, check
 from discord.ext.commands.errors import BadArgument
@@ -60,13 +60,25 @@ class Utils:
             self.bot.user_repo.new_invite(
                 ctx.guild.id, ctx.author.id, time(), ctx.message.clean_content
             )
-            await ctx.message.delete()
 
-            if "notify_channel" in self.bot.configs[ctx.guild.id]["prevent_invites"]:
+            try:
+                await ctx.message.delete()
+            except Forbidden:
+                await self.send_message_to_mods(
+                    f"⚠️ - I don't have the right permissions to manage messages in the channel {ctx.channel.mention} (i tried to delete a message that have an invit to another discord server in it! -> {ctx.message.jump_url})!",
+                    ctx.guild.id,
+                )
+
+            try:
                 await self.bot.configs[ctx.guild.id]["prevent_invites"][
                     "notify_channel"
                 ].send(
                     f"⚠️ - The member `{ctx.author}` tried to send an invitation link to another discord server in {ctx.channel.mention}! => {ctx.message.clean_content}"
+                )
+            except Forbidden:
+                await self.send_message_to_mods(
+                    f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['prevent_invites']['notify_channel'].mention} (message: `⚠️ - The member `{ctx.author}` tried to send an invitation link to another discord server in {ctx.channel.mention}! => {ctx.message.clean_content}`)!",
+                    ctx.guild.id,
                 )
 
             if links > 1:
@@ -78,50 +90,113 @@ class Utils:
                     "Sent three invitation links to other servers.",
                 )
                 self.bot.user_repo.clear_invites(ctx.guild.id, ctx.author.id)
-                await ctx.send(
-                    f"⚠️ - {ctx.author.mention} - **You've received a warning because you've sent three consecutive invitation links to other discord servers!**",
-                    delete_after=30,
-                )
+
+                try:
+                    await ctx.send(
+                        f"⚠️ - {ctx.author.mention} - **You've received a warning because you've sent three consecutive invitation links to other discord servers!**",
+                        delete_after=30,
+                    )
+                except Forbidden as f:
+                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - **You've received a warning because you've sent three consecutive invitation links to other discord servers!**`)!"
+                    raise
             else:
-                await ctx.send(
-                    f"⛔ - {ctx.author.mention} - **Invitation links to other discord servers are not allowed in this server!**, `{'first' if links == 0 else 'second'} warning`!"
-                )
+                try:
+                    await ctx.send(
+                        f"⛔ - {ctx.author.mention} - **Invitation links to other discord servers are not allowed in this server!**, `{'first' if links == 0 else 'second'} warning`!"
+                    )
+                except Forbidden as f:
+                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⛔ - {ctx.author.mention} - **Invitation links to other discord servers are not allowed in this server!**, `{'first' if links == 0 else 'second'} warning`!`)!"
+                    raise
 
     async def mute_completion(self, db_user: OrderedDict, guild_id: int):
         """This method manage the mute completion"""
         await self.bot.wait_until_ready()
         mute = db_user["mutes"][-1]
         timeout = mute["duration_s"] - (time() - mute["at_ms"])
+
         if timeout <= 0:
             timeout = 2
+
         await sleep(timeout)
         self.bot.user_repo.unmute_user(guild_id, db_user["id"])
-        member = await (await self.bot.fetch_guild(guild_id)).fetch_member(
-            db_user["id"]
-        )
-        await member.remove_roles(
-            self.bot.configs[member.guild.id]["mute_on_join"]["muted_role"]
-        )
+
+        try:
+            member = await (await self.bot.fetch_guild(guild_id)).fetch_member(
+                db_user["id"]
+            )
+        except NotFound:
+            return
+
+        try:
+            await member.remove_roles(self.bot.configs[guild_id]["muted_role"])
+        except Forbidden as f:
+            f.text = f"⚠️ - I don't have the right permissions to remove the role `@{self.bot.configs[guild_id]['muted_role'].name}` from the member `{member}`!"
+            raise
+
         if mute["reason"] == "joined the server":
             self.bot.user_repo.clear_mutes(guild_id, db_user["id"])
-            if "notify_channel" in self.bot.configs[member.guild.id]["mute_on_join"]:
-                await self.bot.configs[member.guild.id]["mute_on_join"][
-                    "notify_channel"
-                ].send(
-                    f"🔊 - The member `{member}` has just finished being muted after joining the server! (ID: `{db_user['id']}`)"
-                )
-        else:
-            if "notify_channel" in self.bot.configs[member.guild.id]["mute_on_join"]:
-                await self.bot.configs[member.guild.id]["mute_on_join"][
-                    "notify_channel"
-                ].send(f"🔊 - The member {member.mention} is no longer muted.")
 
-    def have_xp_bonus(self, member: Member) -> bool:
-        if "boosteds" not in self.bot.configs[member.guild.id]["xp"]:
-            return False
-        return set([str(r.id) for r in member.roles]) & set(
-            self.bot.configs[member.guild.id]["xp"]["boosteds"]
-        ) or str(member.id) in set(self.bot.configs[member.guild.id]["xp"]["boosteds"])
+            if "notify_channel" in self.bot.configs[guild_id]["mute_on_join"]:
+                try:
+                    await self.bot.configs[guild_id]["mute_on_join"][
+                        "notify_channel"
+                    ].send(
+                        f"🔊 - The member `{member}` has just finished being muted after joining the server! (ID: `{db_user['id']}`)"
+                    )
+                except Forbidden as f:
+                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member `{member}` has just finished being muted after joining the server! (ID: `{db_user['id']}`)`)!"
+                    raise
+        else:
+            if "notify_channel" in self.bot.configs[guild_id]["mute_on_join"]:
+                try:
+                    await self.bot.configs[guild_id]["mute_on_join"][
+                        "notify_channel"
+                    ].send(f"🔊 - The member {member.mention} is no longer muted.")
+                except Forbidden as f:
+                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member {member.mention} is no longer muted.`)!"
+                    raise
+
+    async def send_message_to_mods(self, message: str, guild_id: int):
+        """This method send a message to all mods"""
+        guild = await self.bot.fetch_guild(guild_id)
+
+        if "mods_channel" in self.bot.configs[guild_id]:
+            try:
+                return await self.bot.configs[guild_id]["mods_channel"].send(message)
+            except Forbidden:
+                message += f"\nAnd also in the channel {self.bot.configs[guild_id]['mods_channel'].mention}!"
+
+        message += f"\n\nIn the guild -> `{guild}` (ID: `{guild_id}`)"
+
+        if self.bot.moderators[guild_id]:
+            for mod in self.bot.moderators[guild_id]:
+                mod = guild.get_role(int(mod))
+
+                if mod:
+                    for m in set(mod.members):
+                        try:
+                            m.send(message)
+                        except Forbidden:
+                            pass
+                else:
+                    try:
+                        mod = await guild.fetch_member(int(mod))
+                        m.send(message)
+                    except Forbidden or NotFound:
+                        pass
+
+        else:
+            try:
+                guild_owner = guild.owner
+
+                if not guild_owner:
+                    guild_owner = await guild.fetch_member(int(guild.owner_id))
+
+                await guild_owner.send(message)
+            except Forbidden or NotFound:
+                return await self.bot.fetch_user(self.bot.owner_id).send(
+                    f"{message}\nAnd couldn't send a message to the owner of the server!"
+                )
 
     def get_embed_from_ctx(self, ctx: Context, title: str) -> Embed:
         em = Embed(
@@ -175,14 +250,19 @@ class Utils:
 
     async def parse_duration(
         self, _duration: int, type_duration: str, ctx: Context
-    ) -> bool or int:
+    ) -> bool or int or None:
         type_duration = self.to_lower(type_duration)
 
         if _duration <= 0:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                delete_after=15,
-            )
+            try:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                    delete_after=15,
+                )
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                raise
+
             return False
         elif (
             ctx.command.parents[0].name if ctx.command.parents else ""
@@ -192,10 +272,15 @@ class Utils:
             or _duration <= 10
             and type_duration == "m"
         ):
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                delete_after=15,
-            )
+            try:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                    delete_after=15,
+                )
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                raise
+
             return False
 
         if type_duration == "s":
@@ -207,10 +292,15 @@ class Utils:
         elif type_duration == "j":
             return _duration * 86400
         else:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - Please provide a valid duration type! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                delete_after=15,
-            )
+            try:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - Please provide a valid duration type! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                    delete_after=15,
+                )
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration type! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                raise
+
             return False
 
     def get_guild_pre(self, arg: Union[Message, Member], *args) -> list:
@@ -253,9 +343,12 @@ class Utils:
         if not poll:
             return
 
-        poll_msg = (
-            await self.bot.configs[guild.id]["polls_channel"].fetch_message(poll["id"])
-        ) or None
+        try:
+            poll_msg = await self.bot.configs[guild.id]["polls_channel"].fetch_message(
+                poll["id"]
+            )
+        except NotFound:
+            poll_msg = None
 
         if poll_msg:
             completion_embed = poll_msg.embeds[0]
@@ -401,7 +494,6 @@ class Utils:
         if mute_on_join:
             bot.configs[guild.id]["mute_on_join"] = {
                 "duration": mute_on_join["duration"],
-                "muted_role": guild.get_role(int(mute_on_join["muted_role_id"])),
             }
             if "notify_channel_id" in mute_on_join:
                 bot.configs[guild.id]["mute_on_join"][
@@ -412,15 +504,12 @@ class Utils:
 
         prevent_invites = bot.config_repo.get_invit_prevention(guild.id)
         if prevent_invites:
-            bot.configs[guild.id]["prevent_invites"] = (
-                {
-                    "notify_channel": guild.get_channel(
-                        int(prevent_invites["notify_channel_id"])
-                    )
-                }
-                if isinstance(prevent_invites, OrderedDict)
-                else None
-            )
+            bot.configs[guild.id]["prevent_invites"] = {"is_on": True}
+
+            if "notify_channel_id" in prevent_invites:
+                bot.configs[guild.id]["prevent_invites"][
+                    "notify_channel"
+                ] = guild.get_channel(int(prevent_invites["notify_channel_id"]))
 
         """ MUSIC MISC """
 
@@ -517,6 +606,18 @@ class Utils:
                 bot.configs[guild.id]["select2role"]["roles_msg_id"] = select2role[
                     "roles_msg_id"
                 ]
+
+        """ MUTED ROLE """
+
+        muted_role = bot.config_repo.get_muted_role(guild.id)
+        if muted_role:
+            bot.configs[guild.id]["muted_role"] = guild.get_role(int(muted_role))
+
+        """ MODS CHANNEL """
+
+        mods_channel = bot.config_repo.get_mods_channel(guild.id)
+        if mods_channel:
+            bot.configs[guild.id]["mods_channel"] = guild.get_channel(int(mods_channel))
 
         print(bot.configs[guild.id])
 
