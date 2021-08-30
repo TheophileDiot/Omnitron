@@ -20,10 +20,16 @@ class Moderation(Cog):
 
     """ GROUP """
 
-    @group(pass_context=True, name="poll", aliases=["polls"])
+    @group(
+        pass_context=True,
+        name="poll",
+        aliases=["polls"],
+        usage="(sub-command)",
+        description="This command manage the server's polls",
+    )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def poll_command(self, ctx: Context):
+    async def poll_group(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -33,7 +39,7 @@ class Moderation(Cog):
 
     """ COMMAND(S) """
 
-    @poll_command.command(
+    @poll_group.command(
         name="create",
         aliases=["new"],
         brief="🎛️",
@@ -111,7 +117,7 @@ class Moderation(Cog):
             self.bot.utils_class.poll_completion, (ctx.guild, poll), count=1
         )
 
-    @poll_command.command(
+    @poll_group.command(
         name="info",
         aliases=["infos"],
         brief="🎛️",
@@ -247,7 +253,7 @@ class Moderation(Cog):
 
         await ctx.send(content=None, embed=em)
 
-    @poll_command.command(
+    @poll_group.command(
         name="end",
         aliases=["ends", "finish"],
         brief="🛑",
@@ -284,7 +290,7 @@ class Moderation(Cog):
             f"ℹ️ - The poll `{poll_msg.embeds[0].title}` (ID: `{poll_msg.id}`) has been ended prematurely successfully!"
         )
 
-    @poll_command.command(
+    @poll_group.command(
         name="delete",
         aliases=["del", "remove"],
         brief="🚫",

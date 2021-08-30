@@ -9,19 +9,20 @@
 from aiohttp import ClientSession
 from asyncio import get_event_loop
 from datetime import date
-from discord import Intents, Colour, Member, Message
+from discord import Colour, Forbidden, Intents, Member, Message
 from discord.ext.commands import Bot, Context
 from discord.ext.commands.errors import (
-    MissingRequiredArgument,
-    MissingPermissions,
     BotMissingPermissions,
-    CommandOnCooldown,
     BadArgument,
-    NotOwner,
-    MissingAnyRole,
-    MaxConcurrencyReached,
     BadUnionArgument,
     CheckFailure,
+    CommandInvokeError,
+    CommandOnCooldown,
+    MaxConcurrencyReached,
+    MissingAnyRole,
+    MissingRequiredArgument,
+    MissingPermissions,
+    NotOwner,
 )
 from dislash import InteractionClient
 from dotenv import load_dotenv
@@ -29,6 +30,7 @@ from itertools import chain
 from logging import basicConfig, DEBUG, error, info
 from multiprocessing import Process
 from subprocess import PIPE, call
+from sys import exc_info
 from os import getenv, listdir, makedirs, name, path, system, remove
 from traceback import format_exc
 
@@ -149,31 +151,42 @@ class Omnitron(Bot):
             else:
                 raise _error
         else:
-            print(f"{type(_error)} {_error}")
-            print(format_exc())
-            await ctx.reply(
-                content=f"❌ - An error occurred with the command `{ctx.command.qualified_name}`! Please contact a server administrator, error type: `{type(_error)}`",
-                delete_after=60,
-            )
-            raise _error
+            # print(f"{type(_error)} {_error}")
+            # print(format_exc())
+            # await ctx.reply(
+            #     content=f"❌ - An error occurred with the command `{ctx.command.qualified_name}`! Please contact a server administrator, error type: `{type(_error)}`",
+            #     delete_after=60,
+            # )
+            raise _error.original
 
     async def on_error(self, event, *args, **kwargs):
-        # Log that the bot had an error
-        error(format_exc())
-        print(event)
-        print(format_exc())
-        if args:
-            message = args[0]  # Gets the message object
-            # send the message to the channel
-            if isinstance(message, Member):
-                return await message.send(
+        _error = exc_info()[1]
+        if isinstance(_error, Forbidden):
+            try:
+                await self.utils_class.send_message_to_mods(
+                    _error.text, args[0].guild.id
+                )
+            except AttributeError:
+                await self.utils_class.send_message_to_mods(
+                    _error.text, args[0].guild_id
+                )
+        else:
+            # Log that the bot had an error
+            error(format_exc())
+            print(event)
+            print(format_exc())
+            if args:
+                message = args[0]  # Gets the message object
+                # send the message to the channel
+                if isinstance(message, Member):
+                    return await message.send(
+                        f"An error occured! Please contact server administrator",
+                        delete_after=20,
+                    )
+                await message.channel.send(
                     f"An error occured! Please contact server administrator",
                     delete_after=20,
                 )
-            await message.channel.send(
-                f"An error occured! Please contact server administrator",
-                delete_after=20,
-            )
 
     async def on_message(self, message: Message):
         if message.is_system() or message.author.bot or not message.guild:
