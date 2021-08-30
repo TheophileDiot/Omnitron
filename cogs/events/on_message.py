@@ -41,7 +41,7 @@ class Events(Cog):
                 raise
 
             try:
-                return await msg.add_reaction("👀")
+                await msg.add_reaction("👀")
             except Forbidden as f:
                 f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {ctx.channel.mention} (message: {msg.jump_url}, reaction: 👀)!"
                 raise
@@ -51,14 +51,17 @@ class Events(Cog):
                 await self.bot.utils_class.check_invite(ctx)
             if self.bot.configs[message.guild.id]["xp"]["is_on"]:
                 if (
-                    "xp_gain_channels" in self.bot.configs[message.guild.id]
-                    and message.channel.id
-                    in self.bot.configs[message.guild.id]["xp_gain_channels"][
-                        "TextChannel"
-                    ]
-                    or not self.bot.configs[message.guild.id]["xp_gain_channels"][
-                        "TextChannel"
-                    ]
+                    "xp_gain_channels" not in self.bot.configs[message.guild.id]
+                    or "xp_gain_channels" in self.bot.configs[message.guild.id]
+                    and (
+                        message.channel.id
+                        in self.bot.configs[message.guild.id]["xp_gain_channels"][
+                            "TextChannel"
+                        ]
+                        or not self.bot.configs[message.guild.id]["xp_gain_channels"][
+                            "TextChannel"
+                        ]
+                    )
                 ):
                     _id = f"{message.guild.id}.{message.author.id}"
                     if _id not in self.limitation:
