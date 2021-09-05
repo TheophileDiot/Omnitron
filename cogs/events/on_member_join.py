@@ -20,7 +20,7 @@ class Events(Cog):
         if member.bot:
             return
 
-        self.bot.user_repo.create_user(member.guild.id, member.id, f"{member}")
+        self.bot.user_repo.update_user(member.guild.id, member.id, f"{member}")
         roles = []
 
         try:
@@ -35,7 +35,9 @@ class Events(Cog):
                     f"{self.bot.user}",
                     "joined the server",
                 )
-                self.bot.utils_class.task_launcher(
+                self.bot.tasks[member.guild.id]["mute_completions"][
+                    member.id
+                ] = self.bot.utils_class.task_launcher(
                     self.bot.utils_class.mute_completion,
                     (
                         self.bot.user_repo.get_user(member.guild.id, member.id),

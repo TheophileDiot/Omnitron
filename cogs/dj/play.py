@@ -1,16 +1,17 @@
+from inspect import Parameter
+from re import compile as re_compile
+
 from discord import Embed, Colour
 from discord.ext.commands import (
+    bot_has_permissions,
     BucketType,
     Cog,
     command,
     Context,
-    bot_has_guild_permissions,
     max_concurrency,
 )
 from discord.ext.commands.errors import MissingRequiredArgument
-from inspect import Parameter
 from lavalink.models import AudioTrack
-from re import compile as re_compile
 from youtube_dl import utils, YoutubeDL
 
 from data import Utils
@@ -43,7 +44,7 @@ class Dj(Cog):
     """ CHECKS """
 
     def __ensure_voice(function):
-        async def check(self, ctx: Context, *, query: str = None, **kargs):
+        async def check(self, ctx: Context, *, query: str = None, **kwargs):
             """This check ensures that the bot and command author are in the same voicechannel."""
             player = self.bot.lavalink.player_manager.create(
                 ctx.guild.id, endpoint=str(ctx.guild.region)
@@ -110,7 +111,7 @@ class Dj(Cog):
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
-    @bot_has_guild_permissions(connect=True, speak=True)
+    @bot_has_permissions(connect=True, speak=True, send_messages=True, embed_links=True)
     @max_concurrency(1, per=BucketType.guild)
     @__ensure_voice
     async def play_command(self, ctx: Context, query: str = None):
@@ -139,7 +140,7 @@ class Dj(Cog):
             results = await player.node.get_tracks(query)
 
             # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
-            # ALternatively, resullts['tracks'] could be an empty array if the query yielded no tracks.
+            # ALternatively, results['tracks'] could be an empty array if the query yielded no tracks.
             if not results or not results["tracks"]:
                 return await ctx.reply(
                     f"⚠️ - {ctx.author.mention} - The video or playlist you are looking for does not exist!",

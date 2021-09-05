@@ -1,5 +1,12 @@
-from discord import Embed, Member
-from discord.ext.commands import BucketType, Cog, Context, group, max_concurrency
+from discord import Embed, Member, NotFound
+from discord.ext.commands import (
+    bot_has_permissions,
+    BucketType,
+    Cog,
+    Context,
+    group,
+    max_concurrency,
+)
 from discord.ext.commands.errors import MissingRequiredArgument
 from inspect import Parameter
 from numpy import isnan
@@ -24,6 +31,7 @@ class Miscellaneous(Cog):
         description="This command contains every xp realted commands",
     )
     @Utils.check_bot_starting()
+    @bot_has_permissions(send_messages=True)
     async def xp_group(self, ctx: Context):
         """Group containing every xp commands
 
@@ -48,8 +56,8 @@ class Miscellaneous(Cog):
         usage="add|set|remove @member <number of levels>",
         description="This option manages member's levels",
     )
-    @max_concurrency(1, per=BucketType.guild)
     @Utils.check_moderator()
+    @max_concurrency(1, per=BucketType.guild)
     async def xp_levels_command(
         self, ctx: Context, option: Utils.to_lower, member: Member, value: int = None
     ):
@@ -83,14 +91,14 @@ class Miscellaneous(Cog):
             )  # Add the levels to the user in the database
 
             if warn:
-                apostroph = "'"
+                apostrophe = "'"
                 if true_value == 0:
                     return await ctx.send(
-                        f"ℹ️ - {member.mention} - {'The user you tried to give levels to is' if member.id != ctx.author.id else 'You are'} already max level, {f'he won{apostroph}t be able to' if member.id != ctx.author.id else f'you won{apostroph}t be able to'} gain levels!",
+                        f"ℹ️ - {member.mention} - {'The user you tried to give levels to is' if member.id != ctx.author.id else 'You are'} already max level, {f'he won{apostrophe}t be able to' if member.id != ctx.author.id else f'you won{apostrophe}t be able to'} gain levels!",
                         delete_after=20,
                     )
                 await ctx.send(
-                    f"ℹ️ - {member.mention} - {'The user you gave levels to is' if member.id != ctx.author.id else 'You are'} already level `{nbr_lvls - true_value}`, {f'he won{apostroph}t be able to' if member.id != ctx.author.id else f'you won{apostroph}t be able to'} gain `{value}` additional levels, so the value has been reduced to `{true_value}`!",
+                    f"ℹ️ - {member.mention} - {'The user you gave levels to is' if member.id != ctx.author.id else 'You are'} already level `{nbr_lvls - true_value}`, {f'he won{apostrophe}t be able to' if member.id != ctx.author.id else f'you won{apostrophe}t be able to'} gain `{value}` additional levels, so the value has been reduced to `{true_value}`!",
                     delete_after=20,
                 )
 
@@ -129,14 +137,14 @@ class Miscellaneous(Cog):
             )  # Remove the levels from the user in the database
 
             if warn:
-                apostroph = "'"
+                apostrophe = "'"
                 if true_value == 0:
                     return await ctx.send(
-                        f"ℹ️ - {member.mention} - {'The user you tried to remove levels to is' if member.id != ctx.author.id else 'You are'} already level `1`, {f'he won{apostroph}t be able to' if member.id != ctx.author.id else f'you won{apostroph}t be able to'} lose levels!",
+                        f"ℹ️ - {member.mention} - {'The user you tried to remove levels to is' if member.id != ctx.author.id else 'You are'} already level `1`, {f'he won{apostrophe}t be able to' if member.id != ctx.author.id else f'you won{apostrophe}t be able to'} lose levels!",
                         delete_after=20,
                     )
                 await ctx.send(
-                    f"ℹ️ - {member.mention} - {'The user you removed levels to is' if member.id != ctx.author.id else 'You are'} already level `{nbr_lvls + true_value}`, {f'he won{apostroph}t be able to' if member.id != ctx.author.id else f'you won{apostroph}t be able to'} lose `{value}` additional levels, so the value has been reduced to `{true_value}`!",
+                    f"ℹ️ - {member.mention} - {'The user you removed levels to is' if member.id != ctx.author.id else 'You are'} already level `{nbr_lvls + true_value}`, {f'he won{apostrophe}t be able to' if member.id != ctx.author.id else f'you won{apostrophe}t be able to'} lose `{value}` additional levels, so the value has been reduced to `{true_value}`!",
                     delete_after=20,
                 )
 
@@ -182,6 +190,7 @@ class Miscellaneous(Cog):
             )
 
         db_user = self.bot.user_repo.get_user(ctx.guild.id, ctx.author.id)
+
         if db_user["level"] == self.bot.configs[ctx.guild.id]["xp"]["max_lvl"] and (
             db_user["prestige"] or 0
         ) < len(self.bot.configs[ctx.guild.id]["xp"]["prestiges"]):
@@ -297,47 +306,62 @@ class Miscellaneous(Cog):
                 )
             )  # Sort the dataframe by xp < level < prestige
             add = "of the server *(not including moderators)*"
-            all = False
+            mods = False
+
             if options:
                 options = options.split(" ")
+
             if options and options[0] == "me":
                 if len(options) > 1 and options[1] == "all":
-                    all = True
+                    mods = True
+
                 x = 1
                 for df_user in df_users.index.values:
-                    if all or self.bot.utils_class.is_mod(ctx.author, self.bot):
+                    if mods or self.bot.utils_class.is_mod(ctx.author, self.bot):
                         if df_user == ctx.author.id:
-                            if all or self.bot.utils_class.is_mod(ctx.author, self.bot):
+                            if mods or self.bot.utils_class.is_mod(
+                                ctx.author, self.bot
+                            ):
                                 add = "of the server *(including moderators)*"
+
                             await ctx.send(
                                 f"{ctx.author.mention} - You are in the `{x}{'st' if x == 1 else ('nd' if x == 2 else 'th')}` place {add}! Keep it up! - **Prestige:** {df_users['prestige'][df_user] if not isnan(df_users['prestige'][df_user]) else 0} - **Level:** {df_users['level'][df_user]} - **XP:** {df_users['xp'][df_user]}"
                             )
                             break
+
                         x += 1
             else:
                 if options and options[0] == "all":
-                    all = True
+                    mods = True
                     add = "of the server *(including moderators)*"
+
                 em = Embed(colour=self.bot.color, title=f"Ranking {add}!")
                 em.set_thumbnail(url=ctx.guild.icon_url)
                 em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
                 em.set_footer(
                     text=self.bot.user.name, icon_url=self.bot.user.avatar_url
                 )
+
                 x = 1
                 for df_user in df_users.index.values:
                     if x > 10:
                         break
-                    if all or not self.bot.utils_class.is_mod(
-                        await ctx.guild.fetch_member(int(df_user)), self.bot
-                    ):
+
+                    try:
+                        member = await ctx.guild.try_member(int(df_user))
+                    except NotFound:
+                        continue
+
+                    if mods or not self.bot.utils_class.is_mod(member, self.bot):
                         em.add_field(
                             name=f"{x} - {df_users['name'][df_user]}",
-                            value=f"**Prestige:** {df_users['prestige'][df_user] if not isnan(df_users['prestige'][df_user]) else 0}\n**Niveau:** {df_users['level'][df_user]}\n**XP:** {df_users['xp'][df_user]}",
+                            value=f"**Prestige:** {df_users['prestige'][df_user] if not isnan(df_users['prestige'][df_user]) else 0}\n**Level:** {df_users['level'][df_user]}\n**XP:** {df_users['xp'][df_user]}",
                             inline=True,
                         )
-                        x += 1
-                await ctx.send(content=None, embed=em)
+
+                    x += 1
+
+                await ctx.send(embed=em)
 
 
 def setup(bot):

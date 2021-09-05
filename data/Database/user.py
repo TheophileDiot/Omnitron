@@ -105,10 +105,18 @@ class User:
                 "id": _id,
                 "name": name,
                 "muted": False,
-                "identified": False,
                 "xp": 0,
                 "level": 1,
                 "prestige": 0,
+            },
+        )
+
+    @Utils.resolve_guild_path
+    def update_user(self, guild_id: int, _id: int, name: str) -> None:
+        self.model.update(
+            f"{self.path}/{_id}",
+            args={
+                "name": name,
             },
         )
 
@@ -188,6 +196,19 @@ class User:
 
     @Utils.resolve_guild_path
     @__check_user_exists
+    def clear_join_mutes(self, guild_id: int, _id: int) -> None:
+        db_user = self.get_user(guild_id, _id)
+
+        if "mutes" in db_user:
+            x = 0
+            for mute in db_user["mutes"]:
+                if "reason" in mute and mute["reason"] == "joined the server":
+                    self.model.delete(f"{self.path}/{_id}/mutes/{x}")
+
+                x += 1
+
+    @Utils.resolve_guild_path
+    @__check_user_exists
     def get_last_mute(self, guild_id: int, _id: int) -> dict:
         path = f"{self.path}/{_id}/mutes"
         mutes = [mute for mute in self.model.get(f"{path}")]
@@ -264,7 +285,7 @@ class User:
         path = f"{self.path}/{_id}"
         level = (self.model.get(f"{path}"))["level"]
         self.model.update(f"{self.path}/{_id}", args={"level": level + value})
-        return (warn, value, level + value)
+        return warn, value, level + value
 
     @Utils.resolve_guild_path
     @__check_user_exists
@@ -275,7 +296,7 @@ class User:
         path = f"{self.path}/{_id}"
         level = (self.model.get(f"{path}"))["level"]
         self.model.update(f"{self.path}/{_id}", args={"level": level - value})
-        return (warn, value, level - value)
+        return warn, value, level - value
 
     @Utils.resolve_guild_path
     @__check_user_exists

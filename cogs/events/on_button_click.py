@@ -1,4 +1,4 @@
-from discord import PermissionOverwrite
+from discord import Forbidden, NotFound, PermissionOverwrite
 from discord.ext.commands import Cog
 from dislash import MessageInteraction
 
@@ -19,7 +19,14 @@ class Events(Cog):
             "polls_channel" in self.bot.configs[interaction.guild.id]
             and interaction.channel.id
             == self.bot.configs[interaction.guild.id]["polls_channel"].id
+            and "polls" in self.bot.configs[interaction.guild.id]
         ):
+            if (
+                interaction.message.id
+                not in self.bot.configs[interaction.guild.id]["polls"]
+            ):
+                return
+
             responses = self.bot.poll_repo.get_responses(
                 interaction.guild.id, interaction.message.id
             )
@@ -49,6 +56,8 @@ class Events(Cog):
             "tickets" in self.bot.configs[interaction.guild.id]
             and interaction.channel.id
             == self.bot.configs[interaction.guild.id]["tickets"]["tickets_channel"].id
+            and interaction.component.custom_id
+            == f"{self.bot.configs[interaction.guild.id]['tickets']['tickets_channel'].id}.ticket_create"
         ):
             channel_name = f"ticket-channel-{interaction.author.name.lower()}"
 
@@ -63,20 +72,31 @@ class Events(Cog):
                     ephemeral=True,
                 )
 
-            overwrites = {
-                interaction.guild.get_role(int(m))
-                if interaction.guild.get_role(int(m))
-                else interaction.guild.get_member(int(m)): PermissionOverwrite(
-                    **{
-                        "view_channel": True,
-                        "read_messages": True,
-                        "send_messages": True,
-                    }
-                )
-                for m in set(self.bot.moderators[interaction.guild.id])
-            }
+            overwrites = {}
+
+            for m in set(self.bot.moderators[interaction.guild.id]):
+                try:
+                    overwrites[
+                        interaction.guild.get_role(int(m))
+                        or await interaction.guild.try_member(int(m))
+                    ] = PermissionOverwrite(
+                        **{
+                            "view_channel": True,
+                            "read_messages": True,
+                            "send_messages": True,
+                            "manage_messages": True,
+                        }
+                    )
+                except NotFound:
+                    pass
+
             overwrites[self.bot.user] = PermissionOverwrite(
-                **{"view_channel": True, "read_messages": True, "send_messages": True}
+                **{
+                    "view_channel": True,
+                    "read_messages": True,
+                    "send_messages": True,
+                    "manage_messages": True,
+                }
             )
             overwrites[interaction.author] = PermissionOverwrite(
                 **{"view_channel": True, "read_messages": True, "send_messages": True}
@@ -85,14 +105,22 @@ class Events(Cog):
                 **{"view_channel": False}
             )
 
-            channel = await interaction.guild.create_text_channel(
-                name=channel_name,
-                overwrites=overwrites,
-                category=self.bot.configs[interaction.guild.id]["tickets"][
+            try:
+                channel = await self.bot.configs[interaction.guild.id]["tickets"][
                     "tickets_category"
-                ],
-                reason=f"Creation of the ticket channel of {interaction.author.display_name}",
-            )
+                ].create_text_channel(
+                    name=channel_name,
+                    overwrites=overwrites,
+                    reason=f"Creation of the ticket channel of {interaction.author.display_name}",
+                )
+            except Forbidden as f:
+                await interaction.respond(
+                    content=f"⚠️ - Your ticket channel couldn't be created because i'm missing permissions! Moderators have been informed about this!",
+                    ephemeral=True,
+                )
+                f.text = f"⚠️ - I don't have the right permissions to create channels in the category {self.bot.configs[interaction.guild.id]['tickets']['tickets_category'].mention} (I tried to create a ticket channel for the member {interaction.author})!"
+                raise
+
             self.bot.ticket_repo.create_ticket(
                 interaction.guild.id, channel.id, interaction.author.id
             )
@@ -129,7 +157,12 @@ class Events(Cog):
                     self.bot.ticket_repo.delete_ticket(
                         interaction.guild.id, interaction.channel.id
                     )
-                    await interaction.channel.delete()
+
+                    try:
+                        await interaction.channel.delete()
+                    except Forbidden as f:
+                        f.text = f"⚠️ - I don't have the right permissions to delete channels in the category {self.bot.configs[interaction.guild.id]['tickets']['tickets_category'].mention} (I tried to delete the ticket channel {interaction.channel.mention})!"
+                        raise
                 else:
                     await interaction.respond(
                         content=f"📥 - Cancellation of the ticket deletion!",

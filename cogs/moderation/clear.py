@@ -24,7 +24,9 @@ class Moderation(Cog):
         description="Delete a given number of messages in the channel from everyone or a certain member! (99 max) (default: 10)",
     )
     @has_permissions(manage_messages=True)
-    @bot_has_permissions(read_message_history=True, manage_messages=True)
+    @bot_has_permissions(
+        read_message_history=True, manage_messages=True, send_messages=True
+    )
     @max_concurrency(1, per=BucketType.channel)
     async def clear_command(
         self, ctx: Context, nbr_msgs: int = 10, member: Member = None

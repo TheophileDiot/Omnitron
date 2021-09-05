@@ -1,4 +1,4 @@
-from discord import StageChannel
+from discord import CategoryChannel, StageChannel
 from discord.abc import GuildChannel
 from discord.ext.commands import Cog
 
@@ -78,6 +78,16 @@ class Events(Cog):
             self.bot.config_repo.set_polls_channel(channel.guild.id, None)
             del self.bot.configs[channel.guild.id]["polls_channel"]
 
+            polls = self.bot.poll_repo.get_polls(channel.guild.id)
+            if len(polls) > 1 or polls and "old" not in polls:
+                for poll in polls:
+                    if poll == "old":
+                        continue
+
+                    self.bot.poll_repo.erase_poll(channel.guild.id, poll)
+                    self.bot.configs[channel.guild.id]["polls"][int(poll)].cancel()
+                    del self.bot.configs[channel.guild.id]["polls"][int(poll)]
+
         if (
             "select2role" in self.bot.configs[channel.guild.id]
             and "channel" in self.bot.configs[channel.guild.id]["select2role"]
@@ -102,6 +112,9 @@ class Events(Cog):
             self.bot.config_repo.remove_tickets(channel.guild.id)
             del self.bot.configs[channel.guild.id]["tickets"]
 
+            if isinstance(channel, CategoryChannel):
+                self.bot.ticket_repo.purge_tickets(channel.guild.id)
+
         if (
             "prevent_invites" in self.bot.configs[channel.guild.id]
             and "notify_channel"
@@ -109,7 +122,7 @@ class Events(Cog):
             and self.bot.configs[channel.guild.id]["prevent_invites"]["notify_channel"]
             == channel
         ):
-            self.bot.config_repo.set_invit_prevention(channel.guild.id, None)
+            self.bot.config_repo.set_invite_prevention(channel.guild.id, None)
             del self.bot.configs[channel.guild.id]["prevent_invites"]["notify_channel"]
 
         if (
@@ -125,7 +138,12 @@ class Events(Cog):
             )
             del self.bot.configs[channel.guild.id]["mute_on_join"]["notify_channel"]
 
-        print(self.bot.configs[channel.guild.id])
+        if (
+            "mods_channel" in self.bot.configs[channel.guild.id]
+            and self.bot.configs[channel.guild.id]["mods_channel"] == channel
+        ):
+            self.bot.config_repo.set_mods_channel(channel.guild.id, None)
+            del self.bot.configs[channel.guild.id]["mods_channel"]
 
 
 def setup(bot: Omnitron):

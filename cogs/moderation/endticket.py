@@ -1,4 +1,5 @@
 from discord.ext.commands import (
+    bot_has_permissions,
     BucketType,
     Cog,
     command,
@@ -24,6 +25,7 @@ class Moderation(Cog):
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     @bot_has_guild_permissions(manage_channels=True)
+    @bot_has_permissions(send_messages=True)
     @max_concurrency(1, BucketType.channel)
     async def endticket_command(self, ctx: Context):
         tickets = self.bot.ticket_repo.get_tickets(ctx.guild.id)

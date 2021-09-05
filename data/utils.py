@@ -1,13 +1,14 @@
 from asyncio import sleep
 from collections import OrderedDict
-from discord import Embed, Forbidden, Guild, HTTPException, Message, Member, NotFound
-from discord.ext.tasks import loop
-from discord.ext.commands import Context, check
-from discord.ext.commands.errors import BadArgument
 from math import floor
 from re import compile as re_compile
 from time import time
 from typing import Union
+
+from discord import Embed, Forbidden, Guild, Message, Member, NotFound
+from discord.ext.commands import Context, check
+from discord.ext.commands.errors import BadArgument
+from discord.ext.tasks import loop
 
 from bot import Omnitron
 
@@ -16,33 +17,8 @@ class Utils:
     def __init__(self, bot: Omnitron) -> None:
         self.bot = bot
 
-    # The `args` are the arguments passed into the loop
-    def task_launcher(self, function, param, **interval) -> loop:
-        """Creates new instances of `tasks.Loop`"""
-        # Creating the task
-        # You can also pass a static interval and/or count
-        new_task = loop(**interval)(function)
-        # Starting the task
-        new_task.start(*param)
-        return new_task
-
-    def is_mod(self, member: Member, bot: Omnitron) -> bool:
-        return (
-            set(member.roles) & set(bot.moderators[member.guild.id])
-            or member.id in set(bot.moderators[member.guild.id])
-            or member.guild_permissions.administrator
-        )
-
-    def is_dj(self, member: Member, bot: Omnitron) -> bool:
-        return (
-            not bot.djs[member.guild.id]
-            or set(member.roles) & set(bot.djs[member.guild.id])
-            or member.id in set(bot.djs[member.guild.id])
-            or member.guild_permissions.administrator
-        )
-
     async def check_invite(self, ctx: Context):
-        """This method check if the user sent an invitation link to antoher discord server"""
+        """This method check if the user sent an invitation link to another discord server"""
         if self.is_mod(ctx.author, ctx.bot):
             return
         regex = re_compile(
@@ -112,6 +88,14 @@ class Utils:
         """This method manage the mute completion"""
         await self.bot.wait_until_ready()
         mute = db_user["mutes"][-1]
+
+        if (
+            mute["reason"] == "joined the server"
+            and db_user["id"] in self.bot.tasks[guild_id]["mute_completions"]
+        ):
+            self.bot.user_repo.clear_join_mutes(guild_id, db_user["id"])
+            return
+
         timeout = mute["duration_s"] - (time() - mute["at_ms"])
 
         if timeout <= 0:
@@ -121,20 +105,21 @@ class Utils:
         self.bot.user_repo.unmute_user(guild_id, db_user["id"])
 
         try:
-            member = await (await self.bot.fetch_guild(guild_id)).fetch_member(
-                db_user["id"]
-            )
+            guild = await self.bot.fetch_guild(guild_id)
+            member = await guild.try_member(int(db_user["id"]))
         except NotFound:
-            return
+            member = db_user["name"]
 
-        try:
-            await member.remove_roles(self.bot.configs[guild_id]["muted_role"])
-        except Forbidden as f:
-            f.text = f"⚠️ - I don't have the right permissions to remove the role `@{self.bot.configs[guild_id]['muted_role'].name}` from the member `{member}`!"
-            raise
+        if not isinstance(member, str):
+            try:
+                if "muted_role" in self.bot.configs[guild_id]:
+                    await member.remove_roles(self.bot.configs[guild_id]["muted_role"])
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to remove the role `@{self.bot.configs[guild_id]['muted_role'].name}` from the member `{member}`!"
+                raise
 
         if mute["reason"] == "joined the server":
-            self.bot.user_repo.clear_mutes(guild_id, db_user["id"])
+            self.bot.user_repo.clear_join_mutes(guild_id, db_user["id"])
 
             if "notify_channel" in self.bot.configs[guild_id]["mute_on_join"]:
                 try:
@@ -148,13 +133,17 @@ class Utils:
                     raise
         else:
             if "notify_channel" in self.bot.configs[guild_id]["mute_on_join"]:
+                print("yep")
                 try:
                     await self.bot.configs[guild_id]["mute_on_join"][
                         "notify_channel"
-                    ].send(f"🔊 - The member {member.mention} is no longer muted.")
+                    ].send(f"🔊 - The member `{member}` is no longer muted.")
                 except Forbidden as f:
-                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member {member.mention} is no longer muted.`)!"
+                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member `{member}` is no longer muted.`)!"
                     raise
+
+        if db_user["id"] in self.bot.tasks[guild_id]["mute_completions"]:
+            del self.bot.tasks[guild_id]["mute_completions"][db_user["id"]]
 
     async def send_message_to_mods(self, message: str, guild_id: int):
         """This method send a message to all mods"""
@@ -180,8 +169,8 @@ class Utils:
                             pass
                 else:
                     try:
-                        mod = await guild.fetch_member(int(mod))
-                        m.send(message)
+                        mod = await guild.try_member(int(mod))
+                        mod.send(message)
                     except Forbidden or NotFound:
                         pass
 
@@ -194,7 +183,7 @@ class Utils:
 
                 await guild_owner.send(message)
             except Forbidden or NotFound:
-                return await self.bot.fetch_user(self.bot.owner_id).send(
+                return await (await self.bot.fetch_user(self.bot.owner_id)).send(
                     f"{message}\nAnd couldn't send a message to the owner of the server!"
                 )
 
@@ -303,11 +292,17 @@ class Utils:
 
             return False
 
-    def get_guild_pre(self, arg: Union[Message, Member], *args) -> list:
+    def get_guild_pre(self, arg: Union[Message, Member, int]) -> list:
         try:
-            prefix = self.configs[arg.guild.id]["prefix"]
-        except Exception:
-            prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
+            if isinstance(arg, int):
+                prefix = self.configs[arg]["prefix"]
+            else:
+                prefix = self.configs[arg.guild.id]["prefix"]
+        except AttributeError:
+            if isinstance(arg, int):
+                prefix = self.bot.configs[arg]["prefix"]
+            else:
+                prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
 
         return [prefix, prefix.lower(), prefix.upper()]
 
@@ -390,15 +385,15 @@ class Utils:
 
     @staticmethod
     def resolve_guild_path(function):
-        def check(self, guild_id: int, *args, **kwargs):
+        def check_guild_path(self, guild_id: int, *args, **kwargs):
             self.path = f"guilds/{str(guild_id)}/{self.innerpath}"
             return function(self, guild_id, *args, **kwargs)
 
-        return check
+        return check_guild_path
 
     @staticmethod
     def check_bot_starting():
-        def predicate(ctx: Context, *args, **kwargs):
+        def predicate(ctx: Context):
             return not ctx.bot.starting
 
         return check(predicate)
@@ -420,35 +415,39 @@ class Utils:
 
         seconds = floor(seconds % 60)
         response = ""
-        seperator = ""
+        separator = ""
 
         if days > 0:
-            plurial = "s" if days > 1 else ""
-            response = f"{days} day{plurial}"
-            seperator = ", "
+            plural = "s" if days > 1 else ""
+            response = f"{days} day{plural}"
+            separator = ", "
             response += f", {hours}h" if hours > 0 else ""
         elif hours > 0:
             response = f"{hours}h"
-            seperator = ", "
+            separator = ", "
 
         if (days > 0 or hours > 0) and minutes > 0:
             response += f", {minutes}m"
         elif minutes > 0:
             response = f"{minutes}m"
-            seperator = ", "
+            separator = ", "
 
         if seconds > 0:
-            response += f"{seperator}{seconds}s"
+            response += f"{separator}{seconds}s"
 
         return response
 
-    @classmethod
-    def init_guild(self, bot: Omnitron, guild: Guild):
+    def init_guild(self, guild: Guild):
         """DB USERS"""
+        bot = self.bot
 
-        db_users = set(bot.user_repo.get_users(guild.id).keys())
+        db_users = bot.user_repo.get_users(guild.id)
         members = set(
-            [m for m in guild.members if not m.bot and str(m.id) not in db_users]
+            [
+                m
+                for m in guild.members
+                if not m.bot and str(m.id) not in set(db_users.keys())
+            ]
         )
         for member in members:
             bot.user_repo.create_user(guild.id, member.id, f"{member}")
@@ -458,6 +457,22 @@ class Utils:
         bot.moderators[guild.id] = list(
             [int(k) for k in bot.config_repo.get_moderators(guild.id).keys()]
         )  # Initialize moderators list for every guilds
+
+        bot.tasks[guild.id] = {"mute_completions": {}}
+
+        for db_user in db_users.values():
+            if db_user["muted"]:
+                if "mutes" in db_user:
+                    self.task_launcher(
+                        self.mute_completion,
+                        (
+                            db_user,
+                            guild.id,
+                        ),
+                        count=1,
+                    )
+                else:
+                    bot.user_repo.unmute_user(guild.id, db_user["id"])
 
         """ CONFIG """
 
@@ -502,7 +517,7 @@ class Utils:
 
         """ PREVENT INVITES """
 
-        prevent_invites = bot.config_repo.get_invit_prevention(guild.id)
+        prevent_invites = bot.config_repo.get_invite_prevention(guild.id)
         if prevent_invites:
             bot.configs[guild.id]["prevent_invites"] = {"is_on": True}
 
@@ -539,6 +554,7 @@ class Utils:
 
         xp_gain_channels = bot.config_repo.get_xp_gain_channels(guild.id)
         if xp_gain_channels:
+            bot.configs[guild.id]["xp_gain_channels"] = {}
             text_channels = []
             voice_channels = []
 
@@ -548,10 +564,13 @@ class Utils:
                 else:
                     voice_channels.append(int(k))
 
-            bot.configs[guild.id]["xp_gain_channels"] = {
-                "TextChannel": text_channels,
-                "VoiceChannel": voice_channels,
-            }
+            if text_channels:
+                bot.configs[guild.id]["xp_gain_channels"]["TextChannel"] = text_channels
+
+            if voice_channels:
+                bot.configs[guild.id]["xp_gain_channels"][
+                    "VoiceChannel"
+                ] = voice_channels
 
         """ POLLS """
 
@@ -562,15 +581,13 @@ class Utils:
             )
 
         polls = bot.poll_repo.get_polls(guild.id)
-        if len(polls) > 1 and "old" in polls:
+        if len(polls) > 1 or polls and "old" not in polls:
             bot.configs[guild.id]["polls"] = {}
             for poll in polls:
                 if poll == "old":
                     continue
-                bot.configs[guild.id]["polls"][
-                    int(poll)
-                ] = bot.utils_class.task_launcher(
-                    bot.utils_class.poll_completion, (guild, polls[poll]), count=1
+                bot.configs[guild.id]["polls"][int(poll)] = self.task_launcher(
+                    self.poll_completion, (guild, polls[poll]), count=1
                 )
 
         """ TICKETS """
@@ -619,20 +636,46 @@ class Utils:
         if mods_channel:
             bot.configs[guild.id]["mods_channel"] = guild.get_channel(int(mods_channel))
 
-        print(bot.configs[guild.id])
-
     @classmethod
-    def check_moderator(self):
-        def predicate(ctx: Context, *args, **kwargs):
+    def check_moderator(cls):
+        def predicate(ctx: Context):
             ctx.bot.last_check = "moderator"
-            return self.is_mod(self, ctx.author, ctx.bot)
+            return cls.is_mod(ctx.author, ctx.bot)
 
         return check(predicate)
 
     @classmethod
-    def check_dj(self):
-        def predicate(ctx: Context, *args, **kwargs):
+    def check_dj(cls):
+        def predicate(ctx: Context):
             ctx.bot.last_check = "dj"
-            return self.is_dj(self, ctx.author, ctx.bot)
+            return cls.is_dj(ctx.author, ctx.bot)
 
         return check(predicate)
+
+    # The `args` are the arguments passed into the loop
+    @staticmethod
+    def task_launcher(function, param, **interval) -> loop:
+        """Creates new instances of `tasks.Loop`"""
+        # Creating the task
+        # You can also pass a static interval and/or count
+        new_task = loop(**interval)(function)
+        # Starting the task
+        new_task.start(*param)
+        return new_task
+
+    @staticmethod
+    def is_mod(member: Member, bot: Omnitron) -> bool:
+        return (
+            set(member.roles) & set(bot.moderators[member.guild.id])
+            or member.id in set(bot.moderators[member.guild.id])
+            or member.guild_permissions.administrator
+        )
+
+    @staticmethod
+    def is_dj(member: Member, bot: Omnitron) -> bool:
+        return (
+            not bot.djs[member.guild.id]
+            or set(member.roles) & set(bot.djs[member.guild.id])
+            or member.id in set(bot.djs[member.guild.id])
+            or member.guild_permissions.administrator
+        )

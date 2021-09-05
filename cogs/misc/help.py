@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from discord import Embed
-from discord.ext.commands import Cog, command, Context, Group
+from discord.ext.commands import bot_has_permissions, Cog, command, Context, Group
 
 from bot import Omnitron
 from data import Utils
@@ -14,8 +14,9 @@ class Miscellaneous(Cog):
         name="help",
         aliases=["h", "halp"],
         usage="(command)",
-        description="Show every bot's command or infos about a specific one",
+        description="Show every bot command or infos about a specific one",
     )
+    @bot_has_permissions(send_messages=True)
     async def help_command(
         self, ctx: Context, _command: Utils.to_lower = None, *args: Utils.to_lower
     ):

@@ -1,4 +1,4 @@
-from discord.ext.commands import Cog, command, Context
+from discord.ext.commands import bot_has_permissions, Cog, command, Context
 from time import monotonic
 
 from bot import Omnitron
@@ -9,6 +9,7 @@ class Miscellaneous(Cog):
         self.bot = bot
 
     @command(name="ping", aliases=["latency"], description="Check bot latency!")
+    @bot_has_permissions(send_messages=True)
     async def ping_command(self, ctx: Context):
         before = monotonic()
         message_ping = await ctx.send("ℹ️ - Pong!")

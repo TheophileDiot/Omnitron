@@ -1,4 +1,4 @@
-from discord.ext.commands import Context, Cog, command
+from discord.ext.commands import bot_has_permissions, Context, Cog, command
 from discord.permissions import Permissions
 
 from bot import Omnitron
@@ -16,8 +16,8 @@ class Moderation(Cog):
         description="Send a message to a specified salon or the current one!",
     )
     @Utils.check_moderator()
+    @bot_has_permissions(send_messages=True)
     async def say_command(self, ctx: Context, *, args: str):
-        bot_member = await ctx.guild.fetch_member(self.bot.user.id)
         channel = ctx.channel
         if ctx.message.channel_mentions:
             channel = ctx.message.channel_mentions[0]
@@ -31,15 +31,15 @@ class Moderation(Cog):
                     delete_after=20,
                 )
             elif (
-                not bot_member.permissions_in(channel).view_channel
-                or not bot_member.permissions_in(channel).send_messages
+                not ctx.guild.me.permissions_in(channel).view_channel
+                or not ctx.guild.me.permissions_in(channel).send_messages
             ):
                 return await ctx.reply(
                     f"⛔ - I don't have the necessary perms to send a message in this channel ({channel})! Required perms: `{', '.join([Permissions.view_channel, Permissions.send_messages])}`",
                     delete_after=20,
                 )
 
-        if bot_member.permissions_in(ctx.channel).manage_messages:
+        if ctx.guild.me.permissions_in(ctx.channel).manage_messages:
             await ctx.message.delete()
 
         await channel.send(args)
