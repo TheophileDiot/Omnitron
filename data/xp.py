@@ -1,5 +1,4 @@
-from discord import Role, Member
-from discord.errors import NotFound
+from discord import Forbidden, Role, Member
 from math import floor, ceil
 from random import randint
 
@@ -23,37 +22,36 @@ class Xp_class:
                 ]
             )
             await member.add_roles(new_role)
+        except Forbidden:
+            try:
+                await member.send(
+                    f"⛔ - I do not have the rights to add or remove roles for members! Moderators have been informed about this!"
+                )
+            except Forbidden:
+                pass
 
-            if "notify_channel" in self.bot.configs[member.guild.id]["xp"]:
+            await self.bot.utils_class.send_message_to_mods(
+                f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in [role for role in member.roles if role in self.bot.configs[member.guild.id]['xp']['lvl2role'].values()] + [new_role]])} (i tried to remove the level roles from {member})!",
+                member.guild.id,
+            )
+
+        if "notify_channel" in self.bot.configs[member.guild.id]["xp"]:
+            msg = f"⚠️ - Message not defined for the event {_type} ! - ⚠️"
+
+            try:
                 if _type == "new_lvl":
-                    await self.bot.configs[member.guild.id]["xp"][
-                        "notify_channel"
-                    ].send(
-                        f"🎉 - {member.mention} - You have just passed a rank and have now the `@{new_role.name}` role! - 🎉"
-                    )
+                    msg = f"🎉 - {member.mention} - You have just passed a rank and have now the `@{new_role.name}` role! - 🎉"
                 elif _type == "set_lvl":
-                    await self.bot.configs[member.guild.id]["xp"][
-                        "notify_channel"
-                    ].send(
-                        f"🎉 - {member.mention} - Your level has changed and since you have the required level you have now the `@{new_role.name}` role! - 🎉"
-                    )
+                    msg = f"🎉 - {member.mention} - Your level has changed and since you have the required level you have now the `@{new_role.name}` role! - 🎉"
                 elif _type == "new_r_2_l":
-                    await self.bot.configs[member.guild.id]["xp"][
-                        "notify_channel"
-                    ].send(
-                        f"🎉 - {member.mention} - A new level to role has juste been created and since you have the required level you have now the `@{new_role.name}` role! - 🎉"
-                    )
-        except Exception as e:
-            if isinstance(e, NotFound):
-                return await member.send(
-                    f"⛔ - I couldn't send a message informing you of your new level role because I couldn't find the `xp` room, please contact a server administrator! New role: `{new_role.name}`"
+                    msg = f"🎉 - {member.mention} - A new level to role has juste been created and since you have the required level you have now the `@{new_role.name}` role! - 🎉"
+
+                await self.bot.configs[member.guild.id]["xp"]["notify_channel"].send(
+                    msg
                 )
-            if e.code == 50001:
-                return await member.send(
-                    f"⛔ - I do not have the rights to add or remove roles for members, please contact a server administrator!"
-                )
-            else:
-                raise e
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[member.guild.id]['xp'].mention} (message: `{msg}`)!"
+                raise
 
     async def manage_levels(self, member: Member, level: int, _type: str = ""):
         if "lvl2role" in self.bot.configs[member.guild.id]["xp"]:
@@ -96,8 +94,6 @@ class Xp_class:
 
         db_user = self.bot.user_repo.get_user(member.guild.id, member.id)
 
-        xp_gain = 0
-
         if _type == "vocal":
             xp_gain = floor(randint(15, 25))
             if member.voice.self_deaf:
@@ -128,23 +124,20 @@ class Xp_class:
             self.bot.user_repo.add_levels(member.guild.id, member.id, 1)
 
             if "notify_channel" in self.bot.configs[member.guild.id]["xp"]:
-                if db_user["level"] + 1 == int(
-                    self.bot.configs[member.guild.id]["xp"]["max_lvl"]
-                ):
-                    await self.bot.configs[member.guild.id]["xp"][
-                        "notify_channel"
-                    ].send(
-                        f"🎉 - {member.mention} - You've just reached level `int({self.bot.configs[member.guild.id]['xp']['max_lvl']})`, you have reached the maximum level! You can now pass a prestige with the command `{self.bot.utils_class.get_guild_pre(member)[0]}prestige`! - 🎉"
-                    )
-                else:
-                    await self.bot.configs[member.guild.id]["xp"][
-                        "notify_channel"
-                    ].send(
-                        f"🎉 - {member.mention} - You've just passed to the level `{db_user['level'] + 1}`! - 🎉"
-                    )
+                msg = f"⚠️ - Message not defined for the event {_type} ! - ⚠️"
+
+                try:
+                    if db_user["level"] + 1 == int(
+                        self.bot.configs[member.guild.id]["xp"]["max_lvl"]
+                    ):
+                        msg = f"🎉 - {member.mention} - You've just reached level `int({self.bot.configs[member.guild.id]['xp']['max_lvl']})`, you have reached the maximum level! You can now pass a prestige with the command `{self.bot.utils_class.get_guild_pre(member)[0]}prestige`! - 🎉"
+                    else:
+                        msg = f"🎉 - {member.mention} - You've just passed to the level `{db_user['level'] + 1}`! - 🎉"
+                except Forbidden as f:
+                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[member.guild.id]['xp'].mention} (message: `{msg}`)!"
+                    raise
 
             await self.manage_levels(member, db_user["level"] + 1, "new_lvl")
-        # await self.bot.logs_repo.create_event('xp', time(), member.id, xp_gain, _type)
 
     async def manage_prestige(self, member: Member, _type: str):
         db_user = self.bot.user_repo.get_user(member.guild.id, member.id)

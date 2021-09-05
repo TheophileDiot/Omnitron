@@ -1,13 +1,14 @@
 from discord import (
     CategoryChannel,
     Embed,
+    Forbidden,
     Member,
     NotFound,
     Role,
     TextChannel,
     VoiceChannel,
 )
-from discord.ext.commands import Context, Cog, group
+from discord.ext.commands import bot_has_permissions, Context, Cog, group
 from discord.ext.commands.errors import (
     BadArgument,
     BadUnionArgument,
@@ -41,6 +42,7 @@ class Moderation(Cog):
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
+    @bot_has_permissions(send_messages=True)
     async def config_group(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(
@@ -200,23 +202,27 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} `@{mod}` {'role' if isinstance(mod, Role) else 'member'} to the moderators list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} `@{mod}` {'role' if isinstance(mod, Role) else 'member'} to the moderators list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
             server_mods = self.bot.config_repo.get_moderators(ctx.guild.id).values()
+
             if not server_mods:
                 return await ctx.reply(
                     f"ℹ️ - {ctx.author.mention} - No moderators (members & roles) have been added to the list yet!",
                     delete_after=20,
                 )
+
             server_mods_roles = []
             server_mods_members = []
+
             for m in server_mods:
                 if m["type"] == "Role":
                     server_mods_roles.append(m["name"])
                 else:
                     server_mods_members.append(m["name"])
+
             await ctx.send(
                 f"**ℹ️ - Here's the list of the server's moderators:**\n\n"
                 + (
@@ -282,9 +288,12 @@ class Moderation(Cog):
                             del self.bot.djs[ctx.guild.id][
                                 self.bot.djs[ctx.guild.id].index(dj.id)
                             ]
-                            await ctx.send(
-                                f"ℹ️ - Removed `@{(await ctx.guild.fetch_member(int(dj.id))) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
-                            )
+                            try:
+                                await ctx.send(
+                                    f"ℹ️ - Removed `@{await ctx.guild.try_member(int(dj.id)) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                                )
+                            except NotFound:
+                                pass
 
                     if bot_djs:
                         await ctx.reply(
@@ -325,23 +334,27 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
             server_djs = self.bot.config_repo.get_djs(ctx.guild.id).values()
+
             if not server_djs:
                 return await ctx.reply(
                     f"ℹ️ - {ctx.author.mention} - No djs (members & roles) have been added to the list yet!",
                     delete_after=20,
                 )
+
             server_djs_roles = []
             server_djs_members = []
+
             for m in server_djs:
                 if m["type"] == "Role":
                     server_djs_roles.append(m["name"])
                 else:
                     server_djs_members.append(m["name"])
+
             await ctx.send(
                 f"**ℹ️ - Here's the list of the server's djs:**\n\n"
                 + (
@@ -380,7 +393,7 @@ class Moderation(Cog):
                 elif option == "reset":
                     self.bot.config_repo.set_prefix(ctx.guild.id)
                     self.bot.configs[ctx.guild.id]["prefix"] = "o!"
-                    await ctx.send(f"ℹ️ - Bot prefix reseted to `o!`.")
+                    await ctx.send(f"ℹ️ - Bot prefix hs been reset to `o!`.")
                 else:
                     await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
@@ -390,14 +403,19 @@ class Moderation(Cog):
                 raise MissingRequiredArgument(param=mre.param)
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'resetting the prefix' if option == 'reset' else f'setting the prefix to `{prefix}`'}! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'resetting the prefix' if option == 'reset' else f'setting the prefix to `{prefix}`'}! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
             msg = await ctx.send(
                 f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`!"
             )
-            await msg.add_reaction("👀")
+
+            try:
+                await msg.add_reaction("👀")
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {ctx.channel.mention} (message: {msg.jump_url}, reaction: 👀)!"
+                raise
 
     @config_group.command(
         pass_context=True,
@@ -405,7 +423,7 @@ class Moderation(Cog):
         aliases=["ticket"],
         brief="📥",
         description="This option manage the server's tickets channel and category!",
-        usage="(on|update|off) (#channel) (#category|<category_name>)",
+        usage="(on|update|resolve|off) (#channel) (#category|<category_name>)",
     )
     async def config_tickets_command(
         self,
@@ -417,7 +435,7 @@ class Moderation(Cog):
         if option:
             try:
                 val = False
-                if option in ("on", "update"):
+                if option in ("on", "update", "resolve"):
                     val = True
                 elif option == "off":
                     val = False
@@ -429,7 +447,7 @@ class Moderation(Cog):
 
                 if (
                     "tickets" in self.bot.configs[ctx.guild.id]
-                ) == val and option != "update":
+                ) == val and option not in ("update", "resolve"):
                     return await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - The tickets are already set to `{BOOL2VAL[val]}`!"
                         + (
@@ -442,13 +460,31 @@ class Moderation(Cog):
                     )
 
                 if val:
-                    if not tickets_channel:
+                    if "tickets" not in self.bot.configs[ctx.guild.id] and option in ("update", "resolve"):
+                        return await ctx.reply(f"ℹ️ - {ctx.author.mention} - The tickets are set to `OFF`! Please activate them before {'updating' if option == 'update' else 'resolving'}.")
+                    if option == "resolve":
+                        if "tickets_channel" not in self.bot.configs[ctx.guild.id]["tickets"]:
+                            return await ctx.reply(f"ℹ️ - {ctx.author.mention} - There is no tickets_channel configure! Please configure one before resolving.")
+
+                        if [
+                            m
+                            for m in set(
+                                await self.bot.configs[ctx.guild.id]["tickets"][
+                                    "tickets_channel"
+                                ].history(limit=10).flatten()
+                            )
+                            if m.author.id == self.bot.user.id
+                        ]:
+                            return await ctx.reply(f"ℹ️ - {ctx.author.mention} - There is no need for the ticket message to be resolved.")
+
+                        tickets_channel = self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
+                    elif not tickets_channel:
                         raise MissingRequiredArgument(
                             param=Parameter(
                                 name="tickets_channel", kind=Parameter.KEYWORD_ONLY
                             )
                         )
-                    if option != "update" and isinstance(
+                    elif option != "update" and isinstance(
                         tickets_channel, CategoryChannel
                     ):
                         raise BadArgument
@@ -470,15 +506,32 @@ class Moderation(Cog):
                             ].id,
                             tickets_channel.id
                             if isinstance(tickets_channel, CategoryChannel)
-                            else self.bot.configs[ctx.guild.id]["tickets"][
+                            else tickets_category if isinstance(tickets_channel, CategoryChannel) else self.bot.configs[ctx.guild.id]["tickets"][
                                 "tickets_category"
                             ].id,
                         )
 
                         if isinstance(tickets_channel, TextChannel):
-                            await self.bot.configs[ctx.guild.id]["tickets"][
-                                "tickets_channel"
-                            ].purge(check=lambda m: m.author.id == self.bot.user.id)
+                            if (
+                                ctx.guild.me.permissions_in(
+                                    self.bot.configs[ctx.guild.id]["tickets"][
+                                        "tickets_channel"
+                                    ]
+                                ).read_message_history
+                                and ctx.guild.me.permissions_in(
+                                    self.bot.configs[ctx.guild.id]["tickets"][
+                                        "tickets_channel"
+                                    ]
+                                ).manage_messages
+                            ):
+                                await self.bot.configs[ctx.guild.id]["tickets"][
+                                    "tickets_channel"
+                                ].purge(check=lambda m: m.author.id == self.bot.user.id)
+                            else:
+                                await self.bot.utils_class.send_message_to_mods(
+                                    f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}!",
+                                    ctx.guild.id,
+                                )
 
                         self.bot.configs[ctx.guild.id]["tickets"] = {
                             "tickets_channel": tickets_channel
@@ -488,12 +541,12 @@ class Moderation(Cog):
                             ],
                             "tickets_category": tickets_channel
                             if isinstance(tickets_channel, CategoryChannel)
-                            else self.bot.configs[ctx.guild.id]["tickets"][
+                            else tickets_category if isinstance(tickets_channel, CategoryChannel) else self.bot.configs[ctx.guild.id]["tickets"][
                                 "tickets_category"
                             ],
                         }
 
-                    else:
+                    elif option != "resolve":
                         self.bot.config_repo.set_tickets(
                             ctx.guild.id,
                             val,
@@ -517,32 +570,64 @@ class Moderation(Cog):
                             text=self.bot.user.name, icon_url=self.bot.user.avatar_url
                         )
 
+                        if ctx.guild.me.permissions_in(
+                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
+                        ).send_messages:
+                            await self.bot.configs[ctx.guild.id]["tickets"][
+                                "tickets_channel"
+                            ].send(
+                                content=None,
+                                embed=em,
+                                components=[
+                                    ActionRow(
+                                        Button(
+                                            style=1,
+                                            emoji="📥",
+                                            custom_id=f"{self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].id}.ticket_create",
+                                        )
+                                    )
+                                ],
+                            )
+                        else:
+                            await self.bot.utils_class.send_message_to_mods(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention} (i tried to send the message that allow users to create tickets so please reactivate this feature after changing the permissions)!",
+                                ctx.guild.id,
+                            )
+                else:
+                    if (
+                        ctx.guild.me.permissions_in(
+                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
+                        ).read_message_history
+                        and ctx.guild.me.permissions_in(
+                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
+                        ).manage_messages
+                    ):
                         await self.bot.configs[ctx.guild.id]["tickets"][
                             "tickets_channel"
-                        ].send(
-                            content=None,
-                            embed=em,
-                            components=[
-                                ActionRow(
-                                    Button(
-                                        style=1, emoji="📥", custom_id="ticket_create"
-                                    )
-                                )
-                            ],
+                        ].purge(check=lambda m: m.author.id == self.bot.user.id)
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}!",
+                            ctx.guild.id,
                         )
-                else:
-                    await self.bot.configs[ctx.guild.id]["tickets"][
-                        "tickets_channel"
-                    ].purge(check=lambda m: m.author.id == self.bot.user.id)
+
                     channels = set(
                         self.bot.configs[ctx.guild.id]["tickets"][
                             "tickets_category"
                         ].channels
                     )
 
-                    for channel in channels:
-                        await channel.delete(
-                            reason=f"Tickets turned off by {ctx.author}!"
+                    if ctx.guild.me.permissions_in(
+                        self.bot.configs[ctx.guild.id]["tickets"]["tickets_category"]
+                    ).manage_channels:
+                        for channel in channels:
+                            await channel.delete(
+                                reason=f"Tickets turned off by {ctx.author}!"
+                            )
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention}!",
+                            ctx.guild.id,
                         )
 
                     self.bot.ticket_repo.purge_tickets(ctx.guild.id)
@@ -550,12 +635,12 @@ class Moderation(Cog):
                     del self.bot.configs[ctx.guild.id]["tickets"]
 
                 await ctx.send(
-                    f"ℹ️ - The tickets are now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
+                    f"ℹ️ - The tickets are now `{BOOL2VAL[val] if option not in ('update', 'resolve') else ('UPDATED' if option == 'update' else 'RESOLVED')}` in this guild!"
                     + (
                         " Parameters: "
                         + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
                         + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
-                        if "tickets" in self.bot.configs[ctx.guild.id]
+                        if "tickets" in self.bot.configs[ctx.guild.id] and option != "resolve"
                         else ""
                     )
                 )
@@ -565,7 +650,7 @@ class Moderation(Cog):
                 raise BadArgument
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -586,7 +671,7 @@ class Moderation(Cog):
         aliases=["select_2_role", "select2role"],
         brief="🥸",
         description="This option manage the server's server_2_role feature!",
-        usage='add|update|remove|purge "Title" @role',
+        usage='add|update|resolve|remove|purge "Title" @role',
     )
     async def config_select_2_role_command(
         self,
@@ -709,10 +794,20 @@ class Moderation(Cog):
                             del self.bot.configs[ctx.guild.id]["select2role"]["selects"]
 
                         members = set(ctx.guild.members)
-                        for member in members:
-                            if member.bot:
-                                continue
-                            await member.remove_roles(role)
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot:
+                                    continue
+
+                                try:
+                                    await member.remove_roles(role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
+                                    raise
+                elif option == "resolve":
+                    await ctx.send(
+                        f"ℹ️ - Resolved the select2role message successfully."
+                    )
                 elif option == "purge":
                     if (
                         "select2role" not in self.bot.configs[ctx.guild.id]
@@ -736,10 +831,22 @@ class Moderation(Cog):
                     )
 
                     members = set(ctx.guild.members)
-                    for member in members:
-                        if member.bot:
-                            continue
-                        await member.remove_roles(*roles)
+                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot:
+                                    continue
+
+                                try:
+                                    await member.remove_roles(*roles)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
+                                    raise
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)!",
+                            ctx.guild.id,
+                        )
                 else:
                     return await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
@@ -747,16 +854,19 @@ class Moderation(Cog):
                     )
 
                 if "channel" in self.bot.configs[ctx.guild.id]["select2role"]:
-                    try:
-                        roles_msg = await self.bot.configs[ctx.guild.id]["select2role"][
-                            "channel"
-                        ].fetch_message(
-                            self.bot.configs[ctx.guild.id]["select2role"][
-                                "roles_msg_id"
-                            ]
-                        )
-                    except NotFound:
-                        roles_msg = None
+                    roles_msg = None
+
+                    if "roles_msg_id" in self.bot.configs[ctx.guild.id]["select2role"]:
+                        try:
+                            roles_msg = await self.bot.configs[ctx.guild.id]["select2role"][
+                                "channel"
+                            ].fetch_message(
+                                self.bot.configs[ctx.guild.id]["select2role"][
+                                    "roles_msg_id"
+                                ]
+                            )
+                        except NotFound:
+                            pass
 
                     em = Embed(
                         colour=self.bot.color,
@@ -817,34 +927,42 @@ class Moderation(Cog):
                             else None,
                         )
                     else:
-                        self.bot.configs[ctx.guild.id]["select2role"][
-                            "roles_msg_id"
-                        ] = (
-                            await self.bot.configs[ctx.guild.id]["select2role"][
-                                "channel"
-                            ].send(
-                                content=None,
-                                embed=em,
-                                components=[
-                                    SelectMenu(
-                                        options=options,
-                                        custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
-                                        placeholder="Choose one or more role!",
-                                        min_values=0,
-                                        max_values=len(options),
-                                    )
-                                ]
-                                if options
-                                else None,
+                        if ctx.guild.me.permissions_in(
+                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
+                        ).send_messages:
+                            self.bot.configs[ctx.guild.id]["select2role"][
+                                "roles_msg_id"
+                            ] = (
+                                await self.bot.configs[ctx.guild.id]["select2role"][
+                                    "channel"
+                                ].send(
+                                    content=None,
+                                    embed=em,
+                                    components=[
+                                        SelectMenu(
+                                            options=options,
+                                            custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                            placeholder="Choose one or more role!",
+                                            min_values=0,
+                                            max_values=len(options),
+                                        )
+                                    ]
+                                    if options
+                                    else None,
+                                )
+                            ).id
+                        else:
+                            await self.bot.utils_class.send_message_to_mods(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention} (i tried to send the message that allow users to select a role so please reactivate this feature after changing the permissions)!",
+                                ctx.guild.id,
                             )
-                        ).id
             except MissingRequiredArgument as mre:
                 raise MissingRequiredArgument(param=mre.param)
-            except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
-                    delete_after=20,
-                )
+            # except Exception as e:
+            #     await ctx.reply(
+            #         f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
+            #         delete_after=20,
+            #     )
         else:
             if (
                 "select2role" not in self.bot.configs[ctx.guild.id]
@@ -897,12 +1015,45 @@ class Moderation(Cog):
                             delete_after=20,
                         )
 
+                    old_role = None
+                    if "muted_role" in self.bot.configs[ctx.guild.id]:
+                        old_role = self.bot.configs[ctx.guild.id]["muted_role"]
+
                     self.bot.config_repo.set_muted_role(ctx.guild.id, muted.id)
                     self.bot.configs[ctx.guild.id]["muted_role"] = muted
 
                     await ctx.send(
                         f"ℹ️ - The muted role is now `@{muted}` in this guild!"
                     )
+
+                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        db_users = self.bot.user_repo.get_users(ctx.guild.id)
+                        for db_user in db_users.values():
+                            if db_user["muted"]:
+                                try:
+                                    member = await ctx.guild.try_member(
+                                        int(db_user["id"])
+                                    )
+                                except NotFound:
+                                    continue
+
+                                if old_role:
+                                    try:
+                                        await member.remove_roles(old_role)
+                                    except Forbidden as f:
+                                        f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
+                                        raise
+
+                                try:
+                                    await member.add_roles(muted)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to add the role `{muted}` to {member} (maybe the role is above mine)"
+                                    raise
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to manage these roles {f'`@{old_role.name}` ' if old_role else ''}`@{muted.name}` (i tried to replace the old muted role with the new one from muted members)!",
+                            ctx.guild.id,
+                        )
                 elif option == "remove":
                     if "muted_role" not in self.bot.configs[ctx.guild.id]:
                         return await ctx.reply(
@@ -910,12 +1061,35 @@ class Moderation(Cog):
                             delete_after=20,
                         )
 
+                    old_role = self.bot.configs[ctx.guild.id]["muted_role"]
                     self.bot.config_repo.set_muted_role(ctx.guild.id, None)
                     del self.bot.configs[ctx.guild.id]["muted_role"]
 
                     await ctx.send(
                         f"ℹ️ - The muted role is now removed from this guild!"
                     )
+
+                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        db_users = self.bot.user_repo.get_users(ctx.guild.id)
+                        for db_user in db_users.values():
+                            if db_user["muted"]:
+                                try:
+                                    member = await ctx.guild.try_member(
+                                        int(db_user["id"])
+                                    )
+                                except NotFound:
+                                    continue
+
+                                try:
+                                    await member.remove_roles(*old_role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
+                                    raise
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old muted role from muted members)!",
+                            ctx.guild.id,
+                        )
                 else:
                     return await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
@@ -927,7 +1101,7 @@ class Moderation(Cog):
                 raise BadArgument
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while configuring the muted_role! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while configuring the muted_role! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -977,7 +1151,7 @@ class Moderation(Cog):
                     )
 
                 if val:
-                    self.bot.config_repo.set_invit_prevention(
+                    self.bot.config_repo.set_invite_prevention(
                         ctx.guild.id, notify_channel.id if notify_channel else None
                     )
                     self.bot.configs[ctx.guild.id]["prevent_invites"] = {"is_on": True}
@@ -987,7 +1161,7 @@ class Moderation(Cog):
                             "notify_channel"
                         ] = notify_channel
                 else:
-                    self.bot.config_repo.remove_invit_prevention(ctx.guild.id)
+                    self.bot.config_repo.remove_invite_prevention(ctx.guild.id)
                     del self.bot.configs[ctx.guild.id]["prevent_invites"]
 
                 await ctx.send(
@@ -1000,7 +1174,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the invites prevention `{BOOL2VAL[val]}`' if option != 'update' else 'updating the invites prevention'}! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the invites prevention `{BOOL2VAL[val]}`' if option != 'update' else 'updating the invites prevention'}! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -1111,7 +1285,7 @@ class Moderation(Cog):
                 raise BadArgument
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -1160,7 +1334,7 @@ class Moderation(Cog):
                 await ctx.send(f"ℹ️ - The xp is now `{BOOL2VAL[val]}` in this guild!")
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while setting the xp `{BOOL2VAL[val]}`! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while setting the xp `{BOOL2VAL[val]}`! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -1247,9 +1421,13 @@ class Moderation(Cog):
                         del self.bot.configs[ctx.guild.id]["xp"]["boosteds"][
                             str(boosted.id)
                         ]
-                        await ctx.send(
-                            f"ℹ️ - Removed `@{(await ctx.guild.fetch_member(int(boosted.id))) if isinstance(boosted, Member) else ctx.guild.get_role(int(boosted.id))}` {'role' if isinstance(boosted, Role) else 'member'} from the boosted xp list."
-                        )
+
+                        try:
+                            await ctx.send(
+                                f"ℹ️ - Removed `@{await ctx.guild.try_member(int(boosted.id)) if isinstance(boosted, Member) else ctx.guild.get_role(int(boosted.id))}` {'role' if isinstance(boosted, Role) else 'member'} from the boosted xp list."
+                            )
+                        except NotFound:
+                            pass
 
                         if not self.bot.configs[ctx.guild.id]["xp"]["boosteds"]:
                             del self.bot.configs[ctx.guild.id]["xp"]["boosteds"]
@@ -1280,7 +1458,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} {'to' if option != 'update' else 'from'} the boosters list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} {'to' if option != 'update' else 'from'} the boosters list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -1348,7 +1526,7 @@ class Moderation(Cog):
                 )
         except Exception as e:
             await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occured while setting the server's max level! please try again in a few seconds! Error type: {type(e)}",
+                f"⚠️ - {ctx.author.mention} - An error occurred while setting the server's max level! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 
@@ -1447,12 +1625,16 @@ class Moderation(Cog):
 
                         db_users = self.bot.user_repo.get_users(ctx.guild.id)
                         members = set(ctx.guild.members)
-                        for member in members:
-                            if member.bot:
-                                continue
-                            await self.xp_class.manage_levels(
-                                member, db_users[str(member.id)]["level"], "new_r_2_l"
-                            )
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot:
+                                    continue
+
+                                await self.xp_class.manage_levels(
+                                    member,
+                                    db_users[str(member.id)]["level"],
+                                    "new_r_2_l",
+                                )
                     elif option == "remove":
                         if "lvl2role" not in self.bot.configs[ctx.guild.id][
                             "xp"
@@ -1473,11 +1655,23 @@ class Moderation(Cog):
                         if not self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]:
                             del self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]
 
-                        members = set(ctx.guild.members)
-                        for member in members:
-                            if member.bot:
-                                continue
-                            await member.remove_roles(role)
+                        if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                            members = set(ctx.guild.members)
+                            async with self.bot.limiter:
+                                for member in members:
+                                    if member.bot:
+                                        continue
+
+                                    try:
+                                        await member.remove_roles(role)
+                                    except Forbidden as f:
+                                        f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
+                                        raise
+                        else:
+                            await self.bot.utils_class.send_message_to_mods(
+                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)!",
+                                ctx.guild.id,
+                            )
                 elif option == "purge":
                     if "lvl2role" not in self.bot.configs[ctx.guild.id]["xp"]:
                         return await ctx.reply(
@@ -1494,11 +1688,23 @@ class Moderation(Cog):
                         f"ℹ️ - Removed all the levels from the level to role list."
                     )
 
-                    members = set(ctx.guild.members)
-                    for member in members:
-                        if member.bot:
-                            continue
-                        await member.remove_roles(*roles)
+                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        members = set(ctx.guild.members)
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot:
+                                    continue
+
+                                try:
+                                    await member.remove_roles(*roles)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
+                                    raise
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)!",
+                            ctx.guild.id,
+                        )
                 else:
                     await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
@@ -1514,7 +1720,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the level `{lvl}` {'to' if option != 'update' else 'from'} the level to role list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the level `{lvl}` {'to' if option != 'update' else 'from'} the level to role list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -1669,12 +1875,29 @@ class Moderation(Cog):
                         f"ℹ️ - Updated the prestige `{prestige}` corresponding to the `@{role}` role from the prestiges list."
                     )
 
-                    members = set(ctx.guild.members)
-                    for member in members:
-                        if member.bot or old_role not in member.roles:
-                            continue
-                        await member.remove_roles(*old_role)
-                        await member.add_roles(*role)
+                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        members = set(ctx.guild.members)
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or old_role not in member.roles:
+                                    continue
+
+                                try:
+                                    await member.remove_roles(old_role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
+                                    raise
+
+                                try:
+                                    await member.add_roles(role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to add the role `{role}` to {member} (maybe the role is above mine)"
+                                    raise
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)!",
+                            ctx.guild.id,
+                        )
                 elif option == "remove":
                     if "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
                         return await ctx.reply(
@@ -1693,12 +1916,29 @@ class Moderation(Cog):
                     if not self.bot.configs[ctx.guild.id]["xp"]["prestiges"]:
                         del self.bot.configs[ctx.guild.id]["xp"]["prestiges"]
 
-                    members = set(ctx.guild.members)
-                    for member in members:
-                        if member.bot or old_role not in member.roles:
-                            continue
-                        await member.remove_roles(old_role)
-                        await self.xp_class.manage_prestige(member, "removed_prestige")
+                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        members = set(ctx.guild.members)
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or old_role not in member.roles:
+                                    continue
+
+                                try:
+                                    await member.remove_roles(old_role)
+                                except Forbidden:
+                                    await self.bot.utils_class.send_message_to_mods(
+                                        f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)",
+                                        ctx.guild.id,
+                                    )
+
+                                await self.xp_class.manage_prestige(
+                                    member, "removed_prestige"
+                                )
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)!",
+                            ctx.guild.id,
+                        )
                 elif option == "purge":
                     if "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
                         return await ctx.reply(
@@ -1715,12 +1955,29 @@ class Moderation(Cog):
                         f"ℹ️ - Removed all the prestiges from the prestiges list."
                     )
 
-                    members = set(ctx.guild.members)
-                    for member in members:
-                        if member.bot or not set(member.roles) & set(old_roles):
-                            continue
-                        await member.remove_roles(*old_roles)
-                        await self.xp_class.manage_prestige(member, "purged_prestiges")
+                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        members = set(ctx.guild.members)
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or not set(member.roles) & set(old_roles):
+                                    continue
+
+                                try:
+                                    await member.remove_roles(*old_roles)
+                                except Forbidden:
+                                    await self.bot.utils_class.send_message_to_mods(
+                                        f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in old_roles])} from {member} (maybe one of these roles is above mine)",
+                                        ctx.guild.id,
+                                    )
+
+                                await self.xp_class.manage_prestige(
+                                    member, "purged_prestiges"
+                                )
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)!",
+                            ctx.guild.id,
+                        )
                 else:
                     await ctx.reply(
                         f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
@@ -1736,7 +1993,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the prestige `{prestige}` {'to' if option != 'update' else 'from'} the prestiges list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the prestige `{prestige}` {'to' if option != 'update' else 'from'} the prestiges list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -1864,7 +2121,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} {channel.mention} to the commands channels list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} {channel.mention} to the commands channels list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -1993,7 +2250,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} {channel.mention} to the music channels list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} {channel.mention} to the music channels list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -2151,7 +2408,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occured while {'adding' if option == 'add' else 'removing'} {channel.mention} to the xp gain channels list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} {channel.mention} to the xp gain channels list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -2255,7 +2512,7 @@ class Moderation(Cog):
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
             await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occured while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
+                f"⚠️ - {ctx.author.mention} - An error occurred while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 
@@ -2291,6 +2548,11 @@ class Moderation(Cog):
                             f"ℹ️ - This channel is already the one configured to have polls sent in it!",
                             delete_after=20,
                         )
+                    elif not ctx.guild.me.permissions_in(polls_channel).send_messages:
+                        return await ctx.reply(
+                            f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it!",
+                            delete_after=20,
+                        )
 
                     self.bot.config_repo.set_polls_channel(
                         ctx.guild.id, polls_channel.id
@@ -2308,14 +2570,90 @@ class Moderation(Cog):
                     if old_polls_channel:
                         polls = self.bot.poll_repo.get_polls(ctx.guild.id)
 
+                        if len(polls) > 1 or polls and "old" not in polls:
+                            if not ctx.guild.me.permissions_in(
+                                old_polls_channel
+                            ).manage_messages:
+                                await self.bot.utils_class.send_message_to_mods(
+                                    f"⚠️ - I don't have the right permissions to delete messages in the channel {old_polls_channel.mention}! (I tried to delete the old polls)",
+                                    ctx.guild.id,
+                                )
+
+                            for poll in polls:
+                                if poll == "old":
+                                    continue
+
+                                try:
+                                    poll_msg = await old_polls_channel.fetch_message(
+                                        int(poll)
+                                    )
+                                except NotFound:
+                                    continue
+
+                                self.bot.poll_repo.erase_poll(ctx.guild.id, poll)
+                                self.bot.configs[ctx.guild.id]["polls"][
+                                    poll_msg.id
+                                ].cancel()
+                                del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
+
+                                if ctx.guild.me.permissions_in(
+                                    old_polls_channel
+                                ).manage_messages:
+                                    await poll_msg.delete()
+
+                                poll = polls[poll]
+
+                                poll_msg = await self.bot.configs[ctx.guild.id][
+                                    "polls_channel"
+                                ].send(
+                                    embed=poll_msg.embeds[0],
+                                    components=poll_msg.components,
+                                )
+
+                                self.bot.poll_repo.create_poll(
+                                    ctx.guild.id,
+                                    poll_msg.id,
+                                    poll["duration_s"]
+                                    - (time() - poll["created_at_ms"]),
+                                    time(),
+                                    poll["choices"],
+                                    poll["responses"] if "responses" in poll else None,
+                                )
+                                poll = self.bot.poll_repo.get_poll(
+                                    ctx.guild.id, poll_msg.id
+                                )
+                                self.bot.configs[ctx.guild.id]["polls"][
+                                    poll_msg.id
+                                ] = self.bot.utils_class.task_launcher(
+                                    self.bot.utils_class.poll_completion,
+                                    (ctx.guild, poll),
+                                    count=1,
+                                )
+                elif option == "remove":
+                    if "polls_channel" not in self.bot.configs[ctx.guild.id]:
+                        return await ctx.reply(
+                            f"ℹ️ - The server already doesn't have a polls channel configured!",
+                            delete_after=20,
+                        )
+
+                    polls = self.bot.poll_repo.get_polls(ctx.guild.id)
+                    if len(polls) > 1 or polls and "old" not in polls:
+                        if not ctx.guild.me.permissions_in(
+                            self.bot.configs[ctx.guild.id]["polls_channel"]
+                        ).manage_messages:
+                            await self.bot.utils_class.send_message_to_mods(
+                                f"⚠️ - I don't have the right permissions to delete messages in the channel {self.bot.configs[ctx.guild.id]['polls_channel'].mention}! (I tried to delete the old polls)",
+                                ctx.guild.id,
+                            )
+
                         for poll in polls:
                             if poll == "old":
                                 continue
 
                             try:
-                                poll_msg = await old_polls_channel.fetch_message(
-                                    int(poll)
-                                )
+                                poll_msg = await self.bot.configs[ctx.guild.id][
+                                    "polls_channel"
+                                ].fetch_message(int(poll))
                             except NotFound:
                                 continue
 
@@ -2324,42 +2662,11 @@ class Moderation(Cog):
                                 poll_msg.id
                             ].cancel()
                             del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
-                            await poll_msg.delete()
 
-                            poll = polls[poll]
-
-                            poll_msg = await self.bot.configs[ctx.guild.id][
-                                "polls_channel"
-                            ].send(
-                                embed=poll_msg.embeds[0],
-                                components=poll_msg.components,
-                            )
-
-                            self.bot.poll_repo.create_poll(
-                                ctx.guild.id,
-                                poll_msg.id,
-                                poll["duration_s"] - (time() - poll["created_at_ms"]),
-                                time(),
-                                poll["choices"],
-                                poll["responses"] if "responses" in poll else None,
-                            )
-                            poll = self.bot.poll_repo.get_poll(
-                                ctx.guild.id, poll_msg.id
-                            )
-                            self.bot.configs[ctx.guild.id]["polls"][
-                                poll_msg.id
-                            ] = self.bot.utils_class.task_launcher(
-                                self.bot.utils_class.poll_completion,
-                                (ctx.guild, poll),
-                                count=1,
-                            )
-
-                elif option == "remove":
-                    if "polls_channel" not in self.bot.configs[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - The server already doesn't have a polls channel configured!",
-                            delete_after=20,
-                        )
+                            if ctx.guild.me.permissions_in(
+                                self.bot.configs[ctx.guild.id]["polls_channel"]
+                            ).manage_messages:
+                                await poll_msg.delete()
 
                     self.bot.config_repo.set_polls_channel(ctx.guild.id, None)
                     del self.bot.configs[ctx.guild.id]["polls_channel"]
@@ -2381,7 +2688,7 @@ class Moderation(Cog):
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
             await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occured while setting the polls channel! please try again in a few seconds! Error type: {type(e)}",
+                f"⚠️ - {ctx.author.mention} - An error occurred while setting the polls channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 
@@ -2416,6 +2723,13 @@ class Moderation(Cog):
                             f"ℹ️ - The server's select to role channel is already {select2role_channel.mention}!",
                             delete_after=20,
                         )
+                    elif not ctx.guild.me.permissions_in(
+                        select2role_channel
+                    ).send_messages:
+                        return await ctx.reply(
+                            f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it!",
+                            delete_after=20,
+                        )
 
                     old_channel = None
                     if "select2role" not in self.bot.configs[ctx.guild.id]:
@@ -2433,9 +2747,20 @@ class Moderation(Cog):
                     )
 
                     if old_channel:
-                        await old_channel.purge(
-                            check=lambda m: m.author.id == self.bot.user.id
-                        )
+                        if (
+                            ctx.guild.me.permissions_in(
+                                old_channel
+                            ).read_message_history
+                            and ctx.guild.me.permissions_in(old_channel).manage_messages
+                        ):
+                            await old_channel.purge(
+                                check=lambda m: m.author.id == self.bot.user.id
+                            )
+                        else:
+                            await self.bot.utils_class.send_message_to_mods(
+                                f"⚠️ - I don't have the right permissions to purge messages in the channel {old_channel.mention}!",
+                                ctx.guild.id,
+                            )
 
                     em = Embed(
                         colour=self.bot.color,
@@ -2515,12 +2840,26 @@ class Moderation(Cog):
                             delete_after=20,
                         )
 
+                    if (
+                        ctx.guild.me.permissions_in(
+                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
+                        ).read_message_history
+                        and ctx.guild.me.permissions_in(
+                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
+                        ).manage_messages
+                    ):
+                        await self.bot.configs[ctx.guild.id]["select2role"][
+                            "channel"
+                        ].purge(check=lambda m: m.author.id == self.bot.user.id)
+                    else:
+                        await self.bot.utils_class.send_message_to_mods(
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}!",
+                            ctx.guild.id,
+                        )
+
                     self.bot.config_repo.set_select2role_channel(ctx.guild.id, None)
-                    await self.bot.configs[ctx.guild.id]["select2role"][
-                        "channel"
-                    ].purge(check=lambda m: m.author.id == self.bot.user.id)
                     del self.bot.configs[ctx.guild.id]["select2role"]["channel"]
-                    del self.bot.configs[ctx.guild.id]["select2role"]["roles_msg"]
+                    del self.bot.configs[ctx.guild.id]["select2role"]["roles_msg_id"]
                     await ctx.send(
                         f"ℹ️ - This guild doesn't have a select to role channel anymore!"
                     )
@@ -2540,7 +2879,7 @@ class Moderation(Cog):
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
             await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occured while setting the select to role channel! please try again in a few seconds! Error type: {type(e)}",
+                f"⚠️ - {ctx.author.mention} - An error occurred while setting the select to role channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 
@@ -2549,7 +2888,7 @@ class Moderation(Cog):
         name="mods_channel",
         aliases=["mod_channel"],
         brief="🔱",
-        description="This option manage the server's mods channel where all the error messages and other informations are sent",
+        description="This option manage the server's mods channel where all the error messages and other information are sent",
         usage="set|remove #channel",
     )
     async def config_channels_mods_channel_command(
@@ -2611,7 +2950,7 @@ class Moderation(Cog):
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
             await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occured while setting the mods channel! please try again in a few seconds! Error type: {type(e)}",
+                f"⚠️ - {ctx.author.mention} - An error occurred while setting the mods channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 

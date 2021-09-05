@@ -1,4 +1,5 @@
 from discord.ext.commands import (
+    bot_has_permissions,
     BucketType,
     Cog,
     command,
@@ -20,6 +21,7 @@ class Dj(Cog):
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
+    @bot_has_permissions(send_messages=True)
     @max_concurrency(1, per=BucketType.guild)
     async def stop_command(self, ctx: Context):
         """Disconnects the player from the voice channel and clears its queue."""

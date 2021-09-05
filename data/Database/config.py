@@ -230,21 +230,21 @@ class Config:
     def purge_xp_prestiges(self, guild_id: int) -> None:
         self.model.delete(f"{self.path}/xp/prestiges")
 
-    """ INVIT PREVENTION """
+    """ INVITE PREVENTION """
 
     @Utils.resolve_guild_path
-    def set_invit_prevention(self, guild_id: int, channel_id: int) -> None:
+    def set_invite_prevention(self, guild_id: int, channel_id: int) -> None:
         self.model.update(
             f"{self.path}/prevent_invites",
             args={"notify_channel_id": channel_id, "is_on": True},
         )
 
     @Utils.resolve_guild_path
-    def remove_invit_prevention(self, guild_id: int) -> None:
+    def remove_invite_prevention(self, guild_id: int) -> None:
         self.model.delete(f"{self.path}/prevent_invites")
 
     @Utils.resolve_guild_path
-    def get_invit_prevention(self, guild_id: int) -> bool:
+    def get_invite_prevention(self, guild_id: int) -> bool:
         return self.model.get(f"{self.path}/prevent_invites") or False
 
     """ MUTE ON JOIN """

@@ -1,8 +1,8 @@
 from discord import Embed, NotFound
 from discord.ext.commands import (
+    bot_has_permissions,
     BucketType,
     Cog,
-    command,
     Context,
     group,
     max_concurrency,
@@ -29,6 +29,7 @@ class Moderation(Cog):
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
+    @bot_has_permissions(send_messages=True)
     async def poll_group(self, ctx: Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(

@@ -1,5 +1,5 @@
 from discord import Embed, Member
-from discord.ext.commands import Cog, command, Context
+from discord.ext.commands import bot_has_permissions, Cog, command, Context
 
 from bot import Omnitron
 
@@ -14,6 +14,7 @@ class Miscellaneous(Cog):
         usage="(@member)",
         description="Get the information from a member or from yourself!",
     )
+    @bot_has_permissions(send_messages=True)
     async def userinfos_command(self, ctx: Context, member: Member = None):
         if not member:
             member = ctx.author

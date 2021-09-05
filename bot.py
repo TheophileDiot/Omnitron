@@ -6,17 +6,26 @@
 # email theophile.diot900@gmail.com
 # linting: black
 # -----------------------------------------------------------
-from aiohttp import ClientSession
 from asyncio import get_event_loop
 from datetime import date
-from discord import Colour, Forbidden, Intents, Member, Message
+from itertools import chain
+from logging import basicConfig, DEBUG, error, info
+from multiprocessing import Process
+from os import getenv, listdir, makedirs, name, path, system, remove
+from ratelimiter import RateLimiter
+from subprocess import PIPE, call
+from time import time
+from sys import exc_info
+from traceback import format_exc
+
+from aiohttp import ClientSession
+from discord import Colour, Forbidden, Intents, Message
 from discord.ext.commands import Bot, Context
 from discord.ext.commands.errors import (
     BotMissingPermissions,
     BadArgument,
     BadUnionArgument,
     CheckFailure,
-    CommandInvokeError,
     CommandOnCooldown,
     MaxConcurrencyReached,
     MissingAnyRole,
@@ -26,13 +35,10 @@ from discord.ext.commands.errors import (
 )
 from dislash import InteractionClient
 from dotenv import load_dotenv
-from itertools import chain
-from logging import basicConfig, DEBUG, error, info
-from multiprocessing import Process
-from subprocess import PIPE, call
-from sys import exc_info
-from os import getenv, listdir, makedirs, name, path, system, remove
-from traceback import format_exc
+
+
+async def limited(until):
+    duration = int(round(until - time()))
 
 
 class Omnitron(Bot):
@@ -43,16 +49,21 @@ class Omnitron(Bot):
             intents=self.get_intents(),
             help_command=None,
             case_insensitive=True,
+            case_insensitive_prefix=True,
             strip_after_prefix=True,
             self_bot=False,
             **kwargs,
         )
+
         [remove(f) for f in listdir(".") if f.startswith("hs_err_pid")]
         [remove(path.join("temp", "musics", f)) for f in listdir("temp/musics")]
+
         with open(path.join("logs", "spring.log"), "w"):
             pass
+
         with open(path.join("temp", "musics.txt"), "w"):
             pass
+
         dirs = chain.from_iterable(
             [
                 [
@@ -60,7 +71,7 @@ class Omnitron(Bot):
                     if path.isfile(path.join("cogs", f, _f))
                     else f"{f}.{_f}"
                     for _f in listdir(path.join("cogs", f))
-                    if _f not in ("__pycache__")
+                    if _f not in "__pycache__"
                 ]
                 for f in listdir("cogs")
                 if path.isdir(path.join("cogs", f))
@@ -70,96 +81,79 @@ class Omnitron(Bot):
         self._extensions = [f for f in dirs]
         self.load_extensions()
         self.session = ClientSession(loop=self.loop)
+        self.limiter = RateLimiter(max_calls=1, period=1, callback=limited)
 
-    """ EVENTS """
-
-    async def on_connect(self):
-        """Connect DB before bot is ready to assure that no calls are made before its ready"""
         self.starting = True
         self.model = Model.setup()
-        await self.init()
+        self.last_check = None
+
+        self.utils_class = Utils(self)
+        self.main_repo = Main(self.model)
+        self.config_repo = Config(self.model)
+        self.poll_repo = Poll(self.model)
+        self.ticket_repo = Ticket(self.model)
+        self.user_repo = User(self.model, self)
         print("Database successfully initialized.")
         info("Database loaded")
-        # create a process for each image
+
+        self.configs = {}
+        self.moderators = {}
+        self.djs = {}
+        self.playlists = {}
+        self.tasks = {}
+
         process = Process(target=self.start_lavalink)
         process.start()  # start the process
         print("Lavalink successfully initialized.")
         info("Lavalink started")
 
-    async def on_ready(self):
         self.color = Colour(BOT_COLOR) or self.user.color
         InteractionClient(self)
+
+    """ EVENTS """
 
     async def on_command_error(self, ctx: Context, _error):
         """Override default command error handler to log errors and prevent the bot from crashing."""
         if isinstance(_error, MissingRequiredArgument):
-            await ctx.reply(
-                f"ℹ️ - The `{ctx.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                delete_after=20,
-            )
+            resp = f"ℹ️ - The `{ctx.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help."
         elif isinstance(_error, MissingPermissions):
-            await ctx.reply(
-                f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`",
-                delete_after=20,
-            )
+            resp = f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
         elif isinstance(_error, MissingAnyRole):
-            await ctx.reply(
-                f"⛔ - You do not have one of the required roles to run this command! One of these roles is required: `{', '.join(_error.missing_roles)}`",
-                delete_after=20,
-            )
+            resp = f"⛔ - You do not have one of the required roles to run this command! One of these roles is required: `{', '.join(_error.missing_roles)}`"
         elif isinstance(_error, NotOwner):
-            await ctx.reply(
-                f"⛔ - The `{ctx.command.qualified_name}` command is reserved for the bot owner!",
-                delete_after=20,
-            )
+            resp = f"⛔ - The `{ctx.command.qualified_name}` command is reserved for the bot owner!"
         elif isinstance(_error, BotMissingPermissions):
-            await ctx.reply(
-                f"⛔ - I don't have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`",
-                delete_after=20,
-            )
+            resp = f"⛔ - I don't have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
         elif isinstance(_error, CommandOnCooldown):
-            await ctx.reply(
-                f"ℹ️ - The `{ctx.command.qualified_name}`command is currently in cooldown, please try again in `{'%.2f' % _error.retry_after}` seconds, this command can be used `{_error.cooldown.rate}` times every `{_error.cooldown.per}` seconds.",
-                delete_after=20,
-            )
+            resp = f"ℹ️ - The `{ctx.command.qualified_name}`command is currently in cooldown, please try again in `{'%.2f' % _error.retry_after}` seconds, this command can be used `{_error.cooldown.rate}` times every `{_error.cooldown.per}` seconds."
         elif isinstance(_error, MaxConcurrencyReached):
-            await ctx.reply(
-                f"ℹ️ - The `{ctx.command.qualified_name}` command has too many executions in progress (`{_error.number}` executions), please try again in a few seconds, this command can only be used a maximum of `{_error.number}` times simultaneously.",
-                delete_after=20,
-            )
+            resp = f"ℹ️ - The `{ctx.command.qualified_name}` command has too many executions in progress (`{_error.number}` executions), please try again in a few seconds, this command can only be used a maximum of `{_error.number}` times simultaneously."
         elif isinstance(_error, BadArgument):
-            await ctx.reply(
-                f"⚠️ - Please provide valid arguments! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                delete_after=20,
-            )
+            resp = f"⚠️ - Please provide valid arguments! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help."
         elif isinstance(_error, BadUnionArgument):
-            await ctx.reply(
-                f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                delete_after=20,
-            )
+            resp = f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help."
         elif isinstance(_error, CheckFailure):
             if self.last_check == "moderator":
-                await ctx.reply(
-                    f"⛔ - {ctx.author.mention} - You must be moderator of this server to use this command!",
-                    delete_after=15,
-                )
+                resp = f"⛔ - {ctx.author.mention} - You must be moderator of this server to use this command!"
             elif self.last_check == "dj":
-                await ctx.reply(
-                    f"⛔ - {ctx.author.mention} - You must be a dj in this server to use this command!",
-                    delete_after=15,
-                )
+                resp = f"⛔ - {ctx.author.mention} - You must be a dj in this server to use this command!"
             else:
                 raise _error
+
+            self.last_check = None
         else:
-            # print(f"{type(_error)} {_error}")
-            # print(format_exc())
-            # await ctx.reply(
-            #     content=f"❌ - An error occurred with the command `{ctx.command.qualified_name}`! Please contact a server administrator, error type: `{type(_error)}`",
-            #     delete_after=60,
-            # )
             raise _error.original
 
+        try:
+            await ctx.reply(resp, delete_after=20)
+        except Forbidden as f:
+            f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message (replying to {ctx.author}): `{resp}`)!"
+            raise
+
     async def on_error(self, event, *args, **kwargs):
+        error(format_exc())
+        print(event)
+        print(format_exc())
         _error = exc_info()[1]
         if isinstance(_error, Forbidden):
             try:
@@ -172,45 +166,29 @@ class Omnitron(Bot):
                 )
         else:
             # Log that the bot had an error
-            error(format_exc())
-            print(event)
-            print(format_exc())
-            if args:
-                message = args[0]  # Gets the message object
-                # send the message to the channel
-                if isinstance(message, Member):
-                    return await message.send(
-                        f"An error occured! Please contact server administrator",
-                        delete_after=20,
-                    )
-                await message.channel.send(
-                    f"An error occured! Please contact server administrator",
-                    delete_after=20,
-                )
+            await (await self.fetch_user(self.owner_id)).send(
+                f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)"
+            )
 
     async def on_message(self, message: Message):
         if message.is_system() or message.author.bot or not message.guild:
             return
 
-        try:
-            prefix = self.utils_class.get_guild_pre(message)
-            has_prefix = message.content[: len(prefix[0])] in prefix
-        except Exception:
-            return
+        prefix = self.utils_class.get_guild_pre(message)
 
-        if has_prefix:
-            await self.process_commands(message, prefix)
+        if message.content.lower().startswith(prefix[0].lower()):
+            await self.process_commands(message)
 
     """ METHOD(S) """
 
-    async def process_commands(self, message: Message, prefix: str):
+    async def process_commands(self, message: Message):
         """This function processes the commands that the user has sent"""
         await self.wait_until_ready()
         ctx = await self.get_context(message=message)
 
         if ctx.command is None:
             return await ctx.reply(
-                f"ℹ️ - This command doesn't exist or is deactivated! Command: `{message.content[len(prefix) - 1::]}`",
+                f"ℹ️ - This command doesn't exist or is deactivated! Command: `{message.content[len(self.utils_class.get_guild_pre(message)[0])::]}`",
                 delete_after=15,
             )
         elif (
@@ -224,19 +202,6 @@ class Omnitron(Bot):
             )
 
         await self.invoke(ctx)
-
-    async def init(self):
-        """When the bot is starting, init the database methods"""
-        self.utils_class = Utils(self)
-        self.main_repo = Main(self.model)
-        self.config_repo = Config(self.model)
-        self.poll_repo = Poll(self.model)
-        self.ticket_repo = Ticket(self.model)
-        self.user_repo = User(self.model, self)
-        self.configs = {}
-        self.moderators = {}
-        self.djs = {}
-        self.playlists = {}
 
     def load_extensions(self, cogs: Context = None, path: str = "cogs."):
         """Loads the default set of extensions or a seperate one if given"""

@@ -42,22 +42,23 @@ class Model:
     @classmethod
     def create(self, path: str, event: str = "set", *, args: dict = "") -> None:
         if event == "push":
-            self.db.child(path).push(args, token=self.user["idToken"])
+            self.db.child(f"dev/{path}").push(args, token=self.user["idToken"])
         elif event == "set":
-            self.db.child(path).set(args, token=self.user["idToken"])
+            self.db.child(f"dev/{path}").set(args, token=self.user["idToken"])
 
     @classmethod
     def update(self, path: str, *, args: dict) -> None:
-        return self.db.child(path).update(args, token=self.user["idToken"])
+        return self.db.child(f"dev/{path}").update(args, token=self.user["idToken"])
 
     @classmethod
     def delete(self, path: str) -> None:
-        return self.db.child(path).remove(token=self.user["idToken"])
+        return self.db.child(f"dev/{path}").remove(token=self.user["idToken"])
 
     @classmethod
     def get(self, path: str) -> OrderedDict:
         return (
-            self.db.child(path).get(token=self.user["idToken"]).val() or OrderedDict()
+            self.db.child(f"dev/{path}").get(token=self.user["idToken"]).val()
+            or OrderedDict()
         )
 
     """ LOOPS """

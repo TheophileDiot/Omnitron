@@ -1,12 +1,14 @@
+from re import compile as re_compile
+
 from discord import Embed, Colour
 from discord.ext.commands import (
+    bot_has_permissions,
     BucketType,
     Cog,
     command,
     Context,
     max_concurrency,
 )
-from re import compile as re_compile
 
 from data import Utils
 
@@ -24,6 +26,7 @@ class Dj(Cog):
         description="Displays the information for the music in the playlist or for a particular one.",
     )
     @Utils.check_bot_starting()
+    @bot_has_permissions(send_messages=True, embed_links=True)
     @max_concurrency(1, per=BucketType.guild)
     async def playlist_command(self, ctx: Context, position: int = None):
         player = self.bot.lavalink.player_manager.get(ctx.guild.id)

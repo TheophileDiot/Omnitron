@@ -1,5 +1,5 @@
 from discord import Embed
-from discord.ext.commands import Cog, command, Context
+from discord.ext.commands import bot_has_permissions, Cog, command, Context
 
 from bot import Omnitron
 
@@ -11,8 +11,9 @@ class Miscellaneous(Cog):
     @command(
         name="serverinfos",
         aliases=["si", "serverinfo"],
-        description="Get server's informations!",
+        description="Get server's information!",
     )
+    @bot_has_permissions(send_messages=True)
     async def serverinfos_command(self, ctx: Context):
         em = Embed(title=f"{ctx.guild.name} server information", colour=self.bot.color)
 

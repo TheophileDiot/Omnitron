@@ -1,12 +1,12 @@
+from logging import info
 from typing import Union
-from discord import Activity, ActivityType, activity
+
+from discord import Activity, ActivityType
 from discord.ext.commands import Cog
 from lavalink import add_event_hook, Client
 from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
-from logging import info
 
 from bot import Omnitron
-from data import Utils
 
 
 class Events(Cog):
@@ -33,7 +33,12 @@ class Events(Cog):
             if not db_guild["present"]:
                 continue
 
-            Utils.init_guild(self.bot, guild)
+            self.bot.utils_class.init_guild(guild)
+
+        print(f"{self.bot.configs = }")
+        print(f"{self.bot.moderators = }")
+        print(f"{self.bot.djs = }")
+        print(f"{self.bot.tasks = }")
 
         print("Omnitron is ready.")
         info("Omnitron successfully started")

@@ -23,7 +23,7 @@ class Events(Cog):
                 guild.id, {"name": guild.name, "owner": f"{guild.owner}"}
             )
 
-        Utils.init_guild(self.bot, guild)
+        self.bot.utils_class.init_guild(guild)
         info(f"Joined the guild {guild.name} ({guild.id}), created by {guild.owner}")
 
 
