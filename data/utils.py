@@ -278,7 +278,7 @@ class Utils:
             return _duration * 60
         elif type_duration == "h":
             return _duration * 3600
-        elif type_duration == "j":
+        elif type_duration == "d":
             return _duration * 86400
         else:
             try:

@@ -4,6 +4,7 @@ from re import compile as re_compile
 from discord import Embed, Colour
 from discord.ext.commands import (
     bot_has_permissions,
+    bot_has_guild_permissions,
     BucketType,
     Cog,
     command,
@@ -97,7 +98,7 @@ class Dj(Cog):
                         f"⚠️ - {ctx.author.mention} - Please be in the same voice channel as the bot to control the music!",
                         delete_after=20,
                     )
-            return await function(self, ctx, query, **kargs)
+            return await function(self, ctx, query, **kwargs)
 
         return check
 
@@ -111,7 +112,8 @@ class Dj(Cog):
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
-    @bot_has_permissions(connect=True, speak=True, send_messages=True, embed_links=True)
+    @bot_has_guild_permissions(connect=True, speak=True)
+    @bot_has_permissions(send_messages=True, embed_links=True)
     @max_concurrency(1, per=BucketType.guild)
     @__ensure_voice
     async def play_command(self, ctx: Context, query: str = None):
