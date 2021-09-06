@@ -11,8 +11,6 @@ class Events(Cog):
 
     @Cog.listener()
     async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
-        print(type(payload.message_id))
-        print(payload.message_id)
         await sleep(3)
 
         if (
@@ -26,7 +24,9 @@ class Events(Cog):
                 for m in set(
                     await self.bot.configs[payload.guild_id]["tickets"][
                         "tickets_channel"
-                    ].history(limit=10).flatten()
+                    ]
+                    .history(limit=10)
+                    .flatten()
                 )
                 if m.author.id == self.bot.user.id
             ]:
