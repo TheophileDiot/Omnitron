@@ -460,24 +460,40 @@ class Moderation(Cog):
                     )
 
                 if val:
-                    if "tickets" not in self.bot.configs[ctx.guild.id] and option in ("update", "resolve"):
-                        return await ctx.reply(f"ℹ️ - {ctx.author.mention} - The tickets are set to `OFF`! Please activate them before {'updating' if option == 'update' else 'resolving'}.")
+                    if "tickets" not in self.bot.configs[ctx.guild.id] and option in (
+                        "update",
+                        "resolve",
+                    ):
+                        return await ctx.reply(
+                            f"ℹ️ - {ctx.author.mention} - The tickets are set to `OFF`! Please activate them before {'updating' if option == 'update' else 'resolving'}."
+                        )
                     if option == "resolve":
-                        if "tickets_channel" not in self.bot.configs[ctx.guild.id]["tickets"]:
-                            return await ctx.reply(f"ℹ️ - {ctx.author.mention} - There is no tickets_channel configure! Please configure one before resolving.")
+                        if (
+                            "tickets_channel"
+                            not in self.bot.configs[ctx.guild.id]["tickets"]
+                        ):
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - There is no tickets_channel configure! Please configure one before resolving."
+                            )
 
                         if [
                             m
                             for m in set(
                                 await self.bot.configs[ctx.guild.id]["tickets"][
                                     "tickets_channel"
-                                ].history(limit=10).flatten()
+                                ]
+                                .history(limit=10)
+                                .flatten()
                             )
                             if m.author.id == self.bot.user.id
                         ]:
-                            return await ctx.reply(f"ℹ️ - {ctx.author.mention} - There is no need for the ticket message to be resolved.")
+                            return await ctx.reply(
+                                f"ℹ️ - {ctx.author.mention} - There is no need for the ticket message to be resolved."
+                            )
 
-                        tickets_channel = self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
+                        tickets_channel = self.bot.configs[ctx.guild.id]["tickets"][
+                            "tickets_channel"
+                        ]
                     elif not tickets_channel:
                         raise MissingRequiredArgument(
                             param=Parameter(
@@ -506,7 +522,9 @@ class Moderation(Cog):
                             ].id,
                             tickets_channel.id
                             if isinstance(tickets_channel, CategoryChannel)
-                            else tickets_category if isinstance(tickets_channel, CategoryChannel) else self.bot.configs[ctx.guild.id]["tickets"][
+                            else tickets_category
+                            if isinstance(tickets_channel, CategoryChannel)
+                            else self.bot.configs[ctx.guild.id]["tickets"][
                                 "tickets_category"
                             ].id,
                         )
@@ -541,7 +559,9 @@ class Moderation(Cog):
                             ],
                             "tickets_category": tickets_channel
                             if isinstance(tickets_channel, CategoryChannel)
-                            else tickets_category if isinstance(tickets_channel, CategoryChannel) else self.bot.configs[ctx.guild.id]["tickets"][
+                            else tickets_category
+                            if isinstance(tickets_channel, CategoryChannel)
+                            else self.bot.configs[ctx.guild.id]["tickets"][
                                 "tickets_category"
                             ],
                         }
@@ -640,7 +660,8 @@ class Moderation(Cog):
                         " Parameters: "
                         + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
                         + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
-                        if "tickets" in self.bot.configs[ctx.guild.id] and option != "resolve"
+                        if "tickets" in self.bot.configs[ctx.guild.id]
+                        and option != "resolve"
                         else ""
                     )
                 )
@@ -858,9 +879,9 @@ class Moderation(Cog):
 
                     if "roles_msg_id" in self.bot.configs[ctx.guild.id]["select2role"]:
                         try:
-                            roles_msg = await self.bot.configs[ctx.guild.id]["select2role"][
-                                "channel"
-                            ].fetch_message(
+                            roles_msg = await self.bot.configs[ctx.guild.id][
+                                "select2role"
+                            ]["channel"].fetch_message(
                                 self.bot.configs[ctx.guild.id]["select2role"][
                                     "roles_msg_id"
                                 ]

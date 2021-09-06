@@ -114,9 +114,14 @@ class Utils:
             try:
                 if "muted_role" in self.bot.configs[guild_id]:
                     await member.remove_roles(self.bot.configs[guild_id]["muted_role"])
-            except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to remove the role `@{self.bot.configs[guild_id]['muted_role'].name}` from the member `{member}`!"
-                raise
+            except Forbidden:
+                if db_user["id"] in self.bot.tasks[guild_id]["mute_completions"]:
+                    del self.bot.tasks[guild_id]["mute_completions"][db_user["id"]]
+
+                return await self.send_message_to_mods(
+                    f"⚠️ - I don't have the right permissions to remove the role `@{self.bot.configs[guild_id]['muted_role'].name}` from the member `{member}`!",
+                    guild_id,
+                )
 
         if mute["reason"] == "joined the server":
             self.bot.user_repo.clear_join_mutes(guild_id, db_user["id"])
@@ -128,19 +133,22 @@ class Utils:
                     ].send(
                         f"🔊 - The member `{member}` has just finished being muted after joining the server! (ID: `{db_user['id']}`)"
                     )
-                except Forbidden as f:
-                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member `{member}` has just finished being muted after joining the server! (ID: `{db_user['id']}`)`)!"
-                    raise
+                except Forbidden:
+                    await self.send_message_to_mods(
+                        f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member `{member}` has just finished being muted after joining the server! (ID: `{db_user['id']}`)`)!",
+                        guild_id,
+                    )
         else:
             if "notify_channel" in self.bot.configs[guild_id]["mute_on_join"]:
-                print("yep")
                 try:
                     await self.bot.configs[guild_id]["mute_on_join"][
                         "notify_channel"
                     ].send(f"🔊 - The member `{member}` is no longer muted.")
-                except Forbidden as f:
-                    f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member `{member}` is no longer muted.`)!"
-                    raise
+                except Forbidden:
+                    await self.send_message_to_mods(
+                        f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[guild_id]['mute_on_join']['notify_channel'].mention} (message: `🔊 - The member `{member}` is no longer muted.`)!",
+                        guild_id,
+                    )
 
         if db_user["id"] in self.bot.tasks[guild_id]["mute_completions"]:
             del self.bot.tasks[guild_id]["mute_completions"][db_user["id"]]
