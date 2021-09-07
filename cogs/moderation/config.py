@@ -979,11 +979,11 @@ class Moderation(Cog):
                             )
             except MissingRequiredArgument as mre:
                 raise MissingRequiredArgument(param=mre.param)
-            # except Exception as e:
-            #     await ctx.reply(
-            #         f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
-            #         delete_after=20,
-            #     )
+            except Exception as e:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
+                )
         else:
             if (
                 "select2role" not in self.bot.configs[ctx.guild.id]

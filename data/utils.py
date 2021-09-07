@@ -90,7 +90,8 @@ class Utils:
         mute = db_user["mutes"][-1]
 
         if (
-            mute["reason"] == "joined the server"
+            "reason" in mute
+            and mute["reason"] == "joined the server"
             and db_user["id"] in self.bot.tasks[guild_id]["mute_completions"]
         ):
             self.bot.user_repo.clear_join_mutes(guild_id, db_user["id"])
@@ -123,7 +124,7 @@ class Utils:
                     guild_id,
                 )
 
-        if mute["reason"] == "joined the server":
+        if "reason" in mute and mute["reason"] == "joined the server":
             self.bot.user_repo.clear_join_mutes(guild_id, db_user["id"])
 
             if "notify_channel" in self.bot.configs[guild_id]["mute_on_join"]:
@@ -471,14 +472,27 @@ class Utils:
         for db_user in db_users.values():
             if db_user["muted"]:
                 if "mutes" in db_user:
-                    self.task_launcher(
-                        self.mute_completion,
-                        (
-                            db_user,
-                            guild.id,
-                        ),
-                        count=1,
-                    )
+                    mute = db_user["mutes"][-1]
+                    if "reason" in mute and mute["reason"] == "joined the server":
+                        self.task_launcher(
+                            self.mute_completion,
+                            (
+                                db_user,
+                                guild.id,
+                            ),
+                            count=1,
+                        )
+                    else:
+                        self.bot.tasks[guild.id]["mute_completions"][
+                            db_user["id"]
+                        ] = self.task_launcher(
+                            self.mute_completion,
+                            (
+                                db_user,
+                                guild.id,
+                            ),
+                            count=1,
+                        )
                 else:
                     bot.user_repo.unmute_user(guild.id, db_user["id"])
 

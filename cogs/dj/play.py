@@ -3,6 +3,7 @@ from re import compile as re_compile
 
 from discord import Embed, Colour
 from discord.ext.commands import (
+    BotMissingPermissions,
     bot_has_permissions,
     bot_has_guild_permissions,
     BucketType,
@@ -13,6 +14,7 @@ from discord.ext.commands import (
 )
 from discord.ext.commands.errors import MissingRequiredArgument
 from lavalink.models import AudioTrack
+from lavalink.exceptions import NodeException
 from youtube_dl import utils, YoutubeDL
 
 from data import Utils
@@ -47,9 +49,16 @@ class Dj(Cog):
     def __ensure_voice(function):
         async def check(self, ctx: Context, *, query: str = None, **kwargs):
             """This check ensures that the bot and command author are in the same voicechannel."""
-            player = self.bot.lavalink.player_manager.create(
-                ctx.guild.id, endpoint=str(ctx.guild.region)
-            )
+            try:
+                player = self.bot.lavalink.player_manager.create(
+                    ctx.guild.id, endpoint=str(ctx.guild.region)
+                )
+            except NodeException:
+                return await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - The player is not ready yet, please try again in a few seconds!",
+                    delete_after=20,
+                )
+
             # Create returns a player if one exists, otherwise creates.
             # This line is important because it ensures that a player always exists for a guild.
 
@@ -89,6 +98,8 @@ class Dj(Cog):
                         f"⚠️ - {ctx.author.mention} - Please be in a valid music channel!",
                         delete_after=20,
                     )
+                elif not ctx.guild.me.permissions_in(ctx.author.voice.channel).connect or not ctx.guild.me.permissions_in(ctx.author.voice.channel).speak:
+                    raise BotMissingPermissions(['connect', 'speak'])
 
                 player.store("channel", ctx.channel.id)
                 await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
@@ -114,8 +125,8 @@ class Dj(Cog):
     @Utils.check_dj()
     @bot_has_guild_permissions(connect=True, speak=True)
     @bot_has_permissions(send_messages=True, embed_links=True)
-    @max_concurrency(1, per=BucketType.guild)
     @__ensure_voice
+    @max_concurrency(1, per=BucketType.guild)
     async def play_command(self, ctx: Context, query: str = None):
         """Searches and plays a song from a given query."""
         async with ctx.typing():
