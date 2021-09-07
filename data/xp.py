@@ -85,10 +85,7 @@ class Xp_class:
     async def manage_xp(self, member: Member, _type: str):
         if (
             member.voice
-            and len(
-                [_ for _ in member.voice.channel.members if not _.bot]
-            )
-            < 2
+            and len([_ for _ in member.voice.channel.members if not _.bot]) < 2
         ):
             return
 

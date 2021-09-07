@@ -590,9 +590,9 @@ class Moderation(Cog):
                             text=self.bot.user.name, icon_url=self.bot.user.avatar_url
                         )
 
-                        if ctx.guild.me.permissions_in(
-                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
-                        ).send_messages:
+                        if self.bot.configs[ctx.guild.id]["tickets"][
+                            "tickets_channel"
+                        ].can_send:
                             await self.bot.configs[ctx.guild.id]["tickets"][
                                 "tickets_channel"
                             ].send(
@@ -948,9 +948,9 @@ class Moderation(Cog):
                             else None,
                         )
                     else:
-                        if ctx.guild.me.permissions_in(
-                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
-                        ).send_messages:
+                        if self.bot.configs[ctx.guild.id]["select2role"][
+                            "channel"
+                        ].can_send:
                             self.bot.configs[ctx.guild.id]["select2role"][
                                 "roles_msg_id"
                             ] = (
@@ -2569,7 +2569,7 @@ class Moderation(Cog):
                             f"ℹ️ - This channel is already the one configured to have polls sent in it!",
                             delete_after=20,
                         )
-                    elif not ctx.guild.me.permissions_in(polls_channel).send_messages:
+                    elif not polls_channel.can_send:
                         return await ctx.reply(
                             f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it!",
                             delete_after=20,
@@ -2744,9 +2744,7 @@ class Moderation(Cog):
                             f"ℹ️ - The server's select to role channel is already {select2role_channel.mention}!",
                             delete_after=20,
                         )
-                    elif not ctx.guild.me.permissions_in(
-                        select2role_channel
-                    ).send_messages:
+                    elif not select2role_channel.can_send:
                         return await ctx.reply(
                             f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it!",
                             delete_after=20,

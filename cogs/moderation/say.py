@@ -23,16 +23,8 @@ class Moderation(Cog):
             channel = ctx.message.channel_mentions[0]
             args = " ".join(args.split(" ")[1::])
             if (
-                not ctx.author.permissions_in(channel).view_channel
-                or not ctx.author.permissions_in(channel).send_messages
-            ):
-                return await ctx.reply(
-                    f"⛔ - You do not have the necessary perms to send a message in this channel ({channel})! Required perms: `{', '.join([Permissions.view_channel, Permissions.send_messages])}`",
-                    delete_after=20,
-                )
-            elif (
                 not ctx.guild.me.permissions_in(channel).view_channel
-                or not ctx.guild.me.permissions_in(channel).send_messages
+                or not channel.can_send
             ):
                 return await ctx.reply(
                     f"⛔ - I don't have the necessary perms to send a message in this channel ({channel})! Required perms: `{', '.join([Permissions.view_channel, Permissions.send_messages])}`",

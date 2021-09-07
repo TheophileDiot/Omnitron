@@ -98,8 +98,11 @@ class Dj(Cog):
                         f"⚠️ - {ctx.author.mention} - Please be in a valid music channel!",
                         delete_after=20,
                     )
-                elif not ctx.guild.me.permissions_in(ctx.author.voice.channel).connect or not ctx.guild.me.permissions_in(ctx.author.voice.channel).speak:
-                    raise BotMissingPermissions(['connect', 'speak'])
+                elif (
+                    not ctx.guild.me.permissions_in(ctx.author.voice.channel).connect
+                    or not ctx.guild.me.permissions_in(ctx.author.voice.channel).speak
+                ):
+                    raise BotMissingPermissions(["connect", "speak"])
 
                 player.store("channel", ctx.channel.id)
                 await ctx.guild.change_voice_state(channel=ctx.author.voice.channel)
