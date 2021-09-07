@@ -28,11 +28,16 @@ class Events(Cog):
                 if self.bot.configs[member.guild.id]["xp"]["is_on"]:
                     if (
                         "xp_gain_channels" in self.bot.configs[member.guild.id]
+                        and "VoiceChannel"
+                        in self.bot.configs[member.guild.id]["xp_gain_channels"]
                         and after.channel.id
                         in self.bot.configs[member.guild.id]["xp_gain_channels"][
                             "VoiceChannel"
                         ]
-                        or not self.bot.configs[member.guild.id]["xp_gain_channels"][
+                        or "xp_gain_channels" in self.bot.configs[member.guild.id]
+                        and "VoiceChannel"
+                        in self.bot.configs[member.guild.id]["xp_gain_channels"]
+                        and not self.bot.configs[member.guild.id]["xp_gain_channels"][
                             "VoiceChannel"
                         ]
                     ):
@@ -41,8 +46,12 @@ class Events(Cog):
                         )
             elif (
                 member.voice.channel == member.guild.afk_channel
-                or self.bot.configs[member.guild.id]["xp_gain_channels"]["VoiceChannel"]
-                and "xp_gain_channels" in self.bot.configs[member.guild.id]
+                or "xp_gain_channels" in self.bot.configs[member.guild.id]
+                and "VoiceChannel"
+                in self.bot.configs[member.guild.id]["xp_gain_channels"]
+                and self.bot.configs[member.guild.id]["xp_gain_channels"][
+                    "VoiceChannel"
+                ]
                 and after.channel.id
                 not in self.bot.configs[member.guild.id]["xp_gain_channels"][
                     "VoiceChannel"
