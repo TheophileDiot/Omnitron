@@ -86,7 +86,7 @@ class Xp_class:
         if (
             member.voice
             and len(
-                [_ for _ in member.voice.channel.members if _.id != self.bot.user.id]
+                [_ for _ in member.voice.channel.members if not _.bot]
             )
             < 2
         ):
