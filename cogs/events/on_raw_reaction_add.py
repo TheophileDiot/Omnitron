@@ -77,20 +77,20 @@ class Events(Cog):
                                 )
                             ]
                         )
-                        await self.send_message_to_mods(
+                        await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to remove the roles {roles} from the member `{payload.member}`!",
                             payload.guild_id,
                         )
 
                         try:
                             return await payload.member.send(
-                                f"⚠️ - I don't have the right permissions to remove the roles {roles} from you so you can't pass the prestige! Please inform a server administrator! (Guild: {await self.bot.fetch_guild(payload.guild_id).name}, ID: {payload.guild_id})"
+                                f"⚠️ - I don't have the right permissions to remove the roles {roles} from you so you can't pass the prestige! Please inform a server administrator! (Guild: {(self.bot.get_guild(payload.guild_id) or await self.bot.fetch_guild(payload.guild_id)).name}, ID: {payload.guild_id})"
                             )
                         except Forbidden:
                             try:
-                                channel = await self.bot.fetch_channel(
+                                channel = self.bot.get_channel(
                                     payload.channel_id
-                                )
+                                ) or await self.bot.fetch_channel(payload.channel_id)
                             except Forbidden as f:
                                 f.text = f"⚠️ - I don't have the right permissions to fetch the channel under the ID {payload.channel_id}!"
                                 raise
@@ -110,17 +110,19 @@ class Events(Cog):
                             ]
                         )
                     except Forbidden:
-                        await self.send_message_to_mods(
+                        await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to add the role {self.bot.configs[payload.guild_id]['xp']['prestiges'][(int(db_user['prestige']) + 1) or 1]} to the member `{payload.member}`!",
                             payload.guild_id,
                         )
 
                         try:
                             return await payload.member.send(
-                                f"⚠️ - I don't have the right permissions to add the role {self.bot.configs[payload.guild_id]['xp']['prestiges'][(int(db_user['prestige']) + 1) or 1]} to you so you can't pass the prestige! Please inform a server administrator! (Guild: {await self.bot.fetch_guild(payload.guild_id).name}, ID: {payload.guild_id})"
+                                f"⚠️ - I don't have the right permissions to add the role {self.bot.configs[payload.guild_id]['xp']['prestiges'][(int(db_user['prestige']) + 1) or 1]} to you so you can't pass the prestige! Please inform a server administrator! (Guild: {(self.bot.get_guild(payload.guild_id) or await self.bot.fetch_guild(payload.guild_id)).name}, ID: {payload.guild_id})"
                             )
                         except Forbidden:
-                            channel = await self.bot.fetch_channel(payload.channel_id)
+                            channel = self.bot.get_channel(
+                                payload.channel_id
+                            ) or await self.bot.fetch_channel(payload.channel_id)
 
                             try:
                                 return await channel.send(
@@ -151,7 +153,8 @@ class Events(Cog):
                 raise
             finally:
                 message = await (
-                    await self.bot.fetch_channel(payload.channel_id)
+                    self.bot.get_channel(payload.channel_id)
+                    or await self.bot.fetch_channel(payload.channel_id)
                 ).fetch_message(payload.message_id)
                 await message.remove_reaction("✅", self.bot.user)
                 await message.remove_reaction("❌", self.bot.user)

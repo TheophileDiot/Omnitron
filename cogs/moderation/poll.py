@@ -183,7 +183,7 @@ class Moderation(Cog):
             em.add_field(
                 name="**⏲️ - Time remaining:**",
                 value=self.bot.utils_class.duration(
-                    poll["duration_s"] - (time() - poll["created_at_ms"])
+                    poll["duration_s"] - (time() - poll["created_at_s"])
                 ),
                 inline=True,
             )
@@ -247,7 +247,7 @@ class Moderation(Cog):
                     ]
                     em.add_field(
                         name=f'Poll "*{poll_message.embeds[0].title}*":',
-                        value=f"**⏲️ - Time remaining:** {self.bot.utils_class.duration(poll['duration_s'] - (time() - poll['created_at_ms']))}{nl}**🔘 - Number of choices:** {len(poll['choices'])}{nl}**🔢 - Number of answers:** {len(poll['responses']) if 'responses' in poll else 'No answers recorded.'}{nl}**🏆 - Leading choice:** {', '.join(winner_choices) if len(winner_choices) != len(poll['choices']) else 'No leading choice.'}",
+                        value=f"**⏲️ - Time remaining:** {self.bot.utils_class.duration(poll['duration_s'] - (time() - poll['created_at_s']))}{nl}**🔘 - Number of choices:** {len(poll['choices'])}{nl}**🔢 - Number of answers:** {len(poll['responses']) if 'responses' in poll else 'No answers recorded.'}{nl}**🏆 - Leading choice:** {', '.join(winner_choices) if len(winner_choices) != len(poll['choices']) else 'No leading choice.'}",
                         inline=True,
                     )
                 x += 1

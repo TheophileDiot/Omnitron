@@ -94,10 +94,23 @@ class Utils:
             and mute["reason"] == "joined the server"
             and db_user["id"] in self.bot.tasks[guild_id]["mute_completions"]
         ):
+            self.bot.user_repo.unmute_user(guild_id, db_user["id"])
             self.bot.user_repo.clear_join_mutes(guild_id, db_user["id"])
+
+            if "muted_role" in self.bot.configs[guild_id]:
+                try:
+                    await (
+                        await (
+                            self.bot.get_guild(guild_id)
+                            or await self.bot.fetch_guild(guild_id)
+                        ).try_member(int(db_user["id"]))
+                    ).remove_roles(self.bot.configs[guild_id]["muted_role"])
+                except NotFound:
+                    pass
+
             return
 
-        timeout = mute["duration_s"] - (time() - mute["at_ms"])
+        timeout = mute["duration_s"] - (time() - mute["at_s"])
 
         if timeout <= 0:
             timeout = 2
@@ -106,7 +119,7 @@ class Utils:
         self.bot.user_repo.unmute_user(guild_id, db_user["id"])
 
         try:
-            guild = await self.bot.fetch_guild(guild_id)
+            guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(guild_id)
             member = await guild.try_member(int(db_user["id"]))
         except NotFound:
             member = db_user["name"]
@@ -154,9 +167,49 @@ class Utils:
         if db_user["id"] in self.bot.tasks[guild_id]["mute_completions"]:
             del self.bot.tasks[guild_id]["mute_completions"][db_user["id"]]
 
+    async def ban_completion(self, banned_user: OrderedDict, guild_id: int):
+        """This method manage the ban completion"""
+        await self.bot.wait_until_ready()
+        timeout = banned_user["ban"]["duration_s"] - (
+            time() - banned_user["ban"]["at_s"]
+        )
+
+        if timeout <= 0:
+            timeout = 2
+
+        await sleep(timeout)
+
+        guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(guild_id)
+        bans = await guild.bans()
+        user = None
+
+        for ban in bans:
+            if ban.user.id == banned_user["id"]:
+                user = ban.user
+
+        reason = f"Unbanned automatically after {self.duration(banned_user['ban']['duration_s'])}"
+
+        self.bot.user_repo.unban_user(
+            guild_id, banned_user["id"], time(), f"{self.bot.user}", reason
+        )
+
+        if user:
+            try:
+                await guild.unban(user, reason=reason)
+            except Forbidden:
+                return await self.send_message_to_mods(
+                    f"⚠️ - I don't have the right permissions to unban the user {f'{user}' if user else 'with the id: ' + banned_user['id']}! ({reason})",
+                    guild_id,
+                )
+
+        await self.send_message_to_mods(
+            f"🚫 - The user {f'{user}' if user else 'with the id: ' + banned_user['id']} is no longer banned from the server.",
+            guild_id,
+        )
+
     async def send_message_to_mods(self, message: str, guild_id: int):
         """This method send a message to all mods"""
-        guild = await self.bot.fetch_guild(guild_id)
+        guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(guild_id)
 
         if "mods_channel" in self.bot.configs[guild_id]:
             try:
@@ -265,14 +318,14 @@ class Utils:
         elif (
             ctx.command.parents[0].name if ctx.command.parents else ""
         ) == "poll" and (
-            _duration <= 600
+            _duration < 600
             and type_duration == "s"
-            or _duration <= 10
+            or _duration < 10
             and type_duration == "m"
         ):
             try:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equalt to 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
                     delete_after=15,
                 )
             except Forbidden as f:
@@ -280,6 +333,42 @@ class Utils:
                 raise
 
             return False
+        elif ctx.command.qualified_name == "sanction mute add" and (
+            _duration < 600
+            and type_duration == "s"
+            or _duration < 10
+            and type_duration == "m"
+        ):
+            try:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equal to 10 minutes to mute a member! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                    delete_after=15,
+                )
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                raise
+
+            return False
+        # elif ctx.command.qualified_name == "sanction ban" and (
+        #     _duration < 86400
+        #     and type_duration == "s"
+        #     or _duration < 1440
+        #     and type_duration == "m"
+        #     or _duration < 24
+        #     and type_duration == "h"
+        #     or _duration < 1
+        #     and type_duration == "d"
+        # ):
+        #     try:
+        #         await ctx.reply(
+        #             f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equal to 1 day to ban a member! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+        #             delete_after=15,
+        #         )
+        #     except Forbidden as f:
+        #         f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+        #         raise
+        #
+        #     return False
 
         if type_duration == "s":
             return _duration * 1
@@ -335,7 +424,7 @@ class Utils:
         poll = args[1]
 
         if len(args) < 3 or len(args) > 2 and not args[2]:
-            timeout = poll["duration_s"] - (time() - poll["created_at_ms"])
+            timeout = poll["duration_s"] - (time() - poll["created_at_s"])
 
             if timeout <= 0:
                 timeout = 2
@@ -495,6 +584,16 @@ class Utils:
                         )
                 else:
                     bot.user_repo.unmute_user(guild.id, db_user["id"])
+
+            if "ban" in db_user:
+                self.task_launcher(
+                    self.ban_completion,
+                    (
+                        db_user,
+                        guild.id,
+                    ),
+                    count=1,
+                )
 
         """ CONFIG """
 

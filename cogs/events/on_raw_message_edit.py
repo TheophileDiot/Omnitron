@@ -17,7 +17,9 @@ class Events(Cog):
             if not payload.guild_id:
                 return
 
-            channel = await self.bot.fetch_channel(payload.channel_id)
+            channel = self.bot.get_channel(
+                payload.channel_id
+            ) or await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
 
             if message.is_system() or message.author.bot:
