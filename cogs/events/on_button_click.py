@@ -68,7 +68,7 @@ class Events(Cog):
                     interaction.guild.id, interaction.author.id
                 )
                 return await interaction.respond(
-                    content=f"You already have an existing ticket channel! {(await self.bot.fetch_channel(ticket['id'])).mention}",
+                    content=f"You already have an existing ticket channel! {(self.bot.get_channel(ticket['id']) or await self.bot.fetch_channel(ticket['id'])).mention}",
                     ephemeral=True,
                 )
 

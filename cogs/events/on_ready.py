@@ -1,7 +1,7 @@
 from logging import info
 from typing import Union
 
-from discord import Activity, ActivityType
+from discord import Activity, ActivityType, NotFound
 from discord.ext.commands import Cog
 from lavalink import add_event_hook, Client
 from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
@@ -74,7 +74,14 @@ class Events(Cog):
             # it indicates that there are no tracks left in the player's queue.
             # To save on resources, we can tell the bot to disconnect from the voicechannel.
             guild_id = int(event.player.guild_id)
-            guild = await self.bot.fetch_guild(guild_id)
+
+            try:
+                guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(
+                    guild_id
+                )
+            except NotFound:
+                return
+
             await self.bot.utils_class.clear_playlist(guild)
             await guild.change_voice_state(channel=None)
         elif isinstance(event, TrackEndEvent):

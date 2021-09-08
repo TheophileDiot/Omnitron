@@ -30,7 +30,7 @@ class Poll:
                 "duration": Utils.duration(_duration),
                 "duration_s": _duration,
                 "created_at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "created_at_ms": at,
+                "created_at_s": at,
                 "choices": {
                     choice.label: 0 for choice in list(chain.from_iterable(choices))
                 }
@@ -59,7 +59,7 @@ class Poll:
                     "duration": poll["duration"],
                     "duration_s": poll["duration_s"],
                     "created_at": poll["created_at"],
-                    "created_at_ms": poll["created_at_ms"],
+                    "created_at_s": poll["created_at_s"],
                     "choices": poll["choices"],
                     "responses": poll["responses"] if "responses" in poll else None,
                 },

@@ -2635,7 +2635,7 @@ class Moderation(Cog):
                                     ctx.guild.id,
                                     poll_msg.id,
                                     poll["duration_s"]
-                                    - (time() - poll["created_at_ms"]),
+                                    - (time() - poll["created_at_s"]),
                                     time(),
                                     poll["choices"],
                                     poll["responses"] if "responses" in poll else None,

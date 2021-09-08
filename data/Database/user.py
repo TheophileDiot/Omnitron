@@ -141,7 +141,7 @@ class User:
             f"{path}/{x}",
             args={
                 "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "at_ms": at,
+                "at_s": at,
                 "by": by,
                 "reason": reason,
             },
@@ -177,7 +177,7 @@ class User:
                 "duration": self.bot.utils_class.duration(_duration),
                 "duration_s": _duration,
                 "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "at_ms": at,
+                "at_s": at,
                 "by": by,
                 "reason": reason,
             },
@@ -220,18 +220,16 @@ class User:
         self, guild_id: int, _id: int, _duration, at: float, by: str, reason: str = None
     ) -> None:
         self.model.create(
-            f"logs/ban/{_id}",
+            f"{self.path}/{_id}/ban",
             args={
-                "id": _id,
                 "duration": self.bot.utils_class.duration(_duration)
                 if isinstance(_duration, int)
                 else "all Eternity",
                 "duration_s": _duration if isinstance(_duration, int) else "infinite",
                 "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "at_ms": at,
+                "at_s": at,
                 "by": by,
                 "reason": reason,
-                "still": True,
             },
         )
 
@@ -240,17 +238,17 @@ class User:
     def unban_user(
         self, guild_id: int, _id: int, at: float, by: str, reason: str = None
     ) -> None:
-        self.model.update(f"logs/ban/{_id}", args={"still": False})
         self.model.create(
-            f"logs/unban/{_id}",
+            f"{self.path}/{_id}/unban/{int(at)}",
             args={
-                "id": _id,
                 "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "at_ms": at,
+                "at_s": at,
                 "by": by,
                 "reason": reason,
+                "original_ban": self.model.get(f"{self.path}/{_id}/ban"),
             },
         )
+        self.model.delete(f"{self.path}/{_id}/ban")
 
     @Utils.resolve_guild_path
     @__check_user_exists
@@ -261,7 +259,7 @@ class User:
             f"logs/kick/{_id}",
             args={
                 "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "at_ms": at,
+                "at_s": at,
                 "by": by,
                 "reason": reason,
             },
@@ -378,7 +376,7 @@ class User:
             f"{self.path}/{_id}/invit_links/{ceil(at)}",
             args={
                 "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "at_ms": at,
+                "at_s": at,
                 "content": content,
             },
         )
