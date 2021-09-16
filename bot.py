@@ -38,7 +38,7 @@ from dotenv import load_dotenv
 
 
 async def limited(until):
-    duration = int(round(until - time()))
+    return int(round(until - time()))
 
 
 class Omnitron(Bot):
@@ -171,7 +171,12 @@ class Omnitron(Bot):
             )
 
     async def on_message(self, message: Message):
-        if message.is_system() or message.author.bot or not message.guild:
+        if (
+            message.is_system()
+            or message.author.bot
+            or not message.guild
+            or self.starting
+        ):
             return
 
         prefix = self.utils_class.get_guild_pre(message)

@@ -20,8 +20,6 @@
   </p>
 </p>
 
-
-
 <!-- TABLE OF CONTENTS -->
 <details open="open">
   <summary><h2 style="display: inline-block">Table of Contents</h2></summary>
@@ -46,31 +44,30 @@
   </ol>
 </details>
 
-
-
 <!-- ABOUT THE PROJECT -->
+
 ## About The Project
 
 ### Built With
 
-* [Python](https://www.python.org)
-* [discord.py](https://discordpy.readthedocs.io/en/stable/)
-
-
+- [Python](https://www.python.org)
+- [discord.py](https://discordpy.readthedocs.io/en/stable/)
 
 <!-- GETTING STARTED -->
+
 ## Getting Started
 
 To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
-* python
-* pip
+- python
+- pip
 
 ### Installation
 
 1. Clone the repo
+
    ```sh
    git clone https://github.com/TheophileDiot/Omnitron.git
    ```
@@ -83,6 +80,7 @@ To get a local copy up and running follow these simple steps.
    ```
 
 3. Install the modules packages
+
    ```sh
    pip install -r requirements.txt
    ```
@@ -90,21 +88,23 @@ To get a local copy up and running follow these simple steps.
 4. Create a .env file and put all your environment variables in it, variables needed : `BOT_TOKEN`, `FIREBASE_APIKEY`, `FIREBASE_AUTHDOMAIN`, `FIREBASE_DATABASEURL`, `FIREBASE_STORAGEBUCKET`, `FIREBASE_USER_EMAIL`, `FIREBASE_USER_PASSWORD` or put them in the data/constants.py file !
 
 ### Launch the bot:
+
 `python bot.py`
 
 ### Buildpacks needed for heroku
-* `https://github.com/xrisk/heroku-opus.git`
-* `https://github.com/heroku/heroku-buildpack-apt`
-* `https://github.com/heroku/heroku-buildpack-jvm-common.git`
+
+- `https://github.com/xrisk/heroku-opus.git`
+- `https://github.com/heroku/heroku-buildpack-apt`
+- `https://github.com/heroku/heroku-buildpack-jvm-common.git`
 
 <!-- ROADMAP -->
+
 ## Roadmap
 
 See the [open issues](https://github.com/TheophileDiot/Omnitron/issues) for a list of proposed features (and known issues).
 
-
-
 <!-- CONTRIBUTING -->
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
@@ -115,16 +115,14 @@ Contributions are what make the open source community such an amazing place to b
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-
-
 <!-- LICENSE -->
+
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-
-
 <!-- CONTACT -->
+
 ## Contact
 
 Project Link: [https://github.com/TheophileDiot/Omnitron](https://github.com/TheophileDiot/Omnitron)

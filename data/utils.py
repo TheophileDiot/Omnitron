@@ -2,7 +2,9 @@ from asyncio import sleep
 from collections import OrderedDict
 from math import floor
 from re import compile as re_compile
+from sys import exc_info
 from time import time
+from traceback import extract_tb
 from typing import Union
 
 from discord import Embed, Forbidden, Guild, Message, Member, NotFound
@@ -349,26 +351,26 @@ class Utils:
                 raise
 
             return False
-        # elif ctx.command.qualified_name == "sanction ban" and (
-        #     _duration < 86400
-        #     and type_duration == "s"
-        #     or _duration < 1440
-        #     and type_duration == "m"
-        #     or _duration < 24
-        #     and type_duration == "h"
-        #     or _duration < 1
-        #     and type_duration == "d"
-        # ):
-        #     try:
-        #         await ctx.reply(
-        #             f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equal to 1 day to ban a member! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-        #             delete_after=15,
-        #         )
-        #     except Forbidden as f:
-        #         f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
-        #         raise
-        #
-        #     return False
+        elif ctx.command.qualified_name == "sanction ban" and (
+            _duration < 86400
+            and type_duration == "s"
+            or _duration < 1440
+            and type_duration == "m"
+            or _duration < 24
+            and type_duration == "h"
+            or _duration < 1
+            and type_duration == "d"
+        ):
+            try:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equal to 1 day to ban a member! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                    delete_after=15,
+                )
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                raise
+
+            return False
 
         if type_duration == "s":
             return _duration * 1
@@ -392,15 +394,25 @@ class Utils:
 
     def get_guild_pre(self, arg: Union[Message, Member, int]) -> list:
         try:
+            if self.starting:
+                return ["", "", ""]
+
             if isinstance(arg, int):
                 prefix = self.configs[arg]["prefix"]
             else:
                 prefix = self.configs[arg.guild.id]["prefix"]
         except AttributeError:
-            if isinstance(arg, int):
-                prefix = self.bot.configs[arg]["prefix"]
-            else:
-                prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
+            if self.bot.starting:
+                return ["", "", ""]
+
+            try:
+                if isinstance(arg, int):
+                    prefix = self.bot.configs[arg]["prefix"]
+                else:
+                    prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
+            except AttributeError:
+                prefix = ""
+                pass
 
         return [prefix, prefix.lower(), prefix.upper()]
 
