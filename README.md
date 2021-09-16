@@ -14,7 +14,7 @@
     <a href="https://github.com/TheophileDiot/Omnitron/issues">Report Bug</a>
     ·
     <a href="https://github.com/TheophileDiot/Omnitron/issues">Request Feature</a>
-    .
+    ·
     <a href="https://theophilediot.github.io/Omnitron/">Documentation</a>
     <br />
     <a href="https://github.com/TheophileDiot/Omnitron/main/LICENSE"><img alt="License: MIT" src="https://black.readthedocs.io/en/stable/_static/license.svg"></a>
