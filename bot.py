@@ -212,6 +212,8 @@ class Omnitron(Bot):
         """Loads the default set of extensions or a seperate one if given"""
         for extension in cogs or self._extensions:
             try:
+                if extension.startswith("dj"): # TODO temporary delete dj commands due to issues with YouTube
+                    continue
                 self.load_extension(f"{path}{extension}")
                 print(f"Loaded cog: {extension}")
             except Exception as e:
