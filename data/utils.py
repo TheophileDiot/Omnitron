@@ -571,7 +571,7 @@ class Utils:
         bot.tasks[guild.id] = {"mute_completions": {}}
 
         for db_user in db_users.values():
-            if db_user["muted"]:
+            if "muted" in db_user and db_user["muted"]:
                 if "mutes" in db_user:
                     mute = db_user["mutes"][-1]
                     if "reason" in mute and mute["reason"] == "joined the server":
