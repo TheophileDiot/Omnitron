@@ -394,25 +394,15 @@ class Utils:
 
     def get_guild_pre(self, arg: Union[Message, Member, int]) -> list:
         try:
-            if self.starting:
-                return ["", "", ""]
-
             if isinstance(arg, int):
                 prefix = self.configs[arg]["prefix"]
             else:
                 prefix = self.configs[arg.guild.id]["prefix"]
         except AttributeError:
-            if self.bot.starting:
-                return ["", "", ""]
-
-            try:
-                if isinstance(arg, int):
-                    prefix = self.bot.configs[arg]["prefix"]
-                else:
-                    prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
-            except AttributeError:
-                prefix = ""
-                pass
+            if isinstance(arg, int):
+                prefix = self.bot.configs[arg]["prefix"]
+            else:
+                prefix = self.bot.configs[arg.guild.id]["prefix"] or "o!"
 
         return [prefix, prefix.lower(), prefix.upper()]
 
