@@ -12,7 +12,7 @@ class Moderation(Cog):
     @command(
         name="say",
         aliases=["acc", "announcement", "talk"],
-        usage='#channel "message"',
+        usage='(#channel) "message"',
         description="Send a message to a specified salon or the current one!",
     )
     @Utils.check_moderator()

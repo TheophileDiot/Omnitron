@@ -86,7 +86,11 @@ class Events(Cog):
             await guild.change_voice_state(channel=None)
         elif isinstance(event, TrackEndEvent):
             guild_id = int(event.player.guild_id)
-            del self.bot.playlists[guild_id][0]
+
+            try:
+                del self.bot.playlists[guild_id][0]
+            except IndexError:
+                pass
         elif isinstance(event, NodeConnectedEvent):
             print("Lavalink node connected!")
 

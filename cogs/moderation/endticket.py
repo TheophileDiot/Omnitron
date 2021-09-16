@@ -20,7 +20,7 @@ class Moderation(Cog):
     @command(
         name="endticket",
         aliases=["et"],
-        description="Created a procedure for deleting a ticket. (can only be used in a ticket channel)",
+        description="Create a procedure to delete a ticket. (can only be used in a ticket channel)",
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
