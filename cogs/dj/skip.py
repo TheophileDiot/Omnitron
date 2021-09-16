@@ -18,7 +18,7 @@ class Dj(Cog):
         name="skip",
         aliases=["next"],
         usage="(number of skip(s))",
-        description="Pause the current music!",
+        description="Skip the music a given number of times!",
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()

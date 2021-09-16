@@ -318,7 +318,7 @@ class Moderation(Cog):
         name="list",
         brief="ℹ️",
         usage="(@member)",
-        description="Show the list of a member's warns or your warns!",
+        description="Show the list of a member's warns or yours!",
     )
     async def sanction_warn_list_command(self, ctx: Context, member: Member = None):
         if not member:
@@ -480,7 +480,7 @@ class Moderation(Cog):
         name="list",
         brief="ℹ",
         usage="(@member)",
-        description="Show the list of a member's mutes or your mutes!",
+        description="Show the list of a member's mutes or yours!",
     )
     async def sanction_mute_list_command(
         self,

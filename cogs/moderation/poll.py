@@ -296,7 +296,7 @@ class Moderation(Cog):
         aliases=["del", "remove"],
         brief="🚫",
         usage="<id_of_the_poll_message>",
-        description="Delete a poll prematurely (unlike the command end it will erase completly the poll and not just end it)",
+        description="Delete a poll prematurely (unlike the command end it will erase completely the poll and not just end it)",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_command(self, ctx: Context, id_message: int):

@@ -221,6 +221,7 @@ class Miscellaneous(Cog):
         name="info",
         aliases=["infos"],
         brief="ℹ️",
+        usage="(@member)",
         description="Displays the current level and the number of xp remaining before the next level for yourself or someone on the server!",
     )
     @max_concurrency(1, per=BucketType.guild)

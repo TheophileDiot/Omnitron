@@ -59,6 +59,7 @@ class Moderation(Cog):
         name="security",
         aliases=["secu"],
         brief="🚓",
+        usage="(sub-command)",
         description="This option manage the server's security",
     )
     async def config_security_group(self, ctx: Context):
@@ -74,6 +75,7 @@ class Moderation(Cog):
         pass_context=True,
         case_insensitive=True,
         name="xp",
+        aliases=["experience"],
         brief="✨",
         usage="(sub-command)",
         description="This option manage the server's experience feature",
@@ -113,7 +115,7 @@ class Moderation(Cog):
         aliases=["mods"],
         brief="🔨",
         description="This option manage the server's moderators (role & members) (can add/remove multiple at a time)",
-        usage="add|remove|purge @role|@member",
+        usage="(add|remove|purge @role|@member)",
     )
     async def config_moderators_command(
         self,
@@ -243,7 +245,7 @@ class Moderation(Cog):
         aliases=["players"],
         brief="🧑‍🎤",
         description="This option manage the server's djs (role & members) (if there is no dj then everyone can use music commands) (can add/remove multiple at a time)",
-        usage="add|remove|purge @role|@member",
+        usage="(add|remove|purge @role|@member)",
     )
     async def config_djs_command(
         self,
@@ -692,7 +694,7 @@ class Moderation(Cog):
         aliases=["select_2_role", "select2role"],
         brief="🥸",
         description="This option manage the server's server_2_role feature!",
-        usage='add|update|resolve|remove|purge "Title" @role',
+        usage='(add|update|resolve|remove|purge "Title" @role)',
     )
     async def config_select_2_role_command(
         self,
@@ -1010,7 +1012,7 @@ class Moderation(Cog):
         aliases=["mute_role"],
         brief="🤐",
         description="This option manage the server's muted role",
-        usage="set|remove @role",
+        usage="(set|remove @role)",
     )
     async def config_djs_command(
         self,
@@ -1369,7 +1371,7 @@ class Moderation(Cog):
         aliases=["boosts", "boosted", "boosteds"],
         brief="🔋",
         description="This option manage the server's boosted roles | members, you can precise what xp bonus they'll get (default = 20%)",
-        usage="add|update|remove|purge @role|@member (<bonus>)",
+        usage="(add|update|remove|purge @role|@member (<bonus>))",
     )
     async def config_xp_boost_command(
         self,
@@ -1557,7 +1559,7 @@ class Moderation(Cog):
         aliases=["level_2_role", "lvl_to_role", "lvl_2_role", "l_2_r"],
         brief="🎭",
         description="This option manage the server's level to role",
-        usage="add|update|remove|purge <level value> @role",
+        usage="(add|update|remove|purge <level value> @role)",
     )
     async def config_xp_lvl2role_command(
         self,
@@ -1765,7 +1767,7 @@ class Moderation(Cog):
         aliases=["prestg", "prestige"],
         brief="💫",
         description="This option manage the server's prestiges",
-        usage="add|update|remove|purge @role <prestige_value>",
+        usage="(add|update|remove|purge @role <prestige_value>)",
     )
     async def config_xp_prestiges_command(
         self,
@@ -2040,7 +2042,7 @@ class Moderation(Cog):
         aliases=["command_channels", "command_channel", "cmds_chans"],
         brief="🕹️",
         description="This option manage the server's commands channels  (if there is no commands channel then commands can be used everywhere) (can add/remove multiple at a time)",
-        usage="add|remove|purge (#channels)",
+        usage="(add|remove|purge (#channels))",
     )
     async def config_channels_commands_channels_command(
         self,
@@ -2161,10 +2163,10 @@ class Moderation(Cog):
     @config_channels_group.command(
         pass_context=True,
         name="music_channels",
-        aliases=["music_channel" "music_chans"],
+        aliases=["music_channel", "music_chans"],
         brief="🎶",
         description="This option manage the server's music channels  (if there is no music channel then music can be listened everywhere) (can add/remove multiple at a time)",
-        usage="add|remove|purge (#voice_channels|<voice_channels_name>)",
+        usage="(add|remove|purge (#voice_channels))",
     )
     async def config_channels_music_channels_command(
         self, ctx: Context, option: Utils.to_lower = None, *channels: VoiceChannel
@@ -2293,7 +2295,7 @@ class Moderation(Cog):
         aliases=["xp_gain_channel"],
         brief="🌌",
         description="This option manage the server's xp gain channels (voice & text)  (if there is no xp gain channels then xp can be gained everywhere) (can add/remove multiple at a time)",
-        usage="add|remove|purge (#voice_channel|<voice_channel_name>)|#TextChannel",
+        usage="(add|remove|purge (#voice_channels|#text_channels))",
     )
     async def config_channels_xp_gain_channels_command(
         self,
@@ -2472,7 +2474,7 @@ class Moderation(Cog):
         aliases=["xp_chan"],
         brief="🌠",
         description="This option manage the server's xp channels where every xp event is sent",
-        usage="set|remove #channel",
+        usage="(set|remove #channel)",
     )
     async def config_channels_xp_max_lvl_command(
         self,
@@ -2543,7 +2545,7 @@ class Moderation(Cog):
         aliases=["polls_chan"],
         brief="📊",
         description="This option manage the server's polls channel where every polls created will be sent",
-        usage="set|remove #channel",
+        usage="(set|remove #channel)",
     )
     async def config_channels_polls_command(
         self,
@@ -2718,8 +2720,8 @@ class Moderation(Cog):
         name="select_to_role_channel",
         aliases=["select2role_channel"],
         brief="🤠",
-        description="This option manage the server's select 2 role channels where the select to role message is sended",
-        usage="set|remove #channel",
+        description="This option manage the server's select 2 role channels where the select to role message is sent",
+        usage="(set|remove #channel)",
     )
     async def config_channels_select2role_channel_command(
         self,
@@ -2908,7 +2910,7 @@ class Moderation(Cog):
         aliases=["mod_channel"],
         brief="🔱",
         description="This option manage the server's mods channel where all the error messages and other information are sent",
-        usage="set|remove #channel",
+        usage="(set|remove #channel)",
     )
     async def config_channels_mods_channel_command(
         self,
