@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Commands &mdash; Omnitron 1.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/dark_mode_css/general.css" type="text/css" />
+      <link rel="stylesheet" href="_static/dark_mode_css/dark.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/dark_mode_js/default_dark.js"></script>
+        <script src="_static/dark_mode_js/theme_switcher.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to Omnitron’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Omnitron
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Commands</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dj">DJ</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#miscellaneous">Miscellaneous</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id2">Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#group-s">Group(s)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#moderation">Moderation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Commands</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Group(s)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Omnitron</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Commands</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/commands.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="commands">
+<h1>Commands<a class="headerlink" href="#commands" title="Permalink to this headline"></a></h1>
+<div class="section" id="dj">
+<h2>DJ<a class="headerlink" href="#dj" title="Permalink to this headline"></a></h2>
+<div class="section" id="id1">
+<h3>Commands<a class="headerlink" href="#id1" title="Permalink to this headline"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 17%" />
+<col style="width: 17%" />
+<col style="width: 56%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>pause</p></td>
+<td><p>None</p></td>
+<td><p>None</p></td>
+<td><p>Pause the current music</p></td>
+</tr>
+<tr class="row-odd"><td><p>play</p></td>
+<td><p>yt_p</p></td>
+<td><p>&lt;Youtube_link&gt;|&lt;Title&gt;</p></td>
+<td><p>Plays a link or title from a Youtube video (supports playlists)</p></td>
+</tr>
+<tr class="row-even"><td><p>playlist</p></td>
+<td><p>queue, list</p></td>
+<td><p>(position)</p></td>
+<td><p>Displays the information for the music in the playlist or for a particular one</p></td>
+</tr>
+<tr class="row-odd"><td><p>skip</p></td>
+<td><p>next</p></td>
+<td><p>(number of skips)</p></td>
+<td><p>Skip the music a given number of times</p></td>
+</tr>
+<tr class="row-even"><td><p>stop</p></td>
+<td><p>end, leave, disconnect</p></td>
+<td><p>None</p></td>
+<td><p>Stop the music in progress</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="miscellaneous">
+<h2>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline"></a></h2>
+<div class="section" id="id2">
+<h3>Commands<a class="headerlink" href="#id2" title="Permalink to this headline"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 16%" />
+<col style="width: 15%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>help</p></td>
+<td><p>h, halp</p></td>
+<td><p>(command)</p></td>
+<td><p>Show every bot command or infos about a specific one</p></td>
+</tr>
+<tr class="row-odd"><td><p>ping</p></td>
+<td><p>latency</p></td>
+<td><p>None</p></td>
+<td><p>Check the bot latency</p></td>
+</tr>
+<tr class="row-even"><td><p>serverinfos</p></td>
+<td><p>si, serverinfo</p></td>
+<td><p>None</p></td>
+<td><p>Get information about the current server</p></td>
+</tr>
+<tr class="row-odd"><td><p>uptime</p></td>
+<td><p>up, time</p></td>
+<td><p>None</p></td>
+<td><p>Shows how long the bot has been connected</p></td>
+</tr>
+<tr class="row-even"><td><p>userinfos</p></td>
+<td><p>ui, userinfo</p></td>
+<td><p>(&#64;member)</p></td>
+<td><p>Get the information from a member or from yourself</p></td>
+</tr>
+<tr class="row-odd"><td><p>(Group) xp</p></td>
+<td><p>experience</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This command contains every xp related commands</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="group-s">
+<h3>Group(s)<a class="headerlink" href="#group-s" title="Permalink to this headline"></a></h3>
+<ul>
+<li><dl>
+<dt><strong>xp</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 7%" />
+<col style="width: 23%" />
+<col style="width: 63%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>info</p></td>
+<td><p>infos</p></td>
+<td><p>(&#64;member)</p></td>
+<td><p>Displays the current level and the number of xp remaining before the next level for yourself or someone on the server</p></td>
+</tr>
+<tr class="row-odd"><td><p>leaderboard</p></td>
+<td><p>ranking, top</p></td>
+<td><p>(me) (all)</p></td>
+<td><p>Display the top 10 members of the server or your own rank (possibility to display the rank of the moderators with all)</p></td>
+</tr>
+<tr class="row-even"><td><p>levels</p></td>
+<td><p>lvl, lvls</p></td>
+<td><p>add|set|remove &#64;member &lt;number of levels&gt;</p></td>
+<td><p>This option manages member’s levels</p></td>
+</tr>
+<tr class="row-odd"><td><p>prestige</p></td>
+<td><p>prstg</p></td>
+<td><p>None</p></td>
+<td><p>Allows you to create a prestige level passage procedure (one procedure at a time, server’s max level required)</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="moderation">
+<h2>Moderation<a class="headerlink" href="#moderation" title="Permalink to this headline"></a></h2>
+<div class="section" id="id3">
+<h3>Commands<a class="headerlink" href="#id3" title="Permalink to this headline"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 15%" />
+<col style="width: 17%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>clear</p></td>
+<td><p>delete</p></td>
+<td><p>&lt;number of messages&gt; (&#64;member)</p></td>
+<td><p>Delete a given number of messages in the channel from everyone or a certain member (99 max) (default: 10)</p></td>
+</tr>
+<tr class="row-odd"><td><p>endticket</p></td>
+<td><p>et</p></td>
+<td><p>None</p></td>
+<td><p>Create a procedure to delete a ticket. (can only be used in a ticket channel)</p></td>
+</tr>
+<tr class="row-even"><td><p>say</p></td>
+<td><p>acc, announcement, talk</p></td>
+<td><p>(#channel) “message”</p></td>
+<td><p>Send a message to a specified salon or the current one</p></td>
+</tr>
+<tr class="row-odd"><td><p>(Group) config</p></td>
+<td><p>cfg</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This command manage the server’s configuration</p></td>
+</tr>
+<tr class="row-even"><td><p>(Group) poll</p></td>
+<td><p>polls</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This command manage the server’s polls</p></td>
+</tr>
+<tr class="row-odd"><td><p>(Group) sanction</p></td>
+<td><p>sanctions, strike, strikes</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This command manage the server’s sanctions</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="id4">
+<h3>Group(s)<a class="headerlink" href="#id4" title="Permalink to this headline"></a></h3>
+<ul>
+<li><dl>
+<dt><strong>config</strong></dt><dd><dl>
+<dt><strong>config commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 11%" />
+<col style="width: 25%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>djs</p></td>
+<td><p>players</p></td>
+<td><p>(add|remove|purge &#64;role|&#64;member)</p></td>
+<td><p>This option manage the server’s djs (role &amp; members) (if there is no dj then everyone can use music commands) (can add/remove multiple at a time)</p></td>
+</tr>
+<tr class="row-odd"><td><p>moderators</p></td>
+<td><p>mods</p></td>
+<td><p>(add|remove|purge &#64;role|&#64;member)</p></td>
+<td><p>This option manage the server’s moderators (role &amp; members) (can add/remove multiple at a time)</p></td>
+</tr>
+<tr class="row-even"><td><p>muted_role</p></td>
+<td><p>mute_role</p></td>
+<td><p>(set|remove &#64;role)</p></td>
+<td><p>This option manage the server’s muted role</p></td>
+</tr>
+<tr class="row-odd"><td><p>prefix</p></td>
+<td><p>prfx</p></td>
+<td><p>(set|reset) (&lt;prefix&gt;)</p></td>
+<td><p>This option manage the server’s prefix</p></td>
+</tr>
+<tr class="row-even"><td><p>select_to_role</p></td>
+<td><p>select_2_role, select2role</p></td>
+<td><p>(add|update|resolve|remove|purge “Title” &#64;role)</p></td>
+<td><p>This option manage the server’s server_2_role feature</p></td>
+</tr>
+<tr class="row-odd"><td><p>tickets</p></td>
+<td><p>ticket</p></td>
+<td><p>(on|update|resolve|off) (#channel) (#category|&lt;category_name&gt;)</p></td>
+<td><p>This option manage the server’s tickets channel and category</p></td>
+</tr>
+<tr class="row-even"><td><p>(Group) channels</p></td>
+<td><p>channel</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This option manage the server’s special channels</p></td>
+</tr>
+<tr class="row-odd"><td><p>(Group) security</p></td>
+<td><p>secu</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This option manage the server’s security</p></td>
+</tr>
+<tr class="row-even"><td><p>(Group) xp</p></td>
+<td><p>experience</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This option manage the server’s experience feature</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><strong>config groups</strong></dt><dd><ul>
+<li><dl>
+<dt><strong>channels commands</strong> (you can add/remove multiple channels at a time)</dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 9%" />
+<col style="width: 18%" />
+<col style="width: 21%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>commands_channels</p></td>
+<td><p>command_channels, command_channel, cmds_chans</p></td>
+<td><p>(add|remove|purge (#channel))</p></td>
+<td><p>This option manage the server’s commands channels (if there is no commands channel then commands can be used everywhere)</p></td>
+</tr>
+<tr class="row-odd"><td><p>mods_channel</p></td>
+<td><p>mod_channel</p></td>
+<td><p>(set|remove #channel)</p></td>
+<td><p>This option manage the server’s mods channel where all the error messages and other information are sent</p></td>
+</tr>
+<tr class="row-even"><td><p>music_channels</p></td>
+<td><p>music_channel, music_chans</p></td>
+<td><p>(add|remove|purge (#voice_channel))</p></td>
+<td><p>This option manage the server’s music channels (if there is no music channel then music can be listened everywhere)</p></td>
+</tr>
+<tr class="row-odd"><td><p>polls_channel</p></td>
+<td><p>polls_chan</p></td>
+<td><p>(set|remove #channel)</p></td>
+<td><p>This option manage the server’s polls channel where every polls created will be sent</p></td>
+</tr>
+<tr class="row-even"><td><p>select_to_role_channel</p></td>
+<td><p>select2role_channel</p></td>
+<td><p>(set|remove #channel)</p></td>
+<td><p>This option manage the server’s select 2 role channels where the select to role message is sent</p></td>
+</tr>
+<tr class="row-odd"><td><p>xp_channel</p></td>
+<td><p>xp_chan</p></td>
+<td><p>(set|remove #channel)</p></td>
+<td><p>This option manage the server’s xp channels where every xp event is sent</p></td>
+</tr>
+<tr class="row-even"><td><p>xp_gain_channels</p></td>
+<td><p>xp_gain_channel</p></td>
+<td><p>(add|remove|purge (#voice_channels|#text_channels))</p></td>
+<td><p>This option manage the server’s xp gain channels (voice &amp; text) (if there is no xp gain channels then xp can be gained everywhere)</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>security commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 3%" />
+<col style="width: 18%" />
+<col style="width: 75%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>mute_on_join</p></td>
+<td><p>m_on_j</p></td>
+<td><p>(on|update|off) (&lt;duration_value&gt; &lt;duration_type&gt; #channel)</p></td>
+<td><p>This option manage if users are muted during a certain amount of time when joining the server and then notify it at the end if a channel is specified (default duration = 10 min) (duration format -&gt; &lt;duration value (more than 0)&gt; &lt;duration type (d, h, m, s)&gt;</p></td>
+</tr>
+<tr class="row-odd"><td><p>prevent_invites</p></td>
+<td><p>prev_i</p></td>
+<td><p>(on|update|off) (#channel)</p></td>
+<td><p>This option manage if users are allowed to send other servers invites or not (specify a channel to be notified when someone tries to send an invitation link)</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>xp commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 20%" />
+<col style="width: 22%" />
+<col style="width: 51%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>boost</p></td>
+<td><p>boosts, boosted, boosteds</p></td>
+<td><p>(add|update|remove|purge &#64;role|&#64;member (&lt;bonus&gt;))</p></td>
+<td><p>This option manage the server’s boosted roles | members, you can precise what xp bonus they’ll get (default = 20%)</p></td>
+</tr>
+<tr class="row-odd"><td><p>level_to_role</p></td>
+<td><p>level_2_role, lvl_to_role, lvl_2_role, l_2_r</p></td>
+<td><p>(add|update|remove|purge &lt;level value&gt; &#64;role)</p></td>
+<td><p>This option manage the server’s level to role</p></td>
+</tr>
+<tr class="row-even"><td><p>max_lvl</p></td>
+<td><p>mx_lvl</p></td>
+<td><p>(&lt;number of levels&gt;)</p></td>
+<td><p>This option manage the server’s max level</p></td>
+</tr>
+<tr class="row-odd"><td><p>prestiges</p></td>
+<td><p>prestg, prestige</p></td>
+<td><p>(add|update|remove|purge &#64;role &lt;prestige_value&gt;)</p></td>
+<td><p>This option manage the server’s prestiges</p></td>
+</tr>
+<tr class="row-even"><td><p>switch</p></td>
+<td><p>None</p></td>
+<td><p>(on|off)</p></td>
+<td><p>This option turn the server’s experience feature on or off</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>poll</strong></dt><dd><dl>
+<dt><strong>poll commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 5%" />
+<col style="width: 43%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>create</p></td>
+<td><p>new</p></td>
+<td><p>“title” &lt;duration&gt; &lt;type_of_duration (d == days, h == hours, m == minutes, s == seconds)&gt; choice 1 choice 2 …</p></td>
+<td><p>Create a poll of a specific duration (10 m minimum) (25 choices max)</p></td>
+</tr>
+<tr class="row-odd"><td><p>delete</p></td>
+<td><p>del, remove</p></td>
+<td><p>&lt;id_of_the_poll_message&gt;</p></td>
+<td><p>Delete a poll prematurely (unlike the command end it will erase completely the poll and not just end it)</p></td>
+</tr>
+<tr class="row-even"><td><p>end</p></td>
+<td><p>ends, finish</p></td>
+<td><p>&lt;id_of_the_poll_message&gt;</p></td>
+<td><p>Stops a poll prematurely</p></td>
+</tr>
+<tr class="row-odd"><td><p>info</p></td>
+<td><p>infos</p></td>
+<td><p>&lt;id_of_the_poll_message&gt;</p></td>
+<td><p>Retrieves information from the specified poll (if no identifier is specified then retrieves information from all polls)</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>sanction</strong></dt><dd><dl>
+<dt><strong>sanction commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 3%" />
+<col style="width: 21%" />
+<col style="width: 71%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ban</p></td>
+<td><p>None</p></td>
+<td><p>&#64;member (“reason”) (&lt;duration_value&gt; &lt;duration_type&gt;)</p></td>
+<td><p>Ban a member for a certain duration with a reason attached if specified! (default/minimum duration = 1 day) (duration format -&gt; &lt;duration value (more than 0)&gt; &lt;duration type (d, h, m, s)&gt;</p></td>
+</tr>
+<tr class="row-odd"><td><p>kick</p></td>
+<td><p>None</p></td>
+<td><p>&#64;member (“reason”)</p></td>
+<td><p>Kick a member from the server with a reason attached if specified</p></td>
+</tr>
+<tr class="row-even"><td><p>(Group) mute</p></td>
+<td><p>mutes</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This option manage the server’s mutes</p></td>
+</tr>
+<tr class="row-odd"><td><p>(Group) warn</p></td>
+<td><p>warns</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This option manage the server’s warns</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+<dt><strong>sanction groups</strong></dt><dd><ul>
+<li><dl>
+<dt><strong>mute commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 3%" />
+<col style="width: 20%" />
+<col style="width: 71%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>add</p></td>
+<td><p>None</p></td>
+<td><p>&#64;member (“reason”) (&lt;duration_value&gt; &lt;duration_type&gt;)</p></td>
+<td><p>Mute a member for a certain duration with a reason attached if specified! (default/minimum duration = 10 min) (duration format -&gt; &lt;duration value (more than 0)&gt; &lt;duration type (d, h, m, s)&gt;</p></td>
+</tr>
+<tr class="row-odd"><td><p>list</p></td>
+<td><p>None</p></td>
+<td><p>(&#64;member)</p></td>
+<td><p>Show the list of a member’s mutes or yours</p></td>
+</tr>
+<tr class="row-even"><td><p>remove</p></td>
+<td><p>None</p></td>
+<td><p>&#64;member (“reason”)</p></td>
+<td><p>Unmute a member with a reason attached if specified!</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>warn commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 7%" />
+<col style="width: 43%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>add</p></td>
+<td><p>None</p></td>
+<td><p>&#64;member (“reason”) (&lt;duration_value&gt; &lt;duration_type&gt;)</p></td>
+<td><p>Warn a member with a reason attached if specified</p></td>
+</tr>
+<tr class="row-odd"><td><p>list</p></td>
+<td><p>None</p></td>
+<td><p>(&#64;member)</p></td>
+<td><p>Show the list of a member’s warns or yours</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Omnitron’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, TheophileDiot.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
