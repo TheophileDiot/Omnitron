@@ -14,6 +14,7 @@ help:
 
 github:
 	@sphinx-build -b html source build
+	@make html
 	@cp -a build/html/. ../docs
 	@rm -rf build/html/*
 
