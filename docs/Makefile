@@ -13,9 +13,9 @@ help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 github:
-	@make html
+	@sphinx-build -b html source build
 	@cp -a build/html/. ../docs
-	@rm -rf build/html
+	@rm -rf build/html/*
 
 .PHONY: help Makefile
 

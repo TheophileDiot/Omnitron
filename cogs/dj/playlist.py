@@ -59,17 +59,16 @@ class Dj(Cog):
             position -= 1
 
             em.title = self.bot.playlists[ctx.guild.id][position]["title"]
-            em.description = self.bot.playlists[ctx.guild.id][position]["description"]
             em.url = self.bot.playlists[ctx.guild.id][position]["url"]
 
-            em.set_thumbnail(
-                url=self.bot.playlists[ctx.guild.id][position]["thumbnail"]
-            )
             em.set_author(
-                name=f"Channel: {self.bot.playlists[ctx.guild.id][position]['author']}"
+                name=f"Author: {self.bot.playlists[ctx.guild.id][position]['author']}"
             )
             em.set_footer(
                 text=f"duration: {self.bot.playlists[ctx.guild.id][position]['duration']}"
+            )
+            em.add_field(
+                name="Type:", value=self.bot.playlists[ctx.guild.id][position]["type"]
             )
 
             return await ctx.send(
@@ -96,12 +95,12 @@ class Dj(Cog):
             else:
                 em.add_field(
                     name=f"**{x + 1}:** {self.bot.playlists[ctx.guild.id][x]['title']}",
-                    value=f"**Channel:** {self.bot.playlists[ctx.guild.id][x]['author']}{nl}**Duration:** {self.bot.playlists[ctx.guild.id][x]['duration']}{nl}**URL:** {self.bot.playlists[ctx.guild.id][x]['url']}",
+                    value=f"**Type:** {self.bot.playlists[ctx.guild.id][x]['type']}{nl}**Author:** {self.bot.playlists[ctx.guild.id][x]['author']}{nl}**Duration:** {self.bot.playlists[ctx.guild.id][x]['duration']}{nl}**URL:** {self.bot.playlists[ctx.guild.id][x]['url']}",
                     inline=True,
                 )
                 x += 1
 
-        await ctx.send(content=None, embed=em)
+        await ctx.send(embed=em)
 
 
 def setup(bot):
