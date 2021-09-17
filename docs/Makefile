@@ -12,6 +12,11 @@ BUILDDIR      = build
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+github:
+	@sphinx-build -b html source build
+	@cp -a build/html/. ../docs
+	@rm -rf build/html/*
+
 .PHONY: help Makefile
 
 # Catch-all target: route all unknown targets to Sphinx using the new

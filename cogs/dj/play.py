@@ -1,7 +1,7 @@
 from inspect import Parameter
 from re import compile as re_compile
 
-from discord import Embed, Colour
+from discord import Embed
 from discord.ext.commands import (
     BotMissingPermissions,
     bot_has_permissions,
@@ -13,9 +13,8 @@ from discord.ext.commands import (
     max_concurrency,
 )
 from discord.ext.commands.errors import MissingRequiredArgument
-from lavalink.models import AudioTrack
 from lavalink.exceptions import NodeException
-from youtube_dl import utils, YoutubeDL
+from lavalink.models import AudioTrack
 
 from data import Utils
 
@@ -24,25 +23,6 @@ class Dj(Cog):
     def __init__(self, bot):
         self.bot = bot
         self.url_rx = re_compile(r"https?://(?:www\.)?.+")
-        utils.bug_reports_message = lambda: ""
-        self.ytdl = YoutubeDL(
-            {
-                "format": "worstaudio/worst",
-                "outtmpl": "temp/musics/%(title)s.%(ext)s",
-                "download_archive": "temp/musics.txt",
-                "restrictfilenames": True,
-                "noplaylist": True,
-                "nocheckcertificate": True,
-                "ignoreerrors": False,
-                "logtostderr": False,
-                "quiet": True,
-                "no_warnings": True,
-                "verbose": False,
-                "default_search": "auto",
-                # bind to ipv4 since ipv6 addresses cause issues sometimes
-                "source_address": "0.0.0.0",
-            }
-        )
 
     """ CHECKS """
 
@@ -120,9 +100,9 @@ class Dj(Cog):
 
     @command(
         name="play",
-        aliases=["yt_p"],
-        usage="<Youtube_link>|<Title>",
-        description="Plays a link or title from a Youtube video! (supports playlists!)",
+        aliases=["sc_p"],
+        usage="<link>|<Title>",
+        description="Plays a link or title from a SoundCloud song! It can also play attachments! (supports playlists!)",
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
@@ -139,31 +119,42 @@ class Dj(Cog):
             if not query and player.paused:
                 await player.set_pause(False)
                 return await ctx.send(f"▶️ - Resume Playing!")
-            elif not query:
+            elif not query and not ctx.message.attachments:
                 raise MissingRequiredArgument(
                     param=Parameter(name="query", kind=Parameter.KEYWORD_ONLY)
                 )
+            elif query and not ctx.message.attachments:
+                # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
+                query = query.strip("<>")
 
-            # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
-            query = query.strip("<>")
+                # Check if the user input might be a URL. If it isn't, we can Lavalink do a SoundCloud search for it instead.
+                if not self.url_rx.match(query):
+                    query = f"scsearch:{query}"
+            elif ctx.message.attachments and (
+                not ctx.message.attachments[0].content_type
+                or not ctx.message.attachments[0].content_type.startswith("audio")
+            ):
+                return await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - The file you attach to your message is not a valid playable file!",
+                    delete_after=20,
+                )
 
-            # Check if the user input might be a URL. If it isn't, we can Lavalink do a YouTube search for it instead.
-            # SoundCloud searching is possible by prefixing "scsearch:" instead.
-            if not self.url_rx.match(query):
-                query = f"ytsearch:{query}"
-
-            # Get the results for the query from Lavalink.
-            results = await player.node.get_tracks(query)
+            results = await player.node.get_tracks(
+                query if query else ctx.message.attachments[0].url
+            )
 
             # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
             # ALternatively, results['tracks'] could be an empty array if the query yielded no tracks.
+            if results and "exception" in results:
+                return await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - {results['exception']['message']}",
+                    delete_after=20,
+                )
             if not results or not results["tracks"]:
                 return await ctx.reply(
                     f"⚠️ - {ctx.author.mention} - The video or playlist you are looking for does not exist!",
                     delete_after=20,
                 )
-
-            content = ""
 
             # Valid loadTypes are:
             #   TRACK_LOADED    - single video/direct URL)
@@ -179,7 +170,7 @@ class Dj(Cog):
                     player.add(requester=ctx.author.id, track=track)
 
                 content = (
-                    "🎶 - **Adding the YouTube playlist to the server playlist:** - 🎶"
+                    "🎶 - **Adding the Soundcloud playlist to the server playlist:** - 🎶"
                 )
             else:
                 track = results["tracks"][0]
@@ -188,53 +179,42 @@ class Dj(Cog):
                 else:
                     content = "🎶 - **Playing:** - 🎶"
 
-            try:
-                infos_vid = self.ytdl.extract_info(
-                    track["info"]["uri"], download=not False
-                )
-            except Exception as e:
-                if not f"{e}".endswith(
-                    "This video may be inappropriate for some users."
-                ):
-                    return await ctx.reply(
-                        f"⚠️ - {ctx.author.mention} - An error occurred while retrieving the video information, please try again in a few moments!",
-                        delete_after=20,
-                    )
-                else:
-                    return await ctx.reply(
-                        f"⚠️ - {ctx.author.mention} - This video is not suitable for some users! (I can't play some age restricted videos)",
-                        delete_after=20,
-                    )
+            title = (
+                track["info"]["title"]
+                if track["info"]["title"] != "Unknown title"
+                or not ctx.message.attachments
+                else ctx.message.attachments[0].filename
+            )
+            url = (
+                query
+                if query and not query.startswith("scsearch")
+                else track["info"]["uri"]
+            )
+            duration = self.bot.utils_class.duration(track["info"]["length"] / 1000)
 
             em = Embed(
-                colour=Colour(0xFF0000),  # YTB color
-                title=infos_vid["title"],
-                description=infos_vid["description"]
-                if len(infos_vid["description"]) < 1024
-                else infos_vid["description"][0:1021] + "...",
-                url=infos_vid["webpage_url"]
-                if "webpage_url" in infos_vid
-                else infos_vid["video_url"],
+                colour=self.bot.color,
+                title=title,
+                url=url,
             )
 
-            em.set_thumbnail(url=infos_vid["thumbnail"])
-            em.set_author(name=f"Channel: {infos_vid['channel']}")
-            em.set_footer(
-                text=f"duration: {self.bot.utils_class.duration(infos_vid['duration'])}"
-            )
+            em.set_author(name=track["info"]["author"])
+            em.set_footer(text=f"duration: {duration}")
 
             self.bot.playlists[ctx.guild.id].append(
                 {
-                    "thumbnail": infos_vid["thumbnail"],
-                    "title": infos_vid["title"],
-                    "description": infos_vid["description"]
-                    if len(infos_vid["description"]) < 1024
-                    else infos_vid["description"][0:1021] + "...",
-                    "url": infos_vid["webpage_url"]
-                    if "webpage_url" in infos_vid
-                    else infos_vid["video_url"],
-                    "author": infos_vid["channel"],
-                    "duration": self.bot.utils_class.duration(infos_vid["duration"]),
+                    "type": "Attachment"
+                    if ctx.message.attachments
+                    and ctx.message.attachments[0].content_type
+                    else (
+                        "Soundcloud query"
+                        if query.startswith("scsearch")
+                        else "External link"
+                    ),
+                    "title": title,
+                    "url": url,
+                    "author": track["info"]["author"],
+                    "duration": duration,
                 }
             )
 
