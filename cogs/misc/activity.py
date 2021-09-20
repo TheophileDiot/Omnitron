@@ -1,18 +1,18 @@
-from discord import Embed, HTTPException, VoiceChannel
-from discord.ext.commands import (
+from disnake import Embed, HTTPException, VoiceChannel
+from disnake.ext.commands import (
     bot_has_guild_permissions,
     bot_has_permissions,
     Cog,
     Context,
     group,
 )
-from discord.http import Route
+from disnake.http import Route
 
 from bot import Omnitron
 from data import Utils
 
 
-class Miscellaneous(Cog):
+class Miscellaneous(Cog, name="misc.activity"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -142,9 +142,13 @@ class Miscellaneous(Cog):
         em.set_thumbnail(
             url=f"https://cdn.discordapp.com/app-icons/{resp['target_application']['id']}/{resp['target_application']['icon']}.png"
         )
-        em.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=ctx.author.avatar.url if ctx.author.avatar else None,
+        )
         em.set_footer(
-            text=f"Requested by {ctx.author}", icon_url=self.bot.user.avatar_url
+            text=f"Requested by {ctx.author}",
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
         )
 
         return em

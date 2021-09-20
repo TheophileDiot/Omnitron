@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
-from discord import Member
-from discord.ext.commands import (
+from disnake import Member
+from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
@@ -13,7 +12,7 @@ from discord.ext.commands import (
 from bot import Omnitron
 
 
-class Moderation(Cog):
+class Moderation(Cog, name="moderation.clear"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -37,9 +36,12 @@ class Moderation(Cog):
                 delete_after=10,
             )
 
-        deleted = await ctx.channel.purge(
-            limit=nbr_msgs, check=(lambda m: m.author == member) if member else None
-        )
+        if member:
+            deleted = await ctx.channel.purge(
+                limit=nbr_msgs, check=(lambda m: m.author == member)
+            )
+        else:
+            deleted = await ctx.channel.purge(limit=nbr_msgs)
         await ctx.send(
             f"ℹ️ - `{len(deleted)}` message{'s' if len(deleted) > 1 else ''} deleted {f'from the user {member}' if member else ''}.",
             delete_after=20,

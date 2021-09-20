@@ -1,11 +1,10 @@
-from discord import Forbidden, NotFound, PermissionOverwrite
-from discord.ext.commands import Cog
-from dislash import MessageInteraction
+from disnake import Forbidden, MessageInteraction, NotFound, PermissionOverwrite
+from disnake.ext.commands import Cog
 
 from bot import Omnitron
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_button_click"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -32,7 +31,7 @@ class Events(Cog):
             )
 
             if str(interaction.author.id) in responses:
-                return await interaction.respond(
+                return await interaction.response.send_message(
                     content=f"You have already answered this poll! Your answer: `{responses[str(interaction.author.id)]['response']}`",
                     ephemeral=True,
                 )
@@ -48,7 +47,7 @@ class Events(Cog):
                 "value"
             ] = f"`{str(int(new_embed.to_dict()['fields'][0]['value'][1:-1]) + 1)}`"
             await interaction.message.edit(embed=new_embed)
-            await interaction.respond(
+            await interaction.response.send_message(
                 content=f"Your answer has been taken into account! Answer: `{interaction.component.label}`",
                 ephemeral=True,
             )
@@ -67,7 +66,7 @@ class Events(Cog):
                 ticket = self.bot.ticket_repo.get_ticket(
                     interaction.guild.id, interaction.author.id
                 )
-                return await interaction.respond(
+                return await interaction.response.send_message(
                     content=f"You already have an existing ticket channel! {(self.bot.get_channel(ticket['id']) or await self.bot.fetch_channel(ticket['id'])).mention}",
                     ephemeral=True,
                 )
@@ -78,7 +77,10 @@ class Events(Cog):
                 try:
                     overwrites[
                         interaction.guild.get_role(int(m))
-                        or await interaction.guild.try_member(int(m))
+                        or (
+                            interaction.guild.get_member(int(m))
+                            or await interaction.guild.fetch_member(int(m))
+                        )
                     ] = PermissionOverwrite(
                         **{
                             "view_channel": True,
@@ -114,7 +116,7 @@ class Events(Cog):
                     reason=f"Creation of the ticket channel of {interaction.author.display_name}",
                 )
             except Forbidden as f:
-                await interaction.respond(
+                await interaction.response.send_message(
                     content=f"⚠️ - Your ticket channel couldn't be created because i'm missing permissions! Moderators have been informed about this!",
                     ephemeral=True,
                 )
@@ -127,7 +129,7 @@ class Events(Cog):
             await channel.send(
                 f"ℹ️ - {interaction.author.mention} - Here goes your ticket channel, feel free to ask questions or just talk to the server's moderators privately!"
             )
-            await interaction.respond(
+            await interaction.response.send_message(
                 content=f"Your ticket channel {channel.mention} has been successfully created!",
                 ephemeral=True,
             )
@@ -137,7 +139,7 @@ class Events(Cog):
                 ticket for ticket in tickets
             ]:
                 if not self.bot.utils_class.is_mod(interaction.author, self.bot):
-                    return await interaction.respond(
+                    return await interaction.response.send_message(
                         content=f"You cannot interact with this message because you are not a moderator of this server!",
                         ephemeral=True,
                     )
@@ -145,13 +147,13 @@ class Events(Cog):
                     "deletion_pending"
                 ]
                 if interaction.author.id != delete_pending["author"]:
-                    return await interaction.respond(
+                    return await interaction.response.send_message(
                         content=f"📥 - You are not the user who started the deletion procedure for this ticket, so you cannot interact with this message!",
                         ephemeral=True,
                     )
 
                 if (
-                    interaction.component.id
+                    interaction.component.custom_id
                     == f"{interaction.channel.id}_confirm_ticket"
                 ):
                     self.bot.ticket_repo.delete_ticket(
@@ -164,7 +166,7 @@ class Events(Cog):
                         f.text = f"⚠️ - I don't have the right permissions to delete channels in the category {self.bot.configs[interaction.guild.id]['tickets']['tickets_category'].mention} (I tried to delete the ticket channel {interaction.channel.mention})!"
                         raise
                 else:
-                    await interaction.respond(
+                    await interaction.response.send_message(
                         content=f"📥 - Cancellation of the ticket deletion!",
                         ephemeral=True,
                     )

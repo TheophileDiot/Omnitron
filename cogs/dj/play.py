@@ -1,8 +1,8 @@
 from inspect import Parameter
 from re import compile as re_compile
 
-from discord import Embed
-from discord.ext.commands import (
+from disnake import Embed
+from disnake.ext.commands import (
     BotMissingPermissions,
     bot_has_permissions,
     bot_has_guild_permissions,
@@ -12,14 +12,14 @@ from discord.ext.commands import (
     Context,
     max_concurrency,
 )
-from discord.ext.commands.errors import MissingRequiredArgument
+from disnake.ext.commands.errors import MissingRequiredArgument
 from lavalink.exceptions import NodeException
 from lavalink.models import AudioTrack
 
 from data import Utils
 
 
-class Dj(Cog):
+class Dj(Cog, name="dj.play"):
     def __init__(self, bot):
         self.bot = bot
         self.url_rx = re_compile(r"https?://(?:www\.)?.+")
@@ -78,10 +78,9 @@ class Dj(Cog):
                         f"⚠️ - {ctx.author.mention} - Please be in a valid music channel!",
                         delete_after=20,
                     )
-                elif (
-                    not ctx.guild.me.permissions_in(ctx.author.voice.channel).connect
-                    or not ctx.guild.me.permissions_in(ctx.author.voice.channel).speak
-                ):
+
+                perms = ctx.author.voice.channel.permissions_for(ctx.guild.me)
+                if perms.connect or not perms.speak:
                     raise BotMissingPermissions(["connect", "speak"])
 
                 player.store("channel", ctx.channel.id)

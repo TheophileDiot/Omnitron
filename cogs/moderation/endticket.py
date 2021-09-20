@@ -1,4 +1,5 @@
-from discord.ext.commands import (
+from disnake import ButtonStyle
+from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
@@ -7,13 +8,13 @@ from discord.ext.commands import (
     bot_has_guild_permissions,
     max_concurrency,
 )
-from dislash import ActionRow, Button
+from disnake.ui import Button, View
 
 from bot import Omnitron
 from data import Utils
 
 
-class Moderation(Cog):
+class Moderation(Cog, name="moderation.endticket"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -44,24 +45,25 @@ class Moderation(Cog):
             ctx.guild.id, ctx.channel.id, ctx.author.id
         )
         nl = "\n"
+        view = View(timeout=None)
+        view.add_item(
+            Button(
+                style=ButtonStyle.success,
+                label="yes",
+                custom_id=f"{ctx.channel.id}_confirm_ticket",
+            )
+        )
+        view.add_item(
+            Button(
+                style=ButtonStyle.danger,
+                label="no",
+                custom_id=f"{ctx.channel.id}_cancel_ticket",
+            )
+        )
+
         await ctx.send(
-            f"**📤 - {ctx.author.mention} - Confirmation of ticket deletion!**{nl}{nl}Do you wish to terminate this ticket?",
-            components=[
-                ActionRow(
-                    *[
-                        Button(
-                            style=3,
-                            label="yes",
-                            custom_id=f"{ctx.channel.id}_confirm_ticket",
-                        ),
-                        Button(
-                            style=4,
-                            label="no",
-                            custom_id=f"{ctx.channel.id}_cancel_ticket",
-                        ),
-                    ]
-                )
-            ],
+            content=f"**📤 - {ctx.author.mention} - Confirmation of ticket deletion!**{nl}{nl}Do you wish to terminate this ticket?",
+            view=view,
         )
 
 

@@ -1,11 +1,11 @@
-from discord import Forbidden, RawReactionActionEvent
-from discord.ext.commands import Cog
+from disnake import Forbidden, RawReactionActionEvent
+from disnake.ext.commands import Cog
 
 from bot import Omnitron
 from data import Utils, Xp_class
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_raw_reaction_add"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.xp_class = Xp_class(bot)

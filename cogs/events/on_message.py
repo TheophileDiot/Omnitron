@@ -1,12 +1,12 @@
 from asyncio import sleep
-from discord import Forbidden, Message
-from discord.ext.commands import Cog
+from disnake import Forbidden, Message
+from disnake.ext.commands import Cog
 
 from bot import Omnitron
 from data import Utils, Xp_class
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_message"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.limitation = []

@@ -292,11 +292,11 @@ class Config:
 
     @Utils.resolve_guild_path
     def add_select2role(
-        self, guild_id: int, title: str, role_name: str, role_id: int
+        self, guild_id: int, title: str, role_name: str, role_id: int, description: str
     ) -> None:
         self.model.create(
             f"{self.path}/select2role/selects/{title}",
-            args={"name": role_name, "role_id": role_id},
+            args={"name": role_name, "role_id": role_id, "description": description},
         )
 
     @Utils.resolve_guild_path

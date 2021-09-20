@@ -1,11 +1,11 @@
-from discord import Member, VoiceState, channel
-from discord.ext.commands import Cog
+from disnake import Member, VoiceState, channel
+from disnake.ext.commands import Cog
 
 from bot import Omnitron
 from data import Utils, Xp_class
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_voice_state_update"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.voice_intervals = {}

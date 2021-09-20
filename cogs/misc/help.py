@@ -1,12 +1,14 @@
 from collections import OrderedDict
-from discord import Embed
-from discord.ext.commands import bot_has_permissions, Cog, command, Context, Group
+from itertools import chain
+
+from disnake import Embed
+from disnake.ext.commands import bot_has_permissions, Cog, command, Context, Group
 
 from bot import Omnitron
 from data import Utils
 
 
-class Miscellaneous(Cog):
+class Miscellaneous(Cog, name="misc.help"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -22,9 +24,14 @@ class Miscellaneous(Cog):
     ):
         em = Embed(colour=self.bot.color)
 
-        em.set_thumbnail(url=self.bot.user.avatar_url)
-        em.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-        em.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
+        em.set_thumbnail(url=self.bot.user.avatar.url if self.bot.user.avatar else None)
+        em.set_author(
+            name=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
+        em.set_footer(
+            text=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
+        )
 
         if _command:
             if _command in self.bot.all_commands.keys():
@@ -66,36 +73,26 @@ class Miscellaneous(Cog):
         else:
             em.description = f"Here are all the available commands for {ctx.guild.me.display_name}\nThe bot prefix is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`"
 
-            cogs = OrderedDict(
-                sorted(
-                    {cog: [] for cog in set(self.bot.cogs) if cog != "Events"}.items()
-                )
-            )
-            cmds = OrderedDict(
-                sorted(
-                    {
-                        c.name: {"cog_name": c.cog_name, "hidden": c.hidden}
-                        for c in set(self.bot.commands)
-                    }.items()
-                )
-            )
+            cogs = {}
+            for cog in OrderedDict(sorted(self.bot.cogs.items())):
+                root = cog.split(".")[0]
 
-            for k, v in cmds.items():
-                cogs[v["cog_name"]].append([k, v])
+                if root == "events":
+                    continue
+                elif root not in cogs:
+                    cogs[root] = []
+
+                cogs[root].append(self.bot.cogs[cog].get_commands()[0])
 
             for cog, cmds in cogs.items():
-                if cog == "Events":
-                    continue
                 em.add_field(
                     name=cog,
-                    value=" ".join(
-                        ["`" + cmd[0] + "`" for cmd in cmds if not cmd[1]["hidden"]]
-                    )
+                    value=" ".join(["`" + c.name + "`" for c in cmds if not c.hidden])
                     or "**No commands**",
                     inline=False,
                 )
 
-        await ctx.send(content=None, embed=em)
+        await ctx.send(embed=em)
 
 
 def setup(bot):

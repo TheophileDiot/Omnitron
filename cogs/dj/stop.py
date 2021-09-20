@@ -1,4 +1,4 @@
-from discord.ext.commands import (
+from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
@@ -10,7 +10,7 @@ from discord.ext.commands import (
 from data import Utils
 
 
-class Dj(Cog):
+class Dj(Cog, name="dj.stop"):
     def __init__(self, bot):
         self.bot = bot
 

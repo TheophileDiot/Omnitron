@@ -1,5 +1,5 @@
-from discord import Embed, Member, NotFound
-from discord.ext.commands import (
+from disnake import Embed, Member, NotFound
+from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
@@ -7,7 +7,7 @@ from discord.ext.commands import (
     group,
     max_concurrency,
 )
-from discord.ext.commands.errors import MissingRequiredArgument
+from disnake.ext.commands.errors import MissingRequiredArgument
 from inspect import Parameter
 from numpy import isnan
 from pandas import DataFrame
@@ -16,7 +16,7 @@ from bot import Omnitron
 from data import Utils, Xp_class
 
 
-class Miscellaneous(Cog):
+class Miscellaneous(Cog, name="misc.xp"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.xp_class = Xp_class(bot)
@@ -337,10 +337,14 @@ class Miscellaneous(Cog):
                     add = "of the server *(including moderators)*"
 
                 em = Embed(colour=self.bot.color, title=f"Ranking {add}!")
-                em.set_thumbnail(url=ctx.guild.icon_url)
-                em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+                em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+                em.set_author(
+                    name=ctx.guild.name,
+                    icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
+                )
                 em.set_footer(
-                    text=self.bot.user.name, icon_url=self.bot.user.avatar_url
+                    text=self.bot.user.name,
+                    icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
                 )
 
                 x = 1
@@ -349,7 +353,9 @@ class Miscellaneous(Cog):
                         break
 
                     try:
-                        member = await ctx.guild.try_member(int(df_user))
+                        member = ctx.guild.get_member(
+                            int(df_user)
+                        ) or await ctx.guild.fetch_member(int(df_user))
                     except NotFound:
                         continue
 
