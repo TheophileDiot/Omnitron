@@ -13,7 +13,6 @@ from disnake import (
     SelectOption,
     TextChannel,
     VoiceChannel,
-    Permissions,
     Message,
 )
 from disnake.ext.commands import bot_has_permissions, Context, Cog, group
@@ -523,7 +522,7 @@ class Moderation(Cog, name="moderation.config"):
             try:
                 await msg.add_reaction("👀")
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {ctx.channel.mention} (message: {msg.jump_url}, reaction: 👀)! Required perms: `{', '.join([Permissions.add_reactions])}`"
+                f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {ctx.channel.mention} (message: {msg.jump_url}, reaction: 👀)! Required perms: `{', '.join(['ADD_REACTIONS'])}`"
                 raise
 
     @config_group.command(
@@ -648,7 +647,7 @@ class Moderation(Cog, name="moderation.config"):
                                 ].purge(check=lambda m: m.author.id == self.bot.user.id)
                             else:
                                 await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                                    f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
                                     ctx.guild.id,
                                 )
 
@@ -717,7 +716,7 @@ class Moderation(Cog, name="moderation.config"):
                             )
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention} (i tried to send the message that allow users to create tickets so please reactivate this feature after changing the permissions)! Required perms: `{', '.join([Permissions.send_messages])}`",
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention} (i tried to send the message that allow users to create tickets so please reactivate this feature after changing the permissions)! Required perms: `{', '.join(['SEND_MESSAGE'])}`",
                                 ctx.guild.id,
                             )
                 else:
@@ -730,7 +729,7 @@ class Moderation(Cog, name="moderation.config"):
                         ].purge(check=lambda m: m.author.id == self.bot.user.id)
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
                             ctx.guild.id,
                         )
 
@@ -751,7 +750,7 @@ class Moderation(Cog, name="moderation.config"):
                             )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention}! Required perms: `{', '.join([Permissions.manage_channels])}`",
+                            f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention}! Required perms: `{', '.join(['MANAGE_CHANNELS'])}`",
                             ctx.guild.id,
                         )
 
@@ -904,7 +903,7 @@ class Moderation(Cog, name="moderation.config"):
                                         raise
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old select to role role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old select to role role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                                 ctx.guild.id,
                             )
                 elif option == "resolve":
@@ -947,7 +946,7 @@ class Moderation(Cog, name="moderation.config"):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                            f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -978,7 +977,7 @@ class Moderation(Cog, name="moderation.config"):
                                 ].purge(check=lambda m: m.author.id == self.bot.user.id)
                             else:
                                 await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to purge messages in the (select_to_role) channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                                    f"⚠️ - I don't have the right permissions to purge messages in the (select_to_role) channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
                                     ctx.guild.id,
                                 )
                             pass
@@ -1064,7 +1063,7 @@ class Moderation(Cog, name="moderation.config"):
                             ).id
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention} (i tried to send the message that allow users to select a role so please reactivate this feature after changing the permissions)! Required perms: `{', '.join([Permissions.send_messages])}`",
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention} (i tried to send the message that allow users to select a role so please reactivate this feature after changing the permissions)! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
                                 ctx.guild.id,
                             )
             except MissingRequiredArgument as mre:
@@ -1166,7 +1165,7 @@ class Moderation(Cog, name="moderation.config"):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles {f'`@{old_role.name}` ' if old_role else ''}`@{muted.name}` (i tried to replace the old muted role with the new one from muted members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                            f"⚠️ - I don't have the right permissions to manage these roles {f'`@{old_role.name}` ' if old_role else ''}`@{muted.name}` (i tried to replace the old muted role with the new one from muted members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                             ctx.guild.id,
                         )
                 elif option == "remove":
@@ -1204,7 +1203,7 @@ class Moderation(Cog, name="moderation.config"):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old muted role from muted members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old muted role from muted members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -1757,7 +1756,7 @@ class Moderation(Cog, name="moderation.config"):
                                         raise
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                                 ctx.guild.id,
                             )
                 elif option == "purge":
@@ -1790,7 +1789,7 @@ class Moderation(Cog, name="moderation.config"):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -1939,7 +1938,7 @@ class Moderation(Cog, name="moderation.config"):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                            f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                             ctx.guild.id,
                         )
                 elif option == "remove":
@@ -1980,7 +1979,7 @@ class Moderation(Cog, name="moderation.config"):
                                 )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                             ctx.guild.id,
                         )
                 elif option == "purge":
@@ -2019,7 +2018,7 @@ class Moderation(Cog, name="moderation.config"):
                                 )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -2594,7 +2593,7 @@ class Moderation(Cog, name="moderation.config"):
                         )
                     elif not polls_channel.permissions_for(ctx.guild.me).send_messages:
                         return await ctx.reply(
-                            f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join([Permissions.send_messages])}`",
+                            f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
                             delete_after=20,
                         )
 
@@ -2621,7 +2620,7 @@ class Moderation(Cog, name="moderation.config"):
                                 or not perms.manage_messages
                             ):
                                 await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to delete messages in the channel {old_polls_channel.mention}! (I tried to delete the old polls) Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                                    f"⚠️ - I don't have the right permissions to delete messages in the channel {old_polls_channel.mention}! (I tried to delete the old polls) Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
                                     ctx.guild.id,
                                 )
 
@@ -2697,7 +2696,7 @@ class Moderation(Cog, name="moderation.config"):
                         ].permissions_for(ctx.guild.me)
                         if not perms.read_message_history or not perms.manage_messages:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to delete messages in the channel {self.bot.configs[ctx.guild.id]['polls_channel'].mention}! (I tried to delete the old polls) Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                                f"⚠️ - I don't have the right permissions to delete messages in the channel {self.bot.configs[ctx.guild.id]['polls_channel'].mention}! (I tried to delete the old polls) Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
                                 ctx.guild.id,
                             )
 
@@ -2780,7 +2779,7 @@ class Moderation(Cog, name="moderation.config"):
                         ctx.guild.me
                     ).send_messages:
                         return await ctx.reply(
-                            f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it! Required perms: `{', '.join([Permissions.send_messages])}`",
+                            f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
                             delete_after=20,
                         )
 
@@ -2807,7 +2806,7 @@ class Moderation(Cog, name="moderation.config"):
                             )
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to purge messages in the channel {old_channel.mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                                f"⚠️ - I don't have the right permissions to purge messages in the channel {old_channel.mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
                                 ctx.guild.id,
                             )
 
@@ -2906,7 +2905,7 @@ class Moderation(Cog, name="moderation.config"):
                         ].purge(check=lambda m: m.author.id == self.bot.user.id)
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
                             ctx.guild.id,
                         )
 

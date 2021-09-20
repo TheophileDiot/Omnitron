@@ -1,10 +1,22 @@
-from disnake import Embed, HTTPException, VoiceChannel
+from typing import Union
+
+from disnake import (
+    ApplicationCommandInteraction,
+    Embed,
+    HTTPException,
+    Option,
+    OptionChoice,
+    OptionType,
+    VoiceChannel,
+)
+from disnake.abc import GuildChannel
 from disnake.ext.commands import (
     bot_has_guild_permissions,
     bot_has_permissions,
     Cog,
     Context,
     group,
+    slash_command,
 )
 from disnake.http import Route
 
@@ -34,6 +46,61 @@ class Miscellaneous(Cog, name="misc.activity"):
                     ctx, title="Server's activity feature"
                 )
             )
+
+    """ SLASH COMMAND """
+
+    @slash_command(
+        name="activity",
+        aliases=["activities"],
+        description="This command manage the server's activities",
+        options=[
+            Option(
+                name="channel",
+                description="Enter the channel you want to create the activity in",
+                type=OptionType.channel,
+                required=True,
+            ),
+            Option(
+                name="activity",
+                description="Select the activity you want to create",
+                choices=[
+                    OptionChoice(name="youtube_together", value="755600276941176913"),
+                    OptionChoice(name="poker_night", value="755827207812677713"),
+                    OptionChoice(name="betrayal_io", value="773336526917861400"),
+                    OptionChoice(name="fishington_io", value="814288819477020702"),
+                ],
+                required=False,
+            ),
+            Option(
+                name="custom_activity",
+                description="Enter the activity ID of the custom activity you want to create",
+                type=OptionType.string,
+                required=False,
+            ),
+        ],
+    )
+    @Utils.check_bot_starting()
+    async def activity_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        channel: VoiceChannel,
+        activity: int = None,
+        custom_activity: int = None,
+    ):
+        if not isinstance(channel, VoiceChannel):
+            return await inter.response.send_message(
+                "The channel precised must be a valid VoiceChannel!", ephemeral=True
+            )
+        elif not activity and custom_activity:
+            activity = custom_activity
+        elif not activity:
+            return await inter.response.send_message(
+                "Select at least an activity or enter a custom one!", ephemeral=True
+            )
+
+        await inter.response.send_message(
+            embed=await self.create_activity(inter, channel, activity)
+        )
 
     """ COMMAND(S) """
 
@@ -107,8 +174,11 @@ class Miscellaneous(Cog, name="misc.activity"):
     """ METHOD(S) """
 
     async def create_activity(
-        self, ctx: Context, channel: VoiceChannel, activity: int
-    ) -> Embed:
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        channel: VoiceChannel,
+        activity: int,
+    ) -> Embed or None:
         data = {
             "max_age": 0,
             "max_uses": 0,
@@ -123,15 +193,27 @@ class Miscellaneous(Cog, name="misc.activity"):
             )
         except HTTPException as e:
             if e.code == 50035:
-                return await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - The application ID you gave is not an available one!",
-                    delete_after=20,
-                )
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - The application ID you gave is not an available one!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"⚠️ - {source.author.mention} - The application ID you gave is not an available one!",
+                        ephemeral=True,
+                    )
             else:
-                return await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error happened, please try again in a few seconds!",
-                    delete_after=20,
-                )
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - An error happened, please try again in a few seconds!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"⚠️ - {source.author.mention} - An error happened, please try again in a few seconds!",
+                        ephemeral=True,
+                    )
 
         em = Embed(
             colour=self.bot.color,
@@ -143,11 +225,11 @@ class Miscellaneous(Cog, name="misc.activity"):
             url=f"https://cdn.discordapp.com/app-icons/{resp['target_application']['id']}/{resp['target_application']['icon']}.png"
         )
         em.set_author(
-            name=ctx.author.display_name,
-            icon_url=ctx.author.avatar.url if ctx.author.avatar else None,
+            name=source.author.display_name,
+            icon_url=source.author.avatar.url if source.author.avatar else None,
         )
         em.set_footer(
-            text=f"Requested by {ctx.author}",
+            text=f"Requested by {source.author}",
             icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
         )
 
