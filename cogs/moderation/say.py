@@ -1,9 +1,44 @@
-from disnake import TextChannel
-from disnake.ext.commands import bot_has_permissions, Context, Cog, command
-from disnake.permissions import Permissions
+from typing import Union
+
+from disnake import ApplicationCommandInteraction, TextChannel, Option, OptionType
+from disnake.ext.commands import (
+    bot_has_permissions,
+    Context,
+    Cog,
+    command,
+    slash_command,
+)
 
 from bot import Omnitron
 from data import Utils
+
+
+async def handle_say(
+    source: Union[Context, ApplicationCommandInteraction],
+    channel: TextChannel,
+    message: str,
+):
+    perms = channel.permissions_for(source.guild.me)
+
+    if not perms.view_channel or not perms.send_messages:
+        if isinstance(source, Context):
+            return await source.reply(
+                f"⛔ - I don't have the necessary perms to send a message in this channel ({channel})! Required perms: `{', '.join(['VIEW_CHANNEL', 'SEND_MESSAGES'])}`",
+                delete_after=20,
+            )
+        else:
+            return await source.response.send_message(
+                f"⛔ - I don't have the necessary perms to send a message in this channel ({channel})! Required perms: `{', '.join(['VIEW_CHANNEL', 'SEND_MESSAGES'])}`",
+                ephemeral=True,
+            )
+
+    if (
+        isinstance(source, Context)
+        and source.channel.permissions_for(source.guild.me).manage_messages
+    ):
+        await source.message.delete()
+
+    await channel.send(message)
 
 
 class Moderation(Cog, name="moderation.say"):
@@ -24,18 +59,46 @@ class Moderation(Cog, name="moderation.say"):
         if ctx.message.channel_mentions:
             channel = ctx.message.channel_mentions[0]
             args = " ".join(args.split(" ")[1::])
-            perms = channel.permissions_for(ctx.guild.me)
 
-            if perms.view_channel or not perms.send_messages:
-                return await ctx.reply(
-                    f"⛔ - I don't have the necessary perms to send a message in this channel ({channel})! Required perms: `{', '.join([Permissions.view_channel, Permissions.send_messages])}`",
-                    delete_after=20,
-                )
+        await handle_say(ctx, channel, args)
 
-        if ctx.channel.permissions_for(ctx.guild.me).manage_messages:
-            await ctx.message.delete()
+    @slash_command(
+        name="say",
+        aliases=["acc", "announcement", "talk"],
+        description="Send a message to a specified salon or the current one!",
+        options=[
+            Option(
+                name="message",
+                description="Enter the message you want to send through the bot",
+                type=OptionType.string,
+                required=True,
+            ),
+            Option(
+                name="channel",
+                description="Enter the channel you want to send the message in",
+                type=OptionType.channel,
+                required=False,
+            ),
+        ],
+    )
+    @Utils.check_moderator()
+    @bot_has_permissions(send_messages=True)
+    async def say_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        message: str,
+        channel: TextChannel = None,
+    ):
+        if not channel:
+            channel = inter.channel
+        elif not isinstance(channel, TextChannel):
+            return await inter.response.send_message(
+                "The channel precised must be a valid TextChannel!", ephemeral=True
+            )
 
-        await channel.send(args)
+        await handle_say(inter, channel, message)
+
+    """ METHOD(S) """
 
 
 def setup(bot):

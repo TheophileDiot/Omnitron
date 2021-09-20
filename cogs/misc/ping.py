@@ -38,12 +38,7 @@ class Miscellaneous(Cog, name="misc.ping"):
     async def ping_command(self, ctx: Context):
         await handle_ping(ctx)
 
-    @slash_command(
-        name="ping",
-        aliases=["latency"],
-        description="Check bot latency!",
-        guild_ids=[872500404540280893],
-    )
+    @slash_command(name="ping", aliases=["latency"], description="Check bot latency!")
     async def ping_slash_command(self, inter: ApplicationCommandInteraction):
         await handle_ping(inter)
 

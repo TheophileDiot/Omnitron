@@ -366,7 +366,7 @@ class Miscellaneous(Cog, name="misc.xp"):
                             inline=True,
                         )
 
-                    x += 1
+                        x += 1
 
                 await ctx.send(embed=em)
 

@@ -159,7 +159,7 @@ class Moderation(Cog, name="moderation.sanction"):
                     delete_after=15,
                 )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join([Permissions.send_messages])}`"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join(['SEND_MESSAGES'])}`"
                 raise
             return
 
@@ -306,7 +306,7 @@ class Moderation(Cog, name="moderation.sanction"):
                 )
             else:
                 await self.bot.utils_class.send_message_to_mods(
-                    f"⚠️ - I don't have the right permissions to manage roles in this server (i tried to add the muted role to {member} after his {'2nd' if warns == 2 else '4th'} warn)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                    f"⚠️ - I don't have the right permissions to manage roles in this server (i tried to add the muted role to {member} after his {'2nd' if warns == 2 else '4th'} warn)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
                     ctx.guild.id,
                 )
         elif warns == 5:
@@ -426,7 +426,7 @@ class Moderation(Cog, name="moderation.sanction"):
                     delete_after=15,
                 )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join([Permissions.send_messages])}`"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join(['SEND_MESSAGES'])}`"
                 raise
             return
 
