@@ -1,10 +1,10 @@
-from discord import Embed
-from discord.ext.commands import bot_has_permissions, Cog, command, Context
+from disnake import Embed
+from disnake.ext.commands import bot_has_permissions, Cog, command, Context
 
 from bot import Omnitron
 
 
-class Miscellaneous(Cog):
+class Miscellaneous(Cog, name="misc.serverinfos"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -17,9 +17,14 @@ class Miscellaneous(Cog):
     async def serverinfos_command(self, ctx: Context):
         em = Embed(title=f"{ctx.guild.name} server information", colour=self.bot.color)
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         em.add_field(name="**Server's name:**", value=ctx.guild.name, inline=True)
         em.add_field(
@@ -45,7 +50,7 @@ class Miscellaneous(Cog):
             inline=True,
         )
 
-        await ctx.send(content=None, embed=em)
+        await ctx.send(embed=em)
 
 
 def setup(bot):

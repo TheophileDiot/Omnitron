@@ -1,15 +1,15 @@
 from logging import info
 from typing import Union
 
-from discord import Activity, ActivityType, NotFound
-from discord.ext.commands import Cog
+from disnake import Activity, ActivityType, NotFound
+from disnake.ext.commands import Cog
 from lavalink import add_event_hook, Client
 from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
 
 from bot import Omnitron
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_ready"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -34,11 +34,6 @@ class Events(Cog):
                 continue
 
             self.bot.utils_class.init_guild(guild)
-
-        print(f"{self.bot.configs = }")
-        print(f"{self.bot.moderators = }")
-        print(f"{self.bot.djs = }")
-        print(f"{self.bot.tasks = }")
 
         print("Omnitron is ready.")
         info("Omnitron successfully started")

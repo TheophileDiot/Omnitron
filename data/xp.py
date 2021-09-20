@@ -1,4 +1,4 @@
-from discord import Forbidden, Role, Member
+from disnake import Forbidden, Role, Member
 from math import floor, ceil
 from random import randint
 

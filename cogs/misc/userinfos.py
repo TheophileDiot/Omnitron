@@ -1,10 +1,10 @@
-from discord import Embed, Member
-from discord.ext.commands import bot_has_permissions, Cog, command, Context
+from disnake import Embed, Member
+from disnake.ext.commands import bot_has_permissions, Cog, command, Context
 
 from bot import Omnitron
 
 
-class Miscellaneous(Cog):
+class Miscellaneous(Cog, name="misc.userinfos"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -24,9 +24,15 @@ class Miscellaneous(Cog):
             colour=member.colour,
         )
 
-        em.set_thumbnail(url=member.avatar_url)
-        em.set_author(name=f"Infos on {member}", icon_url=member.avatar_url)
-        em.set_footer(text=ctx.author.name, icon_url=ctx.author.avatar_url)
+        em.set_thumbnail(url=member.avatar.url if member.avatar else None)
+        em.set_author(
+            name=f"Infos on {member}",
+            icon_url=member.avatar.url if member.avatar else None,
+        )
+        em.set_footer(
+            text=ctx.author.name,
+            icon_url=ctx.author.avatar.url if ctx.author.avatar else None,
+        )
 
         em.add_field(name="**User name**", value=member.name, inline=True)
         em.add_field(name="**Discriminator:**", value=member.discriminator, inline=True)
@@ -56,7 +62,7 @@ class Miscellaneous(Cog):
             inline=True,
         )
 
-        await ctx.send(content=None, embed=em)
+        await ctx.send(embed=em)
 
 
 def setup(bot):

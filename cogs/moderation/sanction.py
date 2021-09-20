@@ -1,5 +1,5 @@
-from discord import Embed, Forbidden, Member
-from discord.ext.commands import (
+from disnake import Embed, Forbidden, Member, Permissions
+from disnake.ext.commands import (
     bot_has_permissions,
     bot_has_guild_permissions,
     BucketType,
@@ -15,7 +15,7 @@ from bot import Omnitron
 from data import Utils
 
 
-class Moderation(Cog):
+class Moderation(Cog, name="moderation.sanction"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -96,9 +96,15 @@ class Moderation(Cog):
             description=f"The member {member} has been kicked by {ctx.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.author.display_name, icon_url=member.avatar_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=member.avatar.url if member.avatar else None,
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         if reason:
             em.add_field(name="raison:", value=reason, inline=False)
@@ -153,7 +159,7 @@ class Moderation(Cog):
                     delete_after=15,
                 )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join([Permissions.send_messages])}`"
                 raise
             return
 
@@ -169,9 +175,15 @@ class Moderation(Cog):
             description=f"The member {member} has been banned by {ctx.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.author.display_name, icon_url=member.avatar_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=member.avatar.url if member.avatar else None,
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         if reason:
             em.add_field(name="raison:", value=reason, inline=False)
@@ -237,9 +249,15 @@ class Moderation(Cog):
             description=f"The user `{member}` has been warned by {ctx.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.author.display_name, icon_url=member.avatar_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=member.avatar.url if member.avatar else None,
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         if reason:
             em.add_field(name="reason:", value=reason, inline=False)
@@ -255,7 +273,7 @@ class Moderation(Cog):
         )
 
         if warns == 2 or warns == 4:
-            if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+            if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                 em.add_field(
                     name="sanction",
                     value=f"🔇 - Muted {'3H' if warns == 2 else '24H'} - 🔇",
@@ -265,7 +283,7 @@ class Moderation(Cog):
                 try:
                     await member.add_roles(self.bot.configs[ctx.guild.id]["muted_role"])
                 except Forbidden as f:
-                    f.text = f"⚠️ - I don't have the right permissions to add the role `{self.bot.configs[ctx.guild.id]['muted_role']}` to {member} (maybe the role is above mine)"
+                    f.text = f"⚠️ - I don't have the right permissions to add the role `{self.bot.configs[ctx.guild.id]['muted_role']}` to {member}! (maybe the role is above mine)"
                     raise
 
                 self.bot.user_repo.mute_user(
@@ -288,7 +306,7 @@ class Moderation(Cog):
                 )
             else:
                 await self.bot.utils_class.send_message_to_mods(
-                    f"⚠️ - I don't have the right permissions to manage roles in this server (i tried to add the muted role to {member} after his {'2nd' if warns == 2 else '4th'} warn)!",
+                    f"⚠️ - I don't have the right permissions to manage roles in this server (i tried to add the muted role to {member} after his {'2nd' if warns == 2 else '4th'} warn)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                     ctx.guild.id,
                 )
         elif warns == 5:
@@ -305,7 +323,7 @@ class Moderation(Cog):
         elif warns > 5:
             em.add_field(name="sanction", value="🚫 - kick - 🚫", inline=False)
 
-            if ctx.guild.me.permissions_in(ctx.channel).kick_members:
+            if ctx.channel.permissions_for(ctx.guild.me).kick_members:
                 await member.kick(reason="6th warn")
             else:
                 await ctx.send(
@@ -328,9 +346,15 @@ class Moderation(Cog):
             colour=self.bot.color, title=f"⚠️ - list of previous warns from {member}"
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.author.display_name, icon_url=member.avatar_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=member.avatar.url if member.avatar else None,
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         warns = self.bot.user_repo.get_warns(ctx.guild.id, member.id)
 
@@ -402,7 +426,7 @@ class Moderation(Cog):
                     delete_after=15,
                 )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join([Permissions.send_messages])}`"
                 raise
             return
 
@@ -418,9 +442,15 @@ class Moderation(Cog):
             description=f"The member `{member}` has been muted by {ctx.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.author.display_name, icon_url=member.avatar_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=member.avatar.url if member.avatar else None,
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         if reason:
             em.add_field(name="reason:", value=reason, inline=False)
@@ -495,9 +525,15 @@ class Moderation(Cog):
             title=f"🔇 - List of previous mutes of {member}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.author.display_name, icon_url=member.avatar_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=member.avatar.url if member.avatar else None,
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         db_user = self.bot.user_repo.get_user(ctx.guild.id, member.id)
 

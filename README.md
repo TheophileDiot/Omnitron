@@ -15,6 +15,8 @@
     ·
     <a href="https://github.com/TheophileDiot/Omnitron/issues">Request Feature</a>
     ·
+    <a href="https://discord.com/oauth2/authorize?client_id=874201843562065930&permissions=395408796759&scope=applications.commands%20bot">Invite me</a>
+    ·
     <a href="https://theophilediot.github.io/Omnitron/">Documentation</a>
     <br />
     <a href="https://github.com/TheophileDiot/Omnitron/main/LICENSE"><img alt="License: MIT" src="https://black.readthedocs.io/en/stable/_static/license.svg"></a>

@@ -1,23 +1,28 @@
-from discord import (
+from inspect import Parameter
+from time import time
+from typing import Union
+
+from disnake import (
+    ButtonStyle,
     CategoryChannel,
     Embed,
     Forbidden,
     Member,
     NotFound,
     Role,
+    SelectOption,
     TextChannel,
     VoiceChannel,
+    Permissions,
+    Message,
 )
-from discord.ext.commands import bot_has_permissions, Context, Cog, group
-from discord.ext.commands.errors import (
+from disnake.ext.commands import bot_has_permissions, Context, Cog, group
+from disnake.ext.commands.errors import (
     BadArgument,
     BadUnionArgument,
     MissingRequiredArgument,
 )
-from dislash import ActionRow, Button, SelectMenu, SelectOption
-from inspect import Parameter
-from time import time
-from typing import Union
+from disnake.ui import Button, Select, View
 
 from bot import Omnitron
 from data import Utils, Xp_class
@@ -25,7 +30,7 @@ from data import Utils, Xp_class
 BOOL2VAL = {True: "ON", False: "OFF"}
 
 
-class Moderation(Cog):
+class Moderation(Cog, name="moderation.config"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.xp_class = Xp_class(bot)
@@ -135,6 +140,7 @@ class Moderation(Cog):
 
                     _mods = mods
                     mods = list(mods)
+                    warning_mods = []
                     dropped_mods = []
                     bot_mods = []
                     for mod in _mods:
@@ -142,6 +148,50 @@ class Moderation(Cog):
                             if mod.id in set(self.bot.moderators[ctx.guild.id]):
                                 del mods[mods.index(mod)]
                                 dropped_mods.append(mod)
+                                continue
+                            elif mod.id in set(self.bot.djs[ctx.guild.id]):
+                                del mods[mods.index(mod)]
+                                warning_mods.append([mod, "dj"])
+                                continue
+                            elif (
+                                "muted_role" in self.bot.configs[ctx.guild.id]
+                                and self.bot.configs[ctx.guild.id]["muted_role"] == mod
+                            ):
+                                del mods[mods.index(mod)]
+                                warning_mods.append([mod, "muted_role"])
+                                continue
+                            elif mod in set(
+                                self.bot.configs[ctx.guild.id]["xp"][
+                                    "prestiges"
+                                ].values()
+                            ):
+                                del mods[mods.index(mod)]
+                                warning_mods.append([mod, "prestige"])
+                                continue
+                            elif "lvl2role" in self.bot.configs[ctx.guild.id][
+                                "xp"
+                            ] and mod in set(
+                                self.bot.configs[ctx.guild.id]["xp"][
+                                    "lvl2role"
+                                ].values()
+                            ):
+                                del mods[mods.index(mod)]
+                                warning_mods.append([mod, "lvl2role"])
+                                continue
+                            elif (
+                                "select2role" in self.bot.configs[ctx.guild.id]
+                                and "selects"
+                                in self.bot.configs[ctx.guild.id]["select2role"]
+                                and mod
+                                in {
+                                    v["role"]
+                                    for v in self.bot.configs[ctx.guild.id][
+                                        "select2role"
+                                    ]["selects"].values()
+                                }
+                            ):
+                                del mods[mods.index(mod)]
+                                warning_mods.append([mod, "select2role"])
                                 continue
                             elif isinstance(mod, Member) and mod.bot:
                                 del mods[mods.index(mod)]
@@ -163,17 +213,25 @@ class Moderation(Cog):
                                 self.bot.moderators[ctx.guild.id].index(mod.id)
                             ]
 
+                    resp = ""
+
                     if bot_mods:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{mod}`' for mod in bot_mods])} {'is a' if len(bot_mods) == 1 else 'are'} bot user{'s' if len(bot_mods) > 1 else ''} so you can't add {'them' if len(bot_mods) > 1 else 'him'} in the moderators list!",
-                            delete_after=20,
-                        )
+                        resp += f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{mod}`' for mod in bot_mods])} {'is a' if len(bot_mods) == 1 else 'are'} bot user{'s' if len(bot_mods) > 1 else ''} so you can't add {'them' if len(bot_mods) > 1 else 'him'} in the moderators list!"
 
                     if dropped_mods:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in dropped_mods])} {'is' if len(dropped_mods) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the moderators list!",
-                            delete_after=20,
+                        resp += (
+                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            + f"{', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in dropped_mods])} {'is' if len(dropped_mods) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the moderators list!"
                         )
+
+                    if warning_mods:
+                        resp += (
+                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            + f"{', '.join([f'`@{mod[0]} ({type(mod[0]).__name__})` is already assigned to a {mod[1]} role' for mod in warning_mods])}!"
+                        )
+
+                    if resp:
+                        await ctx.reply(resp, delete_after=20)
 
                     if mods:
                         await ctx.send(
@@ -204,7 +262,7 @@ class Moderation(Cog):
                 )
             except Exception as e:
                 await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} `@{mod}` {'role' if isinstance(mod, Role) else 'member'} to the moderators list! please try again in a few seconds! Error type: {type(e)}",
+                    f"⚠️ - {ctx.author.mention} - An error occurred while updating the moderators list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
@@ -263,6 +321,7 @@ class Moderation(Cog):
 
                     _djs = djs
                     djs = list(djs)
+                    warning_djs = []
                     dropped_djs = []
                     bot_djs = []
                     for dj in _djs:
@@ -270,6 +329,46 @@ class Moderation(Cog):
                             if dj.id in set(self.bot.djs[ctx.guild.id]):
                                 del djs[djs.index(dj)]
                                 dropped_djs.append(dj)
+                                continue
+                            elif dj in set(
+                                self.bot.configs[ctx.guild.id]["xp"][
+                                    "prestiges"
+                                ].values()
+                            ):
+                                del djs[djs.index(dj)]
+                                warning_djs.append([dj, "prestige"])
+                                continue
+                            elif (
+                                "muted_role" in self.bot.configs[ctx.guild.id]
+                                and self.bot.configs[ctx.guild.id]["muted_role"] == dj
+                            ):
+                                del djs[djs.index(dj)]
+                                warning_djs.append([dj, "muted_role"])
+                                continue
+                            elif "lvl2role" in self.bot.configs[ctx.guild.id][
+                                "xp"
+                            ] and dj in set(
+                                self.bot.configs[ctx.guild.id]["xp"][
+                                    "lvl2role"
+                                ].values()
+                            ):
+                                del djs[djs.index(dj)]
+                                warning_djs.append([dj, "lvl2role"])
+                                continue
+                            elif (
+                                "select2role" in self.bot.configs[ctx.guild.id]
+                                and "selects"
+                                in self.bot.configs[ctx.guild.id]["select2role"]
+                                and dj
+                                in {
+                                    v["role"]
+                                    for v in self.bot.configs[ctx.guild.id][
+                                        "select2role"
+                                    ]["selects"].values()
+                                }
+                            ):
+                                del djs[djs.index(dj)]
+                                warning_djs.append([dj, "select2role"])
                                 continue
                             elif isinstance(dj, Member) and dj.bot:
                                 del djs[djs.index(dj)]
@@ -292,22 +391,30 @@ class Moderation(Cog):
                             ]
                             try:
                                 await ctx.send(
-                                    f"ℹ️ - Removed `@{await ctx.guild.try_member(int(dj.id)) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                                    f"ℹ️ - Removed `@{ctx.guild.get_member(int(dj.id)) or await ctx.guild.fetch_member(int(dj.id)) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
                                 )
                             except NotFound:
                                 pass
 
+                    resp = ""
+
                     if bot_djs:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{dj}`' for dj in bot_djs])} {'is a' if len(bot_djs) == 1 else 'are'} bot user{'s' if len(bot_djs) > 1 else ''} so you can't add {'them' if len(bot_djs) > 1 else 'him'} in the djs list!",
-                            delete_after=20,
-                        )
+                        resp += f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{dj}`' for dj in bot_djs])} {'is a' if len(bot_djs) == 1 else 'are'} bot user{'s' if len(bot_djs) > 1 else ''} so you can't add {'them' if len(bot_djs) > 1 else 'him'} in the djs list!"
 
                     if dropped_djs:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in dropped_djs])} {'is' if len(dropped_djs) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the djs list!",
-                            delete_after=20,
+                        resp += (
+                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            + f"{', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in dropped_djs])} {'is' if len(dropped_djs) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the djs list!"
                         )
+
+                    if warning_djs:
+                        resp += (
+                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            + f"{', '.join([f'`@{dj[0]} ({type(dj[0]).__name__})` is already assigned to a {dj[1]} role' for dj in warning_djs])}!"
+                        )
+
+                    if resp:
+                        await ctx.reply(resp, delete_after=20)
 
                     if djs:
                         await ctx.send(
@@ -416,7 +523,7 @@ class Moderation(Cog):
             try:
                 await msg.add_reaction("👀")
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {ctx.channel.mention} (message: {msg.jump_url}, reaction: 👀)!"
+                f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {ctx.channel.mention} (message: {msg.jump_url}, reaction: 👀)! Required perms: `{', '.join([Permissions.add_reactions])}`"
                 raise
 
     @config_group.command(
@@ -425,7 +532,7 @@ class Moderation(Cog):
         aliases=["ticket"],
         brief="📥",
         description="This option manage the server's tickets channel and category!",
-        usage="(on|update|resolve|off) (#channel) (#category|<category_name>)",
+        usage="(on|update|resolve|off) (#channel) (#category)",
     )
     async def config_tickets_command(
         self,
@@ -532,24 +639,16 @@ class Moderation(Cog):
                         )
 
                         if isinstance(tickets_channel, TextChannel):
-                            if (
-                                ctx.guild.me.permissions_in(
-                                    self.bot.configs[ctx.guild.id]["tickets"][
-                                        "tickets_channel"
-                                    ]
-                                ).read_message_history
-                                and ctx.guild.me.permissions_in(
-                                    self.bot.configs[ctx.guild.id]["tickets"][
-                                        "tickets_channel"
-                                    ]
-                                ).manage_messages
-                            ):
+                            perms = self.bot.configs[ctx.guild.id]["tickets"][
+                                "tickets_channel"
+                            ].permissions_for(ctx.guild.me)
+                            if perms.read_message_history and perms.manage_messages:
                                 await self.bot.configs[ctx.guild.id]["tickets"][
                                     "tickets_channel"
                                 ].purge(check=lambda m: m.author.id == self.bot.user.id)
                             else:
                                 await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}!",
+                                    f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
                                     ctx.guild.id,
                                 )
 
@@ -587,49 +686,51 @@ class Moderation(Cog):
                             description="**To create a ticket please click on the button 📥**\n\nAfter clicking on the button, a private room will be created at the bottom of the ticket category.\n\nYou can only create one ticket at a time.",
                         )
 
-                        em.set_thumbnail(url=ctx.guild.icon_url)
+                        em.set_thumbnail(
+                            url=ctx.guild.icon.url if ctx.guild.icon else None
+                        )
                         em.set_footer(
-                            text=self.bot.user.name, icon_url=self.bot.user.avatar_url
+                            text=self.bot.user.name,
+                            icon_url=self.bot.user.avatar.url
+                            if self.bot.user.avatar
+                            else None,
                         )
 
-                        if self.bot.configs[ctx.guild.id]["tickets"][
-                            "tickets_channel"
-                        ].can_send:
+                        if (
+                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
+                            .permissions_for(ctx.guild.me)
+                            .send_messages
+                        ):
+                            view = View(timeout=None)
+                            view.add_item(
+                                Button(
+                                    style=ButtonStyle.primary,
+                                    emoji="📥",
+                                    custom_id=f"{self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].id}.ticket_create",
+                                )
+                            )
                             await self.bot.configs[ctx.guild.id]["tickets"][
                                 "tickets_channel"
                             ].send(
-                                content=None,
                                 embed=em,
-                                components=[
-                                    ActionRow(
-                                        Button(
-                                            style=1,
-                                            emoji="📥",
-                                            custom_id=f"{self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].id}.ticket_create",
-                                        )
-                                    )
-                                ],
+                                view=view,
                             )
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention} (i tried to send the message that allow users to create tickets so please reactivate this feature after changing the permissions)!",
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention} (i tried to send the message that allow users to create tickets so please reactivate this feature after changing the permissions)! Required perms: `{', '.join([Permissions.send_messages])}`",
                                 ctx.guild.id,
                             )
                 else:
-                    if (
-                        ctx.guild.me.permissions_in(
-                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
-                        ).read_message_history
-                        and ctx.guild.me.permissions_in(
-                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
-                        ).manage_messages
-                    ):
+                    perms = self.bot.configs[ctx.guild.id]["tickets"][
+                        "tickets_channel"
+                    ].permissions_for(ctx.guild.me)
+                    if perms.read_message_history and perms.manage_messages:
                         await self.bot.configs[ctx.guild.id]["tickets"][
                             "tickets_channel"
                         ].purge(check=lambda m: m.author.id == self.bot.user.id)
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}!",
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
                             ctx.guild.id,
                         )
 
@@ -639,16 +740,18 @@ class Moderation(Cog):
                         ].channels
                     )
 
-                    if ctx.guild.me.permissions_in(
+                    if (
                         self.bot.configs[ctx.guild.id]["tickets"]["tickets_category"]
-                    ).manage_channels:
+                        .permissions_for(ctx.guild.me)
+                        .manage_channels
+                    ):
                         for channel in channels:
                             await channel.delete(
                                 reason=f"Tickets turned off by {ctx.author}!"
                             )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention}!",
+                            f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention}! Required perms: `{', '.join([Permissions.manage_channels])}`",
                             ctx.guild.id,
                         )
 
@@ -694,7 +797,7 @@ class Moderation(Cog):
         aliases=["select_2_role", "select2role"],
         brief="🥸",
         description="This option manage the server's server_2_role feature!",
-        usage='(add|update|resolve|remove|purge "Title" @role)',
+        usage='(add|update|resolve|remove|purge "Title" @role <"description">)',
     )
     async def config_select_2_role_command(
         self,
@@ -702,6 +805,8 @@ class Moderation(Cog):
         option: Utils.to_lower = None,
         title: str = None,
         role: Role = None,
+        *,
+        description: str = "",
     ):
         if option:
             try:
@@ -733,42 +838,11 @@ class Moderation(Cog):
                                 f"ℹ️ - {ctx.author.mention} - The title `{title}` is already assigned to a role! Value: `@{self.bot.configs[ctx.guild.id]['select2role']['selects'][title]}`",
                                 delete_after=20,
                             )
-                        elif (
-                            "select2role" in self.bot.configs[ctx.guild.id]
-                            and "selects"
-                            in self.bot.configs[ctx.guild.id]["select2role"]
-                            and role
-                            in set(
-                                self.bot.configs[ctx.guild.id]["select2role"][
-                                    "selects"
-                                ].values()
-                            )
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
-                                delete_after=20,
-                            )
-                        elif "lvl2role" in self.bot.configs[ctx.guild.id][
-                            "xp"
-                        ] and role in set(
-                            self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
-                                delete_after=20,
-                            )
-                        elif "prestiges" in self.bot.configs[ctx.guild.id][
-                            "xp"
-                        ] and role in set(
-                            self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
-                                delete_after=20,
-                            )
+                        elif self.check_role_duplicates(ctx, role):
+                            return
 
                         self.bot.config_repo.add_select2role(
-                            ctx.guild.id, title, f"{role}", role.id
+                            ctx.guild.id, title, f"{role}", role.id, description
                         )
 
                         if "select2role" not in self.bot.configs[ctx.guild.id]:
@@ -785,7 +859,7 @@ class Moderation(Cog):
 
                         self.bot.configs[ctx.guild.id]["select2role"]["selects"][
                             title
-                        ] = role
+                        ] = {"role": role, "description": description}
 
                         await ctx.send(
                             f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the title `{title}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the select to role list."
@@ -817,16 +891,22 @@ class Moderation(Cog):
                             del self.bot.configs[ctx.guild.id]["select2role"]["selects"]
 
                         members = set(ctx.guild.members)
-                        async with self.bot.limiter:
-                            for member in members:
-                                if member.bot:
-                                    continue
+                        if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
+                            async with self.bot.limiter:
+                                for member in members:
+                                    if member.bot:
+                                        continue
 
-                                try:
-                                    await member.remove_roles(role)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
-                                    raise
+                                    try:
+                                        await member.remove_roles(role)
+                                    except Forbidden as f:
+                                        f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
+                                        raise
+                        else:
+                            await self.bot.utils_class.send_message_to_mods(
+                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old select to role role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
+                                ctx.guild.id,
+                            )
                 elif option == "resolve":
                     await ctx.send(
                         f"ℹ️ - Resolved the select2role message successfully."
@@ -852,9 +932,9 @@ class Moderation(Cog):
                     await ctx.send(
                         f"ℹ️ - Removed all the titles from the select to role list."
                     )
-
                     members = set(ctx.guild.members)
-                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                         async with self.bot.limiter:
                             for member in members:
                                 if member.bot:
@@ -867,7 +947,7 @@ class Moderation(Cog):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)!",
+                            f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -889,6 +969,18 @@ class Moderation(Cog):
                                 ]
                             )
                         except NotFound:
+                            perms = self.bot.configs[ctx.guild.id]["select2role"][
+                                "channel"
+                            ].permissions_for(ctx.guild.me)
+                            if perms.read_message_history and perms.manage_messages:
+                                await self.bot.configs[ctx.guild.id]["select2role"][
+                                    "channel"
+                                ].purge(check=lambda m: m.author.id == self.bot.user.id)
+                            else:
+                                await self.bot.utils_class.send_message_to_mods(
+                                    f"⚠️ - I don't have the right permissions to purge messages in the (select_to_role) channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
+                                    ctx.guild.id,
+                                )
                             pass
 
                     em = Embed(
@@ -897,86 +989,82 @@ class Moderation(Cog):
                         description="Here are the server's select to role available, choose one or more roles you wish to be assigned.\n\n**If you want the role to be removed, deselect the corresponding role!**",
                     )
 
-                    em.set_thumbnail(url=ctx.guild.icon_url)
+                    em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
                     em.set_footer(
-                        text=self.bot.user.name, icon_url=self.bot.user.avatar_url
+                        text=self.bot.user.name,
+                        icon_url=self.bot.user.avatar.url
+                        if self.bot.user.avatar
+                        else None,
                     )
-                    em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+                    em.set_author(
+                        name=ctx.guild.name,
+                        icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
+                    )
 
                     options = []
                     if (
                         "select2role" in self.bot.configs[ctx.guild.id]
                         and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
                     ):
-                        em.add_field(
-                            name="Available roles:",
-                            value="\n".join(
-                                [
-                                    f"{title}: `@{role.name}`"
-                                    for title, role in self.bot.configs[ctx.guild.id][
-                                        "select2role"
-                                    ]["selects"].items()
-                                ]
-                            ),
-                        )
-
-                        for title, role in self.bot.configs[ctx.guild.id][
+                        values = []
+                        for title, value in self.bot.configs[ctx.guild.id][
                             "select2role"
                         ]["selects"].items():
+                            values.append(f"{title}: `@{value['role'].name}`")
+
                             options.append(
                                 SelectOption(
-                                    label=title, value=role.name, default=False
+                                    label=title,
+                                    description=value["description"],
+                                    value=title,
+                                    default=False,
                                 )
                             )
+
+                        em.add_field(
+                            name="Available roles:",
+                            value="\n".join(values),
+                        )
                     else:
                         em.add_field(
                             name="Information", value="For now no roles are available!"
                         )
 
+                    view = None
+
+                    if options:
+                        view = View(timeout=None)
+                        view.add_item(
+                            Select(
+                                options=options,
+                                custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                placeholder="Choose one or more role!",
+                                min_values=0,
+                                max_values=len(options),
+                            )
+                        )
+
                     if roles_msg:
                         await roles_msg.edit(
-                            content=None,
                             embed=em,
-                            components=[
-                                SelectMenu(
-                                    options=options,
-                                    custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
-                                    placeholder="Choose one or more role!",
-                                    min_values=0,
-                                    max_values=len(options),
-                                )
-                            ]
-                            if options
-                            else None,
+                            view=view,
                         )
                     else:
-                        if self.bot.configs[ctx.guild.id]["select2role"][
-                            "channel"
-                        ].can_send:
+                        if (
+                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
+                            .permissions_for(ctx.guild.me)
+                            .send_messages
+                        ):
                             self.bot.configs[ctx.guild.id]["select2role"][
                                 "roles_msg_id"
                             ] = (
                                 await self.bot.configs[ctx.guild.id]["select2role"][
                                     "channel"
-                                ].send(
-                                    content=None,
-                                    embed=em,
-                                    components=[
-                                        SelectMenu(
-                                            options=options,
-                                            custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
-                                            placeholder="Choose one or more role!",
-                                            min_values=0,
-                                            max_values=len(options),
-                                        )
-                                    ]
-                                    if options
-                                    else None,
-                                )
+                                ].send(embed=em, view=view)
                             ).id
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention} (i tried to send the message that allow users to select a role so please reactivate this feature after changing the permissions)!",
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention} (i tried to send the message that allow users to select a role so please reactivate this feature after changing the permissions)! Required perms: `{', '.join([Permissions.send_messages])}`",
                                 ctx.guild.id,
                             )
             except MissingRequiredArgument as mre:
@@ -1001,7 +1089,15 @@ class Moderation(Cog):
             ]
             roles_mess = ""
             for key in sorted(server_select_2_role):
-                roles_mess += f"`{key}` = `@{server_select_2_role[key]}`\n"
+                roles_mess += (
+                    f"`{key}` => `@{server_select_2_role[key]['role']}`"
+                    + (
+                        f", description = `{server_select_2_role[key]['description']}`"
+                        if server_select_2_role[key]["description"]
+                        else ""
+                    )
+                    + "\n"
+                )
             await ctx.send(
                 f"**ℹ️ - Here's the list of the server's select to role:**\n\n{roles_mess}"
             )
@@ -1014,7 +1110,7 @@ class Moderation(Cog):
         description="This option manage the server's muted role",
         usage="(set|remove @role)",
     )
-    async def config_djs_command(
+    async def config_muted_role_command(
         self,
         ctx: Context,
         option: Utils.to_lower = None,
@@ -1029,14 +1125,8 @@ class Moderation(Cog):
                                 name="muted_role", kind=Parameter.KEYWORD_ONLY
                             )
                         )
-                    elif (
-                        "muted_role" in self.bot.configs[ctx.guild.id]
-                        and self.bot.configs[ctx.guild.id]["muted_role"] == muted
-                    ):
-                        return await ctx.reply(
-                            f"ℹ️ - This role is already the one configured has the muted role!",
-                            delete_after=20,
-                        )
+                    elif self.check_role_duplicates(ctx, muted):
+                        return
 
                     old_role = None
                     if "muted_role" in self.bot.configs[ctx.guild.id]:
@@ -1049,12 +1139,14 @@ class Moderation(Cog):
                         f"ℹ️ - The muted role is now `@{muted}` in this guild!"
                     )
 
-                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                         db_users = self.bot.user_repo.get_users(ctx.guild.id)
                         for db_user in db_users.values():
                             if db_user["muted"]:
                                 try:
-                                    member = await ctx.guild.try_member(
+                                    member = ctx.guild.get_member(
+                                        int(db_user["id"])
+                                    ) or await ctx.guild.fetch_member(
                                         int(db_user["id"])
                                     )
                                 except NotFound:
@@ -1074,7 +1166,7 @@ class Moderation(Cog):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles {f'`@{old_role.name}` ' if old_role else ''}`@{muted.name}` (i tried to replace the old muted role with the new one from muted members)!",
+                            f"⚠️ - I don't have the right permissions to manage these roles {f'`@{old_role.name}` ' if old_role else ''}`@{muted.name}` (i tried to replace the old muted role with the new one from muted members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                             ctx.guild.id,
                         )
                 elif option == "remove":
@@ -1092,12 +1184,14 @@ class Moderation(Cog):
                         f"ℹ️ - The muted role is now removed from this guild!"
                     )
 
-                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                         db_users = self.bot.user_repo.get_users(ctx.guild.id)
                         for db_user in db_users.values():
                             if db_user["muted"]:
                                 try:
-                                    member = await ctx.guild.try_member(
+                                    member = ctx.guild.get_member(
+                                        int(db_user["id"])
+                                    ) or await ctx.guild.fetch_member(
                                         int(db_user["id"])
                                     )
                                 except NotFound:
@@ -1110,7 +1204,7 @@ class Moderation(Cog):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old muted role from muted members)!",
+                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old muted role from muted members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -1404,6 +1498,8 @@ class Moderation(Cog):
                                 f"ℹ️ - {ctx.author.mention} - `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} is already in the boosted xp list!",
                                 delete_after=20,
                             )
+                        elif self.check_role_duplicates(ctx, boosted):
+                            return
 
                         if bonus <= 0:
                             return await ctx.reply(
@@ -1447,7 +1543,7 @@ class Moderation(Cog):
 
                         try:
                             await ctx.send(
-                                f"ℹ️ - Removed `@{await ctx.guild.try_member(int(boosted.id)) if isinstance(boosted, Member) else ctx.guild.get_role(int(boosted.id))}` {'role' if isinstance(boosted, Role) else 'member'} from the boosted xp list."
+                                f"ℹ️ - Removed `@{ctx.guild.get_member(int(boosted.id)) or await ctx.guild.fetch_member(int(boosted.id)) if isinstance(boosted, Member) else ctx.guild.get_role(int(boosted.id))}` {'role' if isinstance(boosted, Role) else 'member'} from the boosted xp list."
                             )
                         except NotFound:
                             pass
@@ -1599,39 +1695,8 @@ class Moderation(Cog):
                                 f"ℹ️ - {ctx.author.mention} - The level `{lvl}` is already assigned to a role! Value: `@{self.bot.configs[ctx.guild.id]['xp']['lvl2role'][lvl]}`",
                                 delete_after=20,
                             )
-                        elif "lvl2role" in self.bot.configs[ctx.guild.id][
-                            "xp"
-                        ] and role in set(
-                            self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
-                                delete_after=20,
-                            )
-                        elif "prestiges" in self.bot.configs[ctx.guild.id][
-                            "xp"
-                        ] and role in set(
-                            self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
-                                delete_after=20,
-                            )
-                        elif (
-                            "select2role" in self.bot.configs[ctx.guild.id]
-                            and "selects"
-                            in self.bot.configs[ctx.guild.id]["select2role"]
-                            and role
-                            in set(
-                                self.bot.configs[ctx.guild.id]["select2role"][
-                                    "selects"
-                                ].values()
-                            )
-                        ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
-                                delete_after=20,
-                            )
+                        elif self.check_role_duplicates(ctx, role):
+                            return
 
                         self.bot.config_repo.add_xp_lvl2role(
                             ctx.guild.id, lvl, f"{role}", role.id
@@ -1678,7 +1743,7 @@ class Moderation(Cog):
                         if not self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]:
                             del self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]
 
-                        if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                        if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                             members = set(ctx.guild.members)
                             async with self.bot.limiter:
                                 for member in members:
@@ -1692,7 +1757,7 @@ class Moderation(Cog):
                                         raise
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)!",
+                                f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                                 ctx.guild.id,
                             )
                 elif option == "purge":
@@ -1711,7 +1776,7 @@ class Moderation(Cog):
                         f"ℹ️ - Removed all the levels from the level to role list."
                     )
 
-                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                         members = set(ctx.guild.members)
                         async with self.bot.limiter:
                             for member in members:
@@ -1725,7 +1790,7 @@ class Moderation(Cog):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)!",
+                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -1783,38 +1848,8 @@ class Moderation(Cog):
                         raise MissingRequiredArgument(
                             param=Parameter(name="role", kind=Parameter.KEYWORD_ONLY)
                         )
-                    elif "prestiges" in self.bot.configs[ctx.guild.id][
-                        "xp"
-                    ] and role in set(
-                        self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
-                    ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
-                            delete_after=20,
-                        )
-                    elif "lvl2role" in self.bot.configs[ctx.guild.id][
-                        "xp"
-                    ] and role in set(
-                        self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
-                    ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
-                            delete_after=20,
-                        )
-                    elif (
-                        "select2role" in self.bot.configs[ctx.guild.id]
-                        and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
-                        and role
-                        in set(
-                            self.bot.configs[ctx.guild.id]["select2role"][
-                                "selects"
-                            ].values()
-                        )
-                    ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
-                            delete_after=20,
-                        )
+                    elif self.check_role_duplicates(ctx, role):
+                        return
 
                     if "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
                         self.bot.configs[ctx.guild.id]["xp"]["prestiges"] = {}
@@ -1868,22 +1903,8 @@ class Moderation(Cog):
                             f"ℹ️ - {ctx.author.mention} - The prestige `{prestige}` already have the role `@{role}` assigned!",
                             delete_after=20,
                         )
-                    elif role in set(
-                        self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
-                    ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
-                            delete_after=20,
-                        )
-                    elif "lvl2role" in self.bot.configs[ctx.guild.id][
-                        "xp"
-                    ] and role in set(
-                        self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
-                    ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
-                            delete_after=20,
-                        )
+                    elif self.check_role_duplicates(ctx, role):
+                        return
 
                     old_role = self.bot.configs[ctx.guild.id]["xp"]["prestiges"][
                         prestige
@@ -1898,7 +1919,7 @@ class Moderation(Cog):
                         f"ℹ️ - Updated the prestige `{prestige}` corresponding to the `@{role}` role from the prestiges list."
                     )
 
-                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                         members = set(ctx.guild.members)
                         async with self.bot.limiter:
                             for member in members:
@@ -1918,7 +1939,7 @@ class Moderation(Cog):
                                     raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)!",
+                            f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                             ctx.guild.id,
                         )
                 elif option == "remove":
@@ -1939,7 +1960,7 @@ class Moderation(Cog):
                     if not self.bot.configs[ctx.guild.id]["xp"]["prestiges"]:
                         del self.bot.configs[ctx.guild.id]["xp"]["prestiges"]
 
-                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                         members = set(ctx.guild.members)
                         async with self.bot.limiter:
                             for member in members:
@@ -1959,7 +1980,7 @@ class Moderation(Cog):
                                 )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)!",
+                            f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                             ctx.guild.id,
                         )
                 elif option == "purge":
@@ -1978,7 +1999,7 @@ class Moderation(Cog):
                         f"ℹ️ - Removed all the prestiges from the prestiges list."
                     )
 
-                    if ctx.guild.me.permissions_in(ctx.channel).manage_roles:
+                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
                         members = set(ctx.guild.members)
                         async with self.bot.limiter:
                             for member in members:
@@ -1998,7 +2019,7 @@ class Moderation(Cog):
                                 )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)!",
+                            f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)! Required perms: `{', '.join([Permissions.manage_roles])}`",
                             ctx.guild.id,
                         )
                 else:
@@ -2571,9 +2592,9 @@ class Moderation(Cog):
                             f"ℹ️ - This channel is already the one configured to have polls sent in it!",
                             delete_after=20,
                         )
-                    elif not polls_channel.can_send:
+                    elif not polls_channel.permissions_for(ctx.guild.me).send_messages:
                         return await ctx.reply(
-                            f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it!",
+                            f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join([Permissions.send_messages])}`",
                             delete_after=20,
                         )
 
@@ -2594,11 +2615,13 @@ class Moderation(Cog):
                         polls = self.bot.poll_repo.get_polls(ctx.guild.id)
 
                         if len(polls) > 1 or polls and "old" not in polls:
-                            if not ctx.guild.me.permissions_in(
-                                old_polls_channel
-                            ).manage_messages:
+                            perms = old_polls_channel.permissions_for(ctx.guild.me)
+                            if (
+                                not perms.read_message_history
+                                or not perms.manage_messages
+                            ):
                                 await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to delete messages in the channel {old_polls_channel.mention}! (I tried to delete the old polls)",
+                                    f"⚠️ - I don't have the right permissions to delete messages in the channel {old_polls_channel.mention}! (I tried to delete the old polls) Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
                                     ctx.guild.id,
                                 )
 
@@ -2619,18 +2642,26 @@ class Moderation(Cog):
                                 ].cancel()
                                 del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
 
-                                if ctx.guild.me.permissions_in(
-                                    old_polls_channel
-                                ).manage_messages:
+                                if perms.read_message_history and perms.manage_messages:
                                     await poll_msg.delete()
 
                                 poll = polls[poll]
+                                view = View(timeout=None)
+                                [
+                                    [
+                                        view.add_item(
+                                            Button(label=b.label, custom_id=b.custom_id)
+                                        )
+                                        for b in a.children
+                                    ]
+                                    for a in poll_msg.components
+                                ]
 
-                                poll_msg = await self.bot.configs[ctx.guild.id][
-                                    "polls_channel"
-                                ].send(
+                                poll_msg: Message = await self.bot.configs[
+                                    ctx.guild.id
+                                ]["polls_channel"].send(
                                     embed=poll_msg.embeds[0],
-                                    components=poll_msg.components,
+                                    view=view,
                                 )
 
                                 self.bot.poll_repo.create_poll(
@@ -2661,11 +2692,12 @@ class Moderation(Cog):
 
                     polls = self.bot.poll_repo.get_polls(ctx.guild.id)
                     if len(polls) > 1 or polls and "old" not in polls:
-                        if not ctx.guild.me.permissions_in(
-                            self.bot.configs[ctx.guild.id]["polls_channel"]
-                        ).manage_messages:
+                        perms = self.bot.configs[ctx.guild.id][
+                            "polls_channel"
+                        ].permissions_for(ctx.guild.me)
+                        if not perms.read_message_history or not perms.manage_messages:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to delete messages in the channel {self.bot.configs[ctx.guild.id]['polls_channel'].mention}! (I tried to delete the old polls)",
+                                f"⚠️ - I don't have the right permissions to delete messages in the channel {self.bot.configs[ctx.guild.id]['polls_channel'].mention}! (I tried to delete the old polls) Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
                                 ctx.guild.id,
                             )
 
@@ -2686,9 +2718,7 @@ class Moderation(Cog):
                             ].cancel()
                             del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
 
-                            if ctx.guild.me.permissions_in(
-                                self.bot.configs[ctx.guild.id]["polls_channel"]
-                            ).manage_messages:
+                            if perms.read_message_history and perms.manage_messages:
                                 await poll_msg.delete()
 
                     self.bot.config_repo.set_polls_channel(ctx.guild.id, None)
@@ -2746,9 +2776,11 @@ class Moderation(Cog):
                             f"ℹ️ - The server's select to role channel is already {select2role_channel.mention}!",
                             delete_after=20,
                         )
-                    elif not select2role_channel.can_send:
+                    elif not select2role_channel.permissions_for(
+                        ctx.guild.me
+                    ).send_messages:
                         return await ctx.reply(
-                            f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it!",
+                            f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it! Required perms: `{', '.join([Permissions.send_messages])}`",
                             delete_after=20,
                         )
 
@@ -2756,9 +2788,9 @@ class Moderation(Cog):
                     if "select2role" not in self.bot.configs[ctx.guild.id]:
                         self.bot.configs[ctx.guild.id]["select2role"] = {}
                     elif "channel" in self.bot.configs[ctx.guild.id]["select2role"]:
-                        old_channel = self.bot.configs[ctx.guild.id]["select2role"][
-                            "channel"
-                        ]
+                        old_channel: TextChannel = self.bot.configs[ctx.guild.id][
+                            "select2role"
+                        ]["channel"]
 
                     self.bot.configs[ctx.guild.id]["select2role"][
                         "channel"
@@ -2768,18 +2800,14 @@ class Moderation(Cog):
                     )
 
                     if old_channel:
-                        if (
-                            ctx.guild.me.permissions_in(
-                                old_channel
-                            ).read_message_history
-                            and ctx.guild.me.permissions_in(old_channel).manage_messages
-                        ):
+                        perms = old_channel.permissions_for(ctx.guild.me)
+                        if perms.read_message_history and perms.manage_messages:
                             await old_channel.purge(
                                 check=lambda m: m.author.id == self.bot.user.id
                             )
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to purge messages in the channel {old_channel.mention}!",
+                                f"⚠️ - I don't have the right permissions to purge messages in the channel {old_channel.mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
                                 ctx.guild.id,
                             )
 
@@ -2789,59 +2817,67 @@ class Moderation(Cog):
                         description="Here are the server's select to role available, choose one or more roles you wish to be assigned.\n\n**If you want the role to be removed, deselect the corresponding role!**",
                     )
 
-                    em.set_thumbnail(url=ctx.guild.icon_url)
+                    em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
                     em.set_footer(
-                        text=self.bot.user.name, icon_url=self.bot.user.avatar_url
+                        text=self.bot.user.name,
+                        icon_url=self.bot.user.avatar.url
+                        if self.bot.user.avatar
+                        else None,
                     )
-                    em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+                    em.set_author(
+                        name=ctx.guild.name,
+                        icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
+                    )
 
                     options = []
                     if (
                         "select2role" in self.bot.configs[ctx.guild.id]
                         and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
                     ):
-                        em.add_field(
-                            name="Available roles:",
-                            value="\n".join(
-                                [
-                                    f"{title}: `@{role.name}`"
-                                    for title, role in self.bot.configs[ctx.guild.id][
-                                        "select2role"
-                                    ]["selects"].items()
-                                ]
-                            ),
-                        )
-
-                        for title, role in self.bot.configs[ctx.guild.id][
+                        values = []
+                        for title, value in self.bot.configs[ctx.guild.id][
                             "select2role"
                         ]["selects"].items():
+                            values.append(f"{title}: `@{value['role'].name}`")
+
                             options.append(
                                 SelectOption(
-                                    label=title, value=role.name, default=False
+                                    label=title,
+                                    description=value["description"],
+                                    value=title,
+                                    default=False,
                                 )
                             )
+
+                        em.add_field(
+                            name="Available roles:",
+                            value="\n".join(values),
+                        )
                     else:
                         em.add_field(
                             name="Information", value="For now no roles are available!"
+                        )
+
+                    view = None
+
+                    if options:
+                        view = View(timeout=None)
+                        view.add_item(
+                            Select(
+                                options=options,
+                                custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                placeholder="Choose one or more role!",
+                                min_values=0,
+                                max_values=len(options),
+                            )
                         )
 
                     self.bot.configs[ctx.guild.id]["select2role"]["roles_msg_id"] = (
                         await self.bot.configs[ctx.guild.id]["select2role"][
                             "channel"
                         ].send(
-                            content=None,
                             embed=em,
-                            components=[
-                                SelectMenu(
-                                    options=options,
-                                    custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
-                                    placeholder="Choose one or more role!",
-                                    min_values=0,
-                                    max_values=len(options),
-                                )
-                            ]
-                            if options
-                            else None,
+                            view=view,
                         )
                     ).id
 
@@ -2861,20 +2897,16 @@ class Moderation(Cog):
                             delete_after=20,
                         )
 
-                    if (
-                        ctx.guild.me.permissions_in(
-                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
-                        ).read_message_history
-                        and ctx.guild.me.permissions_in(
-                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
-                        ).manage_messages
-                    ):
+                    perms = self.bot.configs[ctx.guild.id]["select2role"][
+                        "channel"
+                    ].permissions_for(ctx.guild.me)
+                    if perms.read_message_history and perms.manage_messages:
                         await self.bot.configs[ctx.guild.id]["select2role"][
                             "channel"
                         ].purge(check=lambda m: m.author.id == self.bot.user.id)
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}!",
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join([Permissions.read_message_history, Permissions.manage_messages])}`",
                             ctx.guild.id,
                         )
 
@@ -2974,6 +3006,61 @@ class Moderation(Cog):
                 f"⚠️ - {ctx.author.mention} - An error occurred while setting the mods channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
+
+    """ METHOD(S) """
+
+    async def check_role_duplicates(self, ctx: Context, role: Role) -> bool:
+        if (
+            "muted_role" in self.bot.configs[ctx.guild.id]
+            and self.bot.configs[ctx.guild.id]["muted_role"] == role
+        ):
+            await ctx.reply(
+                f"ℹ️ - This role is already the one configured has the muted role!",
+                delete_after=20,
+            )
+        elif role.id in set(self.bot.moderators[ctx.guild.id]):
+            await ctx.reply(
+                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a moderator!",
+                delete_after=20,
+            )
+        elif role.id in set(self.bot.djs[ctx.guild.id]):
+            await ctx.reply(
+                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a dj!",
+                delete_after=20,
+            )
+        elif "prestiges" in self.bot.configs[ctx.guild.id]["xp"] and role in set(
+            self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
+        ):
+            await ctx.reply(
+                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
+                delete_after=20,
+            )
+        elif "lvl2role" in self.bot.configs[ctx.guild.id]["xp"] and role in set(
+            self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
+        ):
+            await ctx.reply(
+                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
+                delete_after=20,
+            )
+        elif (
+            "select2role" in self.bot.configs[ctx.guild.id]
+            and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
+            and role
+            in {
+                v["role"]
+                for v in self.bot.configs[ctx.guild.id]["select2role"][
+                    "selects"
+                ].values()
+            }
+        ):
+            await ctx.reply(
+                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
+                delete_after=20,
+            )
+        else:
+            return False
+
+        return True
 
 
 def setup(bot):

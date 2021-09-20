@@ -1,11 +1,11 @@
 from asyncio import sleep
-from discord import RawMessageDeleteEvent
-from discord.ext.commands import Cog
+from disnake import RawMessageDeleteEvent
+from disnake.ext.commands import Cog
 
 from bot import Omnitron
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_raw_message_delete"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 

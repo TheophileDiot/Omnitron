@@ -1,10 +1,10 @@
 from datetime import datetime
-from discord.ext.commands import bot_has_permissions, Cog, command, Context
+from disnake.ext.commands import bot_has_permissions, Cog, command, Context
 
 from bot import Omnitron
 
 
-class Miscellaneous(Cog):
+class Miscellaneous(Cog, name="misc.uptime"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.start_time = datetime.now()

@@ -1,11 +1,11 @@
-from discord import RawMessageUpdateEvent
-from discord.ext.commands import Cog
+from disnake import RawMessageUpdateEvent
+from disnake.ext.commands import Cog
 
 from bot import Omnitron
 from data import Utils
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_raw_message_edit"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 

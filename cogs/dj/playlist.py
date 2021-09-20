@@ -1,7 +1,7 @@
 from re import compile as re_compile
 
-from discord import Embed, Colour
-from discord.ext.commands import (
+from disnake import Embed, Colour
+from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
@@ -13,7 +13,7 @@ from discord.ext.commands import (
 from data import Utils
 
 
-class Dj(Cog):
+class Dj(Cog, name="dj.playlist"):
     def __init__(self, bot):
         self.bot = bot
         self.url_rx = re_compile(r"https?://(?:www\.)?.+")
@@ -78,9 +78,13 @@ class Dj(Cog):
 
         em.title = "Playlist"
 
-        em.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        em.set_author(
+            name=ctx.author.display_name,
+            icon_url=ctx.author.avatar.url if ctx.author.avatar else None,
+        )
         em.set_footer(
-            text=ctx.guild.owner.display_name, icon_url=ctx.guild.owner.avatar_url
+            text=ctx.guild.owner.display_name,
+            icon_url=ctx.guild.owner.avatar.url if ctx.guild.owner.avatar else None,
         )
 
         x = 0

@@ -3,4 +3,5 @@
 logs/**
 env/
 .env
+.cache
 count_lines.py

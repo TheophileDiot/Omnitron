@@ -12,16 +12,16 @@ from itertools import chain
 from logging import basicConfig, DEBUG, error, info
 from multiprocessing import Process
 from os import getenv, listdir, makedirs, name, path, system, remove
-from ratelimiter import RateLimiter
 from subprocess import PIPE, call
-from time import time
 from sys import exc_info
+from time import time
 from traceback import format_exc
+from typing import Union
 
 from aiohttp import ClientSession
-from discord import Colour, Forbidden, Intents, Message
-from discord.ext.commands import Bot, Context
-from discord.ext.commands.errors import (
+from disnake import ApplicationCommandInteraction, Colour, Forbidden, Intents, Message
+from disnake.ext.commands import Bot, Context
+from disnake.ext.commands.errors import (
     BotMissingPermissions,
     BadArgument,
     BadUnionArgument,
@@ -33,8 +33,8 @@ from discord.ext.commands.errors import (
     MissingPermissions,
     NotOwner,
 )
-from dislash import InteractionClient
 from dotenv import load_dotenv
+from ratelimiter import RateLimiter
 
 
 async def limited(until):
@@ -49,7 +49,6 @@ class Omnitron(Bot):
             intents=self.get_intents(),
             help_command=None,
             case_insensitive=True,
-            case_insensitive_prefix=True,
             strip_after_prefix=True,
             self_bot=False,
             **kwargs,
@@ -108,47 +107,18 @@ class Omnitron(Bot):
         info("Lavalink started")
 
         self.color = Colour(BOT_COLOR) or self.user.color
-        InteractionClient(self)
 
     """ EVENTS """
 
+    async def on_slash_command_error(
+        self, inter: ApplicationCommandInteraction, _error
+    ):
+        """Override default slash command error handler to log errors and prevent the bot from crashing."""
+        await self.handle_error(inter, _error)
+
     async def on_command_error(self, ctx: Context, _error):
         """Override default command error handler to log errors and prevent the bot from crashing."""
-        if isinstance(_error, MissingRequiredArgument):
-            resp = f"ℹ️ - The `{ctx.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help."
-        elif isinstance(_error, MissingPermissions):
-            resp = f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
-        elif isinstance(_error, MissingAnyRole):
-            resp = f"⛔ - You do not have one of the required roles to run this command! One of these roles is required: `{', '.join(_error.missing_roles)}`"
-        elif isinstance(_error, NotOwner):
-            resp = f"⛔ - The `{ctx.command.qualified_name}` command is reserved for the bot owner!"
-        elif isinstance(_error, BotMissingPermissions):
-            resp = f"⛔ - I don't have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
-        elif isinstance(_error, CommandOnCooldown):
-            resp = f"ℹ️ - The `{ctx.command.qualified_name}`command is currently in cooldown, please try again in `{'%.2f' % _error.retry_after}` seconds, this command can be used `{_error.cooldown.rate}` times every `{_error.cooldown.per}` seconds."
-        elif isinstance(_error, MaxConcurrencyReached):
-            resp = f"ℹ️ - The `{ctx.command.qualified_name}` command has too many executions in progress (`{_error.number}` executions), please try again in a few seconds, this command can only be used a maximum of `{_error.number}` times simultaneously."
-        elif isinstance(_error, BadArgument):
-            resp = f"⚠️ - Please provide valid arguments! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help."
-        elif isinstance(_error, BadUnionArgument):
-            resp = f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{self.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help."
-        elif isinstance(_error, CheckFailure):
-            if self.last_check == "moderator":
-                resp = f"⛔ - {ctx.author.mention} - You must be moderator of this server to use this command!"
-            elif self.last_check == "dj":
-                resp = f"⛔ - {ctx.author.mention} - You must be a dj in this server to use this command!"
-            else:
-                raise _error
-
-            self.last_check = None
-        else:
-            raise _error.original
-
-        try:
-            await ctx.reply(resp, delete_after=20)
-        except Forbidden as f:
-            f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message (replying to {ctx.author}): `{resp}`)!"
-            raise
+        await self.handle_error(ctx, _error)
 
     async def on_error(self, event, *args, **kwargs):
         error(format_exc())
@@ -166,7 +136,18 @@ class Omnitron(Bot):
                 )
         else:
             # Log that the bot had an error
-            await (await self.fetch_user(self.owner_id)).send(
+            bot_owner = self.owner
+
+            if not bot_owner:
+                bot_owner = await self.fetch_user(
+                    int(
+                        self.owner_id or self.owner_ids[0]
+                        if self.owner_ids
+                        else self.get_ownerid()
+                    )
+                )
+
+            return await bot_owner.send(
                 f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)"
             )
 
@@ -185,6 +166,48 @@ class Omnitron(Bot):
             await self.process_commands(message)
 
     """ METHOD(S) """
+
+    async def handle_error(
+        self, source: Union[Context, ApplicationCommandInteraction], _error
+    ):
+        if isinstance(_error, MissingRequiredArgument):
+            resp = f"ℹ️ - The `{source.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
+        elif isinstance(_error, MissingPermissions):
+            resp = f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
+        elif isinstance(_error, MissingAnyRole):
+            resp = f"⛔ - You do not have one of the required roles to run this command! One of these roles is required: `{', '.join(_error.missing_roles)}`"
+        elif isinstance(_error, NotOwner):
+            resp = f"⛔ - The `{source.command.qualified_name}` command is reserved for the bot owner!"
+        elif isinstance(_error, BotMissingPermissions):
+            resp = f"⛔ - I don't have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
+        elif isinstance(_error, CommandOnCooldown):
+            resp = f"ℹ️ - The `{source.command.qualified_name}`command is currently in cooldown, please try again in `{'%.2f' % _error.retry_after}` seconds, this command can be used `{_error.cooldown.rate}` times every `{_error.cooldown.per}` seconds."
+        elif isinstance(_error, MaxConcurrencyReached):
+            resp = f"ℹ️ - The `{source.command.qualified_name}` command has too many executions in progress (`{_error.number}` executions), please try again in a few seconds, this command can only be used a maximum of `{_error.number}` times simultaneously."
+        elif isinstance(_error, BadArgument):
+            resp = f"⚠️ - Please provide valid arguments! `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
+        elif isinstance(_error, BadUnionArgument):
+            resp = f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
+        elif isinstance(_error, CheckFailure):
+            if self.last_check == "moderator":
+                resp = f"⛔ - {source.author.mention} - You must be moderator of this server to use this command!"
+            elif self.last_check == "dj":
+                resp = f"⛔ - {source.author.mention} - You must be a dj in this server to use this command!"
+            else:
+                raise _error
+
+            self.last_check = None
+        else:
+            raise _error.original
+
+        try:
+            if isinstance(source, Context):
+                await source.reply(resp, delete_after=20)
+            else:
+                await source.response.send_message(resp, delete_after=20)
+        except Forbidden as f:
+            f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {source.channel.mention} (message (replying to {source.author}): `{resp}`)!"
+            raise
 
     async def process_commands(self, message: Message):
         """This function processes the commands that the user has sent"""
@@ -222,12 +245,15 @@ class Omnitron(Bot):
     @staticmethod
     def start_lavalink():
         """starts lavalink."""
-        call(["java", "-jar", "data/Lavalink.jar"], stdout=PIPE, stderr=PIPE)
+        try:
+            call(["java", "-jar", "data/Lavalink.jar"], stdout=PIPE, stderr=PIPE)
+        except Exception:
+            pass
 
     @staticmethod
     def get_ownerid():
         """Returns the owner id."""
-        return getenv("OWNER_ID") or OWNER_ID or "559057271737548810"
+        return getenv("OWNER_ID") or OWNER_ID or 559057271737548810
 
     @staticmethod
     def get_intents():

@@ -1,5 +1,7 @@
-from discord import Embed, NotFound
-from discord.ext.commands import (
+from time import time
+
+from disnake import ButtonStyle, Embed, NotFound
+from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
@@ -7,14 +9,13 @@ from discord.ext.commands import (
     group,
     max_concurrency,
 )
-from dislash import ActionRow, Button
-from time import time
+from disnake.ui import Button, View
 
 from bot import Omnitron
 from data import Utils
 
 
-class Moderation(Cog):
+class Moderation(Cog, name="moderation.poll"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
@@ -73,39 +74,41 @@ class Moderation(Cog):
         if not duration_s:
             return
 
-        em = Embed(
+        em: Embed = Embed(
             colour=self.bot.color,
             title=title,
             description="Please click on the button of your choice, you can only answer once!",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-        em.add_field(name="**Number of answers:**", value="`0`", inline=False)
-
-        poll_msg = await self.bot.configs[ctx.guild.id]["polls_channel"].send(
-            content=None, embed=em
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
         )
-        buttons_rows = [[]]
-        x = 0
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
+        em.add_field(name="**Number of answers:**", value="`0`", inline=False)
+        view = View(timeout=None)
 
         for choice in range(0, len(choices), 5):
             for c in range(
                 choice, (choice + 5) if choice + 5 <= len(choices) else len(choices)
             ):
-                buttons_rows[x].append(Button(style=2, label=f"{c} - {choices[c]}"))
-            if c < len(choices) - 1:
-                x += 1
-                buttons_rows.append([])
+                view.add_item(
+                    Button(style=ButtonStyle.secondary, label=f"{c} - {choices[c]}")
+                )
 
-        await poll_msg.edit(
-            content=None,
+        poll_msg = await self.bot.configs[ctx.guild.id]["polls_channel"].send(
             embed=em,
-            components=[ActionRow(*row) for row in buttons_rows],
+            view=view,
         )
         self.bot.poll_repo.create_poll(
-            ctx.guild.id, poll_msg.id, duration_s, time(), buttons_rows
+            ctx.guild.id,
+            poll_msg.id,
+            duration_s,
+            time(),
+            view,
         )
         poll = self.bot.poll_repo.get_poll(ctx.guild.id, poll_msg.id)
 
@@ -129,7 +132,7 @@ class Moderation(Cog):
     async def poll_infos_command(self, ctx: Context, id_message: int = None):
         if "polls_channel" not in self.bot.configs[ctx.guild.id]:
             return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before getting informations about one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
+                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before getting information about one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
                 delete_after=20,
             )
 
@@ -173,9 +176,14 @@ class Moderation(Cog):
             colour=self.bot.color,
         )
 
-        em.set_thumbnail(url=ctx.guild.icon_url)
-        em.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_author(
+            name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
+        )
+        em.set_footer(
+            text=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
 
         if poll:
             em.title = f"Poll information *{poll_message.embeds[0].title}*!"
@@ -252,7 +260,7 @@ class Moderation(Cog):
                     )
                 x += 1
 
-        await ctx.send(content=None, embed=em)
+        await ctx.send(embed=em)
 
     @poll_group.command(
         name="end",

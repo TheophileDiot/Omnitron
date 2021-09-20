@@ -58,7 +58,6 @@ Search.setIndex({
     bot: [0, 1],
     can: 0,
     categori: 0,
-    category_nam: 0,
     certain: 0,
     cfg: 0,
     channel: [0, 1],

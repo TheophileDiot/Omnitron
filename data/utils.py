@@ -2,15 +2,13 @@ from asyncio import sleep
 from collections import OrderedDict
 from math import floor
 from re import compile as re_compile
-from sys import exc_info
 from time import time
-from traceback import extract_tb
 from typing import Union
 
-from discord import Embed, Forbidden, Guild, Message, Member, NotFound
-from discord.ext.commands import Context, check
-from discord.ext.commands.errors import BadArgument
-from discord.ext.tasks import loop
+from disnake import Embed, Forbidden, Guild, Message, Member, NotFound
+from disnake.ext.commands import Context, check
+from disnake.ext.commands.errors import BadArgument
+from disnake.ext.tasks import loop
 
 from bot import Omnitron
 
@@ -101,11 +99,12 @@ class Utils:
 
             if "muted_role" in self.bot.configs[guild_id]:
                 try:
+                    guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(
+                        guild_id
+                    )
                     await (
-                        await (
-                            self.bot.get_guild(guild_id)
-                            or await self.bot.fetch_guild(guild_id)
-                        ).try_member(int(db_user["id"]))
+                        guild.get_member(int(db_user["id"]))
+                        or await guild.fetch_member(int(db_user["id"]))
                     ).remove_roles(self.bot.configs[guild_id]["muted_role"])
                 except NotFound:
                     pass
@@ -117,12 +116,18 @@ class Utils:
         if timeout <= 0:
             timeout = 2
 
-        await sleep(timeout)
+        try:
+            await sleep(timeout)
+        except Exception:
+            return
+
         self.bot.user_repo.unmute_user(guild_id, db_user["id"])
 
         try:
             guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(guild_id)
-            member = await guild.try_member(int(db_user["id"]))
+            member = guild.get_member(int(db_user["id"])) or await guild.fetch_member(
+                int(db_user["id"])
+            )
         except NotFound:
             member = db_user["name"]
 
@@ -179,7 +184,10 @@ class Utils:
         if timeout <= 0:
             timeout = 2
 
-        await sleep(timeout)
+        try:
+            await sleep(timeout)
+        except Exception:
+            return
 
         guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(guild_id)
         bans = await guild.bans()
@@ -209,6 +217,9 @@ class Utils:
             guild_id,
         )
 
+        if user and user.id in self.bot.tasks[guild_id]["ban_completions"]:
+            del self.bot.tasks[guild_id]["ban_completions"][user.id]
+
     async def send_message_to_mods(self, message: str, guild_id: int):
         """This method send a message to all mods"""
         guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(guild_id)
@@ -233,8 +244,10 @@ class Utils:
                             pass
                 else:
                     try:
-                        mod = await guild.try_member(int(mod))
-                        mod.send(message)
+                        mod = guild.get_member(int(mod)) or await guild.fetch_member(
+                            int(mod)
+                        )
+                        await mod.send(message)
                     except Forbidden or NotFound:
                         pass
 
@@ -247,7 +260,18 @@ class Utils:
 
                 await guild_owner.send(message)
             except Forbidden or NotFound:
-                return await (await self.bot.fetch_user(self.bot.owner_id)).send(
+                bot_owner = self.bot.owner
+
+                if not bot_owner:
+                    bot_owner = await self.bot.fetch_user(
+                        int(
+                            self.bot.owner_id or self.bot.owner_ids[0]
+                            if self.bot.owner_ids
+                            else self.bot.get_ownerid()
+                        )
+                    )
+
+                return await bot_owner.send(
                     f"{message}\nAnd couldn't send a message to the owner of the server!"
                 )
 
@@ -258,9 +282,14 @@ class Utils:
             description=f"Use the command format `{self.get_guild_pre(ctx.message)[0]}{ctx.command.qualified_name} <option>` to view more info about an option.",
         )
 
-        em.set_thumbnail(url=self.bot.user.avatar_url)
-        em.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar_url)
-        em.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon_url)
+        em.set_thumbnail(url=self.bot.user.avatar.url if self.bot.user.avatar else None)
+        em.set_author(
+            name=self.bot.user.name,
+            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
+        )
+        em.set_footer(
+            text=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
+        )
 
         cmds = OrderedDict(
             sorted(
@@ -431,7 +460,10 @@ class Utils:
             if timeout <= 0:
                 timeout = 2
 
-            await sleep(timeout)
+            try:
+                await sleep(timeout)
+            except Exception:
+                return
 
         poll = self.bot.poll_repo.get_poll(guild.id, poll["id"])
 
@@ -469,7 +501,7 @@ class Utils:
             completion_embed.add_field(
                 name="Results:", value="\n".join(fields), inline=False
             )
-            await poll_msg.edit(content=None, embed=completion_embed, components=[])
+            await poll_msg.edit(content=None, embed=completion_embed, view=[])
 
         del self.bot.configs[guild.id]["polls"][poll["id"]]
         self.bot.poll_repo.delete_poll(guild.id, poll["id"])
@@ -558,7 +590,7 @@ class Utils:
             [int(k) for k in bot.config_repo.get_moderators(guild.id).keys()]
         )  # Initialize moderators list for every guilds
 
-        bot.tasks[guild.id] = {"mute_completions": {}}
+        bot.tasks[guild.id] = {"mute_completions": {}, "ban_completions": {}}
 
         for db_user in db_users.values():
             if "muted" in db_user and db_user["muted"]:
@@ -588,7 +620,9 @@ class Utils:
                     bot.user_repo.unmute_user(guild.id, db_user["id"])
 
             if "ban" in db_user:
-                self.task_launcher(
+                self.bot.tasks[guild.id]["ban_completions"][
+                    db_user["id"]
+                ] = self.task_launcher(
                     self.ban_completion,
                     (
                         db_user,
@@ -734,7 +768,12 @@ class Utils:
 
             if "selects" in select2role:
                 bot.configs[guild.id]["select2role"]["selects"] = {
-                    key: guild.get_role(value["role_id"])
+                    key: {
+                        "role": guild.get_role(value["role_id"]),
+                        "description": value["description"]
+                        if "description" in value
+                        else "",
+                    }
                     for key, value in select2role["selects"].items()
                 }
 

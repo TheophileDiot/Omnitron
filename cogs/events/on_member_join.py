@@ -1,13 +1,13 @@
 from asyncio import sleep
-from discord import Member
-from discord.ext.commands import Cog
+from disnake import Member
+from disnake.ext.commands import Cog
 from time import time
 
 from bot import Omnitron
 from data import Utils
 
 
-class Events(Cog):
+class Events(Cog, name="events.on_member_join"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 

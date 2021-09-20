@@ -1,7 +1,8 @@
-from collections import OrderedDict
+from collections import OrderedDict, ChainMap
 from datetime import datetime
-from itertools import chain
 from typing import Union
+
+from disnake.ui import View
 
 from data import Utils
 
@@ -20,7 +21,7 @@ class Poll:
         _id: int,
         _duration: int,
         at: float,
-        choices: Union[list, OrderedDict],
+        choices: Union[View, OrderedDict],
         responses: list = None,
     ) -> None:
         self.model.create(
@@ -31,10 +32,15 @@ class Poll:
                 "duration_s": _duration,
                 "created_at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
                 "created_at_s": at,
-                "choices": {
-                    choice.label: 0 for choice in list(chain.from_iterable(choices))
-                }
-                if isinstance(choices, list)
+                "choices": dict(
+                    ChainMap(
+                        *[
+                            {c["label"]: 0 for c in a["components"]}
+                            for a in choices.to_components()
+                        ]
+                    )
+                )
+                if isinstance(choices, View)
                 else choices,
                 "responses": responses,
             },
