@@ -1,12 +1,12 @@
 const loadTheme = () => {
-  let theme = localStorage.getItem("theme");
+  let theme = localStorage.getItem('theme');
 
   if (theme !== null) {
-    if (theme === "dark")
-      document.documentElement.setAttribute("data-theme", "dark");
+    if (theme === 'dark')
+      document.documentElement.setAttribute('data-theme', 'dark');
   } else {
-    localStorage.setItem("theme", "light");
-    document.documentElement.setAttribute("data-theme", "light");
+    localStorage.setItem('theme', 'light');
+    document.documentElement.setAttribute('data-theme', 'light');
   }
 };
 

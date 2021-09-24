@@ -17,7 +17,7 @@ Features
 ==================
 
 .. note::
-   More features will come in the near future.
+   More features will come in the near future. Slash commands are on current development.
 
 * High configurability
 * Smart (e.g. if a channel configured to a purpose is deleted it will handle it)

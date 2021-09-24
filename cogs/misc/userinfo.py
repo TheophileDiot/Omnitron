@@ -12,23 +12,22 @@ from disnake.ext.commands import (
 from bot import Omnitron
 
 
-class Miscellaneous(Cog, name="misc.userinfos"):
+class Miscellaneous(Cog, name="misc.userinfo"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
     @command(
-        name="userinfos",
-        aliases=["ui", "userinfo"],
+        name="userinfo",
+        aliases=["ui", "userinfos"],
         usage="(@member)",
         description="Get the information from a member or from yourself!",
     )
     @bot_has_permissions(send_messages=True)
-    async def userinfos_command(self, ctx: Context, member: Member = None):
-        await self.handle_userinfos(ctx, member)
+    async def userinfo_command(self, ctx: Context, member: Member = None):
+        await self.handle_userinfo(ctx, member)
 
     @slash_command(
-        name="userinfos",
-        aliases=["ui", "userinfo"],
+        name="userinfo",
         description="Get the information from a member or from yourself!",
         options=[
             Option(
@@ -40,12 +39,12 @@ class Miscellaneous(Cog, name="misc.userinfos"):
         ],
     )
     @bot_has_permissions(send_messages=True)
-    async def userinfos_slash_command(self, ctx: Context, member: Member = None):
-        await self.handle_userinfos(ctx, member)
+    async def userinfo_slash_command(self, ctx: Context, member: Member = None):
+        await self.handle_userinfo(ctx, member)
 
     """ METHOD(S) """
 
-    async def handle_userinfos(
+    async def handle_userinfo(
         self, source: Union[Context, ApplicationCommandInteraction], member: Member
     ):
         if not member:

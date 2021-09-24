@@ -27,7 +27,6 @@ class Miscellaneous(Cog, name="misc.serverinfos"):
 
     @slash_command(
         name="serverinfos",
-        aliases=["si", "serverinfo"],
         description="Get server's information!",
     )
     async def serverinfos_slash_command(self, inter: ApplicationCommandInteraction):

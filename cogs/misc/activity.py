@@ -51,7 +51,6 @@ class Miscellaneous(Cog, name="misc.activity"):
 
     @slash_command(
         name="activity",
-        aliases=["activities"],
         description="This command manage the server's activities",
         options=[
             Option(

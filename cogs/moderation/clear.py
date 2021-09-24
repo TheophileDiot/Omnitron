@@ -37,7 +37,6 @@ class Moderation(Cog, name="moderation.clear"):
 
     @slash_command(
         name="clear",
-        aliases=["delete"],
         description="Delete a given number of messages in the channel from everyone or a certain member! (default: 10)",
         options=[
             Option(
@@ -85,6 +84,9 @@ class Moderation(Cog, name="moderation.clear"):
                     ephemeral=True,
                 )
 
+        if isinstance(source, ApplicationCommandInteraction):
+            await source.response.defer(ephemeral=True)
+
         if member:
             deleted = await source.channel.purge(
                 limit=nbr_msgs, check=(lambda m: m.author == member)
@@ -98,9 +100,8 @@ class Moderation(Cog, name="moderation.clear"):
                 delete_after=20,
             )
         else:
-            await source.response.send_message(
-                f"ℹ️ - `{len(deleted)}` message{'s' if len(deleted) > 1 else ''} deleted {f'from the user {member}' if member else ''}.",
-                ephemeral=True,
+            await source.edit_original_message(
+                content=f"ℹ️ - `{len(deleted)}` message{'s' if len(deleted) > 1 else ''} deleted {f'from the user {member}' if member else ''}."
             )
 
 

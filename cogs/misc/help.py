@@ -82,7 +82,10 @@ class Miscellaneous(Cog, name="misc.help"):
                 elif root not in cogs:
                     cogs[root] = []
 
-                cogs[root].append(self.bot.cogs[cog].get_commands()[0])
+                cmds = self.bot.cogs[cog].get_commands()
+
+                if cmds:
+                    cogs[root].append(cmds[0])
 
             for cog, cmds in cogs.items():
                 em.add_field(
