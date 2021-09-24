@@ -58,7 +58,7 @@ class Omnitron(Bot):
             case_insensitive=True,
             strip_after_prefix=True,
             self_bot=False,
-            test_guilds=[872500404540280893],
+            test_guilds=[872500404540280893, 880384324027969556],
             **kwargs,
         )
 
