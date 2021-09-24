@@ -5,7 +5,15 @@ from re import compile as re_compile
 from time import time
 from typing import Union
 
-from disnake import Embed, Forbidden, Guild, Message, Member, NotFound
+from disnake import (
+    ApplicationCommandInteraction,
+    Embed,
+    Forbidden,
+    Guild,
+    Message,
+    Member,
+    NotFound,
+)
 from disnake.ext.commands import Context, check
 from disnake.ext.commands.errors import BadArgument
 from disnake.ext.tasks import loop
@@ -331,56 +339,90 @@ class Utils:
         return em
 
     async def parse_duration(
-        self, _duration: int, type_duration: str, ctx: Context
+        self,
+        _duration: int,
+        type_duration: str,
+        source: Union[Context, ApplicationCommandInteraction],
     ) -> bool or int or None:
         type_duration = self.to_lower(type_duration)
 
         if _duration <= 0:
             try:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                    delete_after=15,
-                )
+                if isinstance(source, Context):
+                    await source.reply(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.",
+                        delete_after=15,
+                    )
+                else:
+                    await source.response.send_message(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater than 0!",
+                        ephemeral=True,
+                    )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {source.channel.mention} (message: `⚠️ - {source.author.mention} - Please provide a minimum duration greater than 0! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.`)!"
                 raise
 
             return False
         elif (
-            ctx.command.parents[0].name if ctx.command.parents else ""
-        ) == "poll" and (
+            (
+                source.command.qualified_name
+                if isinstance(source, Context)
+                else source.application_command.qualified_name
+            )
+            == "poll create"
+        ) and (
             _duration < 600
             and type_duration == "s"
             or _duration < 10
             and type_duration == "m"
         ):
             try:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equalt to 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                    delete_after=15,
-                )
+                if isinstance(source, Context):
+                    await source.reply(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater or equal to 10 minutes to create a poll! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.",
+                        delete_after=15,
+                    )
+                else:
+                    await source.response.send_message(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater or equal to 10 minutes to create a poll!",
+                        ephemeral=True,
+                    )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {source.channel.mention} (message: `⚠️ - {source.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.`)!"
                 raise
 
             return False
-        elif ctx.command.qualified_name == "sanction mute add" and (
+        elif (
+            source.command.qualified_name
+            if isinstance(source, Context)
+            else source.application_command.qualified_name
+        ) == "sanction mute add" and (
             _duration < 600
             and type_duration == "s"
             or _duration < 10
             and type_duration == "m"
         ):
             try:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equal to 10 minutes to mute a member! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                    delete_after=15,
-                )
+                if isinstance(source, Context):
+                    await source.reply(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater or equal to 10 minutes to mute a member! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.",
+                        delete_after=15,
+                    )
+                else:
+                    await source.response.send_message(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater or equal to 10 minutes to mute a member!",
+                        ephemeral=True,
+                    )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {source.channel.mention} (message: `⚠️ - {source.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.`)!"
                 raise
 
             return False
-        elif ctx.command.qualified_name == "sanction ban" and (
+        elif (
+            source.command.qualified_name
+            if isinstance(source, Context)
+            else source.application_command.qualified_name
+        ) == "sanction ban" and (
             _duration < 86400
             and type_duration == "s"
             or _duration < 1440
@@ -391,12 +433,18 @@ class Utils:
             and type_duration == "d"
         ):
             try:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - Please provide a minimum duration greater or equal to 1 day to ban a member! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                    delete_after=15,
-                )
+                if isinstance(source, Context):
+                    await source.reply(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater or equal to 1 day to ban a member! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.",
+                        delete_after=15,
+                    )
+                else:
+                    await source.response.send_message(
+                        f"⚠️ - {source.author.mention} - Please provide a minimum duration greater or equal to 1 day to ban a member! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.",
+                        ephemeral=True,
+                    )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {source.channel.mention} (message: `⚠️ - {source.author.mention} - Please provide a minimum duration greater than 10 minutes to create a poll! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.`)!"
                 raise
 
             return False
@@ -411,12 +459,12 @@ class Utils:
             return _duration * 86400
         else:
             try:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - Please provide a valid duration type! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                await source.reply(
+                    f"⚠️ - {source.author.mention} - Please provide a valid duration type! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.",
                     delete_after=15,
                 )
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration type! `{self.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)!"
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {source.channel.mention} (message: `⚠️ - {source.author.mention} - Please provide a valid duration type! `{self.get_guild_pre(source.message)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help.`)!"
                 raise
 
             return False
@@ -525,8 +573,8 @@ class Utils:
 
     @staticmethod
     def check_bot_starting():
-        def predicate(ctx: Context):
-            return not ctx.bot.starting
+        def predicate(source: Union[Context, ApplicationCommandInteraction]):
+            return not source.bot.starting
 
         return check(predicate)
 
@@ -800,17 +848,17 @@ class Utils:
 
     @classmethod
     def check_moderator(cls):
-        def predicate(ctx: Context):
-            ctx.bot.last_check = "moderator"
-            return cls.is_mod(ctx.author, ctx.bot)
+        def predicate(source: Union[Context, ApplicationCommandInteraction]):
+            source.bot.last_check = "moderator"
+            return cls.is_mod(source.author, source.bot)
 
         return check(predicate)
 
     @classmethod
     def check_dj(cls):
-        def predicate(ctx: Context):
-            ctx.bot.last_check = "dj"
-            return cls.is_dj(ctx.author, ctx.bot)
+        def predicate(source: Union[Context, ApplicationCommandInteraction]):
+            source.bot.last_check = "dj"
+            return cls.is_dj(source.author, source.bot)
 
         return check(predicate)
 

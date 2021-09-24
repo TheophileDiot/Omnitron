@@ -29,7 +29,6 @@ class Miscellaneous(Cog, name="misc.uptime"):
 
     @slash_command(
         name="uptime",
-        aliases=["up", "time"],
         description="Shows how long the bot has been connected!",
     )
     async def uptime_slash_command(self, inter: ApplicationCommandInteraction):

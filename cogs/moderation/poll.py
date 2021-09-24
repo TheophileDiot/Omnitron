@@ -1,6 +1,15 @@
 from time import time
+from typing import Union
 
-from disnake import ButtonStyle, Embed, NotFound
+from disnake import (
+    ApplicationCommandInteraction,
+    ButtonStyle,
+    Embed,
+    NotFound,
+    Option,
+    OptionChoice,
+    OptionType,
+)
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -8,6 +17,7 @@ from disnake.ext.commands import (
     Context,
     group,
     max_concurrency,
+    slash_command,
 )
 from disnake.ui import Button, View
 
@@ -39,7 +49,18 @@ class Moderation(Cog, name="moderation.poll"):
                 )
             )
 
+    @slash_command(
+        name="poll",
+        description="This command manage the server's polls",
+    )
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def poll_slash_group(self, inter: ApplicationCommandInteraction):
+        pass
+
     """ COMMAND(S) """
+
+    """ CREATE """
 
     @poll_group.command(
         name="create",
@@ -57,19 +78,93 @@ class Moderation(Cog, name="moderation.poll"):
         type_duration: Utils.to_lower,
         *choices: str,
     ):
-        if "polls_channel" not in self.bot.configs[ctx.guild.id]:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before creating one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
-                delete_after=20,
-            )
+        await self.handle_create(ctx, title, duration, type_duration, choices)
+
+    @poll_slash_group.sub_command(
+        name="create",
+        description="Create a poll of a specific duration! (10 m minimum) (25 choices max)",
+        options=[
+            Option(
+                name="title",
+                description="The title of the poll",
+                type=OptionType.string,
+                required=True,
+            ),
+            Option(
+                name="choices",
+                description='Enter your different choices separated with ";"',
+                type=OptionType.string,
+                required=True,
+            ),
+            Option(
+                name="duration",
+                description="The value of the duration of the poll",
+                type=OptionType.integer,
+                required=False,
+            ),
+            Option(
+                name="type_duration",
+                description="The type of the duration of the poll",
+                choices=[
+                    OptionChoice(name="seconds", value="s"),
+                    OptionChoice(name="minutes", value="m"),
+                    OptionChoice(name="hours", value="h"),
+                    OptionChoice(name="days", value="d"),
+                ],
+                required=False,
+            ),
+        ],
+    )
+    @max_concurrency(1, per=BucketType.guild)
+    async def poll_create_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        title: str,
+        choices: str,
+        duration: int = 10,
+        type_duration: Utils.to_lower = "m",
+    ):
+        await self.handle_create(
+            inter,
+            title,
+            duration,
+            type_duration,
+            [c.strip() for c in choices.split(";")],
+        )
+
+    async def handle_create(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        title: str,
+        duration: int,
+        type_duration: str,
+        choices: list,
+    ):
+        if "polls_channel" not in self.bot.configs[source.guild.id]:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before creating one! `{self.bot.utils_class.get_guild_pre(source.message)[0]}help {source.command.qualified_name}` to get more help.",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before creating one!",
+                    ephemeral=True,
+                )
         elif len(choices) > 25:
-            return await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - A poll can only contain a maximum of 25 choices! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
-                delete_after=20,
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - A poll can only contain a maximum of 25 choices! `{self.bot.utils_class.get_guild_pre(source.message)[0]}help {source.command.qualified_name}` to get more help.",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⚠️ - {source.author.mention} - A poll can only contain a maximum of 25 choices!",
+                    ephemeral=True,
+                )
 
         duration_s = await self.bot.utils_class.parse_duration(
-            duration, type_duration, ctx
+            duration, type_duration, source
         )
         if not duration_s:
             return
@@ -80,9 +175,10 @@ class Moderation(Cog, name="moderation.poll"):
             description="Please click on the button of your choice, you can only answer once!",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
+            name=source.guild.name,
+            icon_url=source.guild.icon.url if source.guild.icon else None,
         )
         em.set_footer(
             text=self.bot.user.name,
@@ -99,27 +195,36 @@ class Moderation(Cog, name="moderation.poll"):
                     Button(style=ButtonStyle.secondary, label=f"{c} - {choices[c]}")
                 )
 
-        poll_msg = await self.bot.configs[ctx.guild.id]["polls_channel"].send(
+        poll_msg = await self.bot.configs[source.guild.id]["polls_channel"].send(
             embed=em,
             view=view,
         )
         self.bot.poll_repo.create_poll(
-            ctx.guild.id,
+            source.guild.id,
             poll_msg.id,
             duration_s,
             time(),
             view,
         )
-        poll = self.bot.poll_repo.get_poll(ctx.guild.id, poll_msg.id)
+        poll = self.bot.poll_repo.get_poll(source.guild.id, poll_msg.id)
 
-        if "polls" not in self.bot.configs[ctx.guild.id]:
-            self.bot.configs[ctx.guild.id]["polls"] = {}
+        if "polls" not in self.bot.configs[source.guild.id]:
+            self.bot.configs[source.guild.id]["polls"] = {}
 
-        self.bot.configs[ctx.guild.id]["polls"][
+        self.bot.configs[source.guild.id]["polls"][
             poll_msg.id
         ] = self.bot.utils_class.task_launcher(
-            self.bot.utils_class.poll_completion, (ctx.guild, poll), count=1
+            self.bot.utils_class.poll_completion, (source.guild, poll), count=1
         )
+
+        if isinstance(source, Context):
+            await source.send(f'The poll "{title}" was created successfully!')
+        else:
+            await source.response.send_message(
+                f'The poll "{title}" was created successfully!'
+            )
+
+    """ INFO """
 
     @poll_group.command(
         name="info",
@@ -130,55 +235,116 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_infos_command(self, ctx: Context, id_message: int = None):
-        if "polls_channel" not in self.bot.configs[ctx.guild.id]:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before getting information about one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
-                delete_after=20,
+        await self.handle_info(ctx, id_message)
+
+    @poll_slash_group.sub_command(
+        name="info",
+        description="Retrieves information from the specified poll or every polls if none specified.",
+        options=[
+            Option(
+                name="id_message",
+                description="The ID of the message containing the poll",
+                type=OptionType.string,
+                required=False,
+            ),
+        ],
+    )
+    @max_concurrency(1, per=BucketType.guild)
+    async def poll_infos_slash_command(
+        self, inter: ApplicationCommandInteraction, id_message: int = None
+    ):
+        if id_message and not isinstance(id_message, int):
+            return await inter.response.send_message(
+                f"ℹ️ - {inter.author.mention} - Please enter a valid message ID!"
             )
 
-        poll = None
-        if id_message:
-            try:
-                poll_message = await self.bot.configs[ctx.guild.id][
-                    "polls_channel"
-                ].fetch_message(id_message)
-                poll = self.bot.poll_repo.get_poll(ctx.guild.id, id_message)
-            except NotFound:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - The poll you are looking for does not exist!",
+        await self.handle_info(inter, id_message)
+
+    async def handle_info(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        poll_id: Union[int, None] = None,
+    ):
+        if "polls_channel" not in self.bot.configs[source.guild.id]:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before getting information from one! `{self.bot.utils_class.get_guild_pre(source.message)[0]}help {source.command.qualified_name}` to get more help.",
                     delete_after=20,
                 )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before getting information from one!",
+                    ephemeral=True,
+                )
+
+        poll = None
+
+        if poll_id:
+            try:
+                poll_message = await self.bot.configs[source.guild.id][
+                    "polls_channel"
+                ].fetch_message(poll_id)
+                poll = self.bot.poll_repo.get_poll(source.guild.id, poll_id)
+            except NotFound:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - The poll you are looking for does not exist!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - The poll you are looking for does not exist!",
+                        ephemeral=True,
+                    )
         else:
             polls = [
                 poll
-                for key, poll in (self.bot.poll_repo.get_polls(ctx.guild.id)).items()
+                for key, poll in (self.bot.poll_repo.get_polls(source.guild.id)).items()
                 if key != "old"
             ]
+
             if not polls:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - There is no poll going on!",
-                    delete_after=20,
-                )
-            if len(polls) == 1:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - There is no poll going on!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - There is no poll going on!",
+                        ephemeral=True,
+                    )
+            elif len(polls) == 1:
                 try:
                     poll = polls[0]
-                    poll_message = await self.bot.configs[ctx.guild.id][
+                    poll_message = await self.bot.configs[source.guild.id][
                         "polls_channel"
                     ].fetch_message(poll["id"])
                 except NotFound:
                     await self.bot.poll_repo.delete_poll(poll["id"])
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - There is no poll going on!",
-                        delete_after=20,
-                    )
+
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"ℹ️ - {source.author.mention} - There is no poll going on!",
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.response.send_message(
+                            f"ℹ️ - {source.author.mention} - There is no poll going on!",
+                            ephemeral=True,
+                        )
+
+        if isinstance(source, ApplicationCommandInteraction):
+            await source.response.defer()
 
         em = Embed(
             colour=self.bot.color,
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
+            name=source.guild.name,
+            icon_url=source.guild.icon.url if source.guild.icon else None,
         )
         em.set_footer(
             text=self.bot.user.name,
@@ -225,6 +391,7 @@ class Moderation(Cog, name="moderation.poll"):
             em.title = "Information about the different polls in progress!"
             x = 0
             nl = "\n"
+
             while x < len(polls) and x <= 24:
                 if x == 24:
                     em.add_field(
@@ -234,20 +401,29 @@ class Moderation(Cog, name="moderation.poll"):
                     )
                 else:
                     poll = polls[x]
+
                     try:
-                        poll_message = await self.bot.configs[ctx.guild.id][
+                        poll_message = await self.bot.configs[source.guild.id][
                             "polls_channel"
                         ].fetch_message(poll["id"])
                     except NotFound:
                         await self.bot.poll_repo.erase_poll(poll["id"])
                         deleted_polls += 1
+
                         if deleted_polls == len(polls):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - There is no poll going on!",
-                                delete_after=20,
-                            )
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - There is no poll going on!",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.edit_original_message(
+                                    content=f"ℹ️ - {source.author.mention} - There is no poll going on!"
+                                )
+
                         x += 1
                         continue
+
                     winner_choices = [
                         f"`{key}`"
                         for key, val in poll["choices"].items()
@@ -260,7 +436,12 @@ class Moderation(Cog, name="moderation.poll"):
                     )
                 x += 1
 
-        await ctx.send(embed=em)
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.edit_original_message(embed=em)
+
+    """ END """
 
     @poll_group.command(
         name="end",
@@ -271,33 +452,82 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_end_command(self, ctx: Context, id_message: int):
-        if "polls_channel" not in self.bot.configs[ctx.guild.id]:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before ending about one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
-                delete_after=20,
+        await self.handle_end(ctx, id_message)
+
+    @poll_slash_group.sub_command(
+        name="end",
+        description="Stops a poll prematurely",
+        options=[
+            Option(
+                name="id_message",
+                description="The ID of the message containing the poll",
+                type=OptionType.string,
+                required=True,
+            ),
+        ],
+    )
+    @max_concurrency(1, per=BucketType.guild)
+    async def poll_end_slash_command(
+        self, inter: ApplicationCommandInteraction, id_message: int = None
+    ):
+        if id_message and not isinstance(id_message, int):
+            return await inter.response.send_message(
+                f"ℹ️ - {inter.author.mention} - Please enter a valid message ID!"
             )
+
+        await self.handle_end(inter, id_message)
+
+    async def handle_end(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        poll_id: Union[int, None] = None,
+    ):
+        if "polls_channel" not in self.bot.configs[source.guild.id]:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before ending one! `{self.bot.utils_class.get_guild_pre(source.message)[0]}help {source.command.qualified_name}` to get more help.",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before ending one!",
+                    ephemeral=True,
+                )
 
         try:
-            poll_msg = await self.bot.configs[ctx.guild.id][
+            poll_msg = await self.bot.configs[source.guild.id][
                 "polls_channel"
-            ].fetch_message(id_message)
-            poll = self.bot.poll_repo.get_poll(ctx.guild.id, id_message)
+            ].fetch_message(poll_id)
+            poll = self.bot.poll_repo.get_poll(source.guild.id, poll_id)
         except NotFound:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - The poll you are looking for does not exist!",
-                delete_after=20,
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - The poll you are looking for does not exist!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - The poll you are looking for does not exist!",
+                    ephemeral=True,
+                )
 
-        self.bot.configs[ctx.guild.id]["polls"][poll_msg.id].cancel()
-        self.bot.configs[ctx.guild.id]["polls"][
+        self.bot.configs[source.guild.id]["polls"][poll_msg.id].cancel()
+        self.bot.configs[source.guild.id]["polls"][
             poll_msg.id
         ] = self.bot.utils_class.task_launcher(
-            self.bot.utils_class.poll_completion, (ctx.guild, poll, True), count=1
+            self.bot.utils_class.poll_completion, (source.guild, poll, True), count=1
         )
 
-        await ctx.send(
-            f"ℹ️ - The poll `{poll_msg.embeds[0].title}` (ID: `{poll_msg.id}`) has been ended prematurely successfully!"
-        )
+        if isinstance(source, Context):
+            await source.send(
+                f"ℹ️ - The poll `{poll_msg.embeds[0].title}` (ID: `{poll_msg.id}`) has been ended prematurely successfully!"
+            )
+        else:
+            await source.response.send_message(
+                f"ℹ️ - The poll `{poll_msg.embeds[0].title}` (ID: `{poll_msg.id}`) has been ended prematurely successfully!"
+            )
+
+    """ DELETE """
 
     @poll_group.command(
         name="delete",
@@ -308,30 +538,77 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_command(self, ctx: Context, id_message: int):
-        if "polls_channel" not in self.bot.configs[ctx.guild.id]:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - Please configure a polls channel before deleting about one! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}help {ctx.command.qualified_name}` to get more help.",
-                delete_after=20,
+        await self.handle_delete(ctx, id_message)
+
+    @poll_slash_group.sub_command(
+        name="delete",
+        description="Delete a poll prematurely (unlike the command end it will erase completely the poll)",
+        options=[
+            Option(
+                name="id_message",
+                description="The ID of the message containing the poll",
+                type=OptionType.string,
+                required=True,
+            ),
+        ],
+    )
+    @max_concurrency(1, per=BucketType.guild)
+    async def poll_delete_slash_command(
+        self, inter: ApplicationCommandInteraction, id_message: int = None
+    ):
+        if id_message and not isinstance(id_message, int):
+            return await inter.response.send_message(
+                f"ℹ️ - {inter.author.mention} - Please enter a valid message ID!"
             )
+
+        await self.handle_delete(inter, id_message)
+
+    async def handle_delete(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        poll_id: Union[int, None] = None,
+    ):
+        if "polls_channel" not in self.bot.configs[source.guild.id]:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before deleting one! `{self.bot.utils_class.get_guild_pre(source.message)[0]}help {source.command.qualified_name}` to get more help.",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - Please configure a polls channel before deleting one!",
+                    ephemeral=True,
+                )
 
         try:
-            poll_msg = await self.bot.configs[ctx.guild.id][
+            poll_msg = await self.bot.configs[source.guild.id][
                 "polls_channel"
-            ].fetch_message(id_message)
+            ].fetch_message(poll_id)
         except NotFound:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - The poll you are looking for does not exist!",
-                delete_after=20,
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - The poll you are looking for does not exist!",
+                    delete_after=20,
+                )
+            else:
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - The poll you are looking for does not exist!",
+                    ephemeral=True,
+                )
 
-        self.bot.configs[ctx.guild.id]["polls"][poll_msg.id].cancel()
-        del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
-        self.bot.poll_repo.erase_poll(ctx.guild.id, poll_msg.id)
+        self.bot.configs[source.guild.id]["polls"][poll_msg.id].cancel()
+        del self.bot.configs[source.guild.id]["polls"][poll_msg.id]
+        self.bot.poll_repo.erase_poll(source.guild.id, poll_msg.id)
         await poll_msg.delete()
 
-        await ctx.send(
-            f"ℹ️ - The poll `{poll_msg.embeds[0].title}` (ID: `{poll_msg.id}`) has been deleted prematurely successfully!"
-        )
+        if isinstance(source, Context):
+            await source.send(
+                f"ℹ️ - The poll `{poll_msg.embeds[0].title}` (ID: `{poll_msg.id}`) has been deleted prematurely successfully!"
+            )
+        else:
+            await source.response.send_message(
+                f"ℹ️ - The poll `{poll_msg.embeds[0].title}` (ID: `{poll_msg.id}`) has been deleted prematurely successfully!"
+            )
 
 
 def setup(bot):

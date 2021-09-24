@@ -19,7 +19,14 @@ from traceback import format_exc
 from typing import Union
 
 from aiohttp import ClientSession
-from disnake import ApplicationCommandInteraction, Colour, Forbidden, Intents, Message
+from disnake import (
+    ApplicationCommandInteraction,
+    Colour,
+    Forbidden,
+    HTTPException,
+    Intents,
+    Message,
+)
 from disnake.ext.commands import Bot, Context
 from disnake.ext.commands.errors import (
     BotMissingPermissions,
@@ -51,7 +58,7 @@ class Omnitron(Bot):
             case_insensitive=True,
             strip_after_prefix=True,
             self_bot=False,
-            test_guilds=[872500404540280893],
+            test_guilds=[872500404540280893, 880384324027969556],
             **kwargs,
         )
 
@@ -102,10 +109,10 @@ class Omnitron(Bot):
         self.playlists = {}
         self.tasks = {}
 
-        process = Process(target=self.start_lavalink)
-        process.start()  # start the process
-        print("Lavalink successfully initialized.")
-        info("Lavalink started")
+        # process = Process(target=self.start_lavalink) # Disable temporarly because there is a problem with Lavalink
+        # process.start()  # start the process
+        # print("Lavalink successfully initialized.")
+        # info("Lavalink started")
 
         self.color = Colour(BOT_COLOR) or self.user.color
 
@@ -142,7 +149,7 @@ class Omnitron(Bot):
             if not bot_owner:
                 bot_owner = await self.fetch_user(
                     int(
-                        self.owner_id or self.owner_ids[0]
+                        self.owner_id or list(self.owner_ids)[0]
                         if self.owner_ids
                         else self.get_ownerid()
                     )
@@ -174,13 +181,13 @@ class Omnitron(Bot):
         if isinstance(_error, MissingRequiredArgument):
             resp = f"ℹ️ - The `{source.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
         elif isinstance(_error, MissingPermissions):
-            resp = f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
+            resp = f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_permissions)}`"
         elif isinstance(_error, MissingAnyRole):
             resp = f"⛔ - You do not have one of the required roles to run this command! One of these roles is required: `{', '.join(_error.missing_roles)}`"
         elif isinstance(_error, NotOwner):
             resp = f"⛔ - The `{source.command.qualified_name}` command is reserved for the bot owner!"
         elif isinstance(_error, BotMissingPermissions):
-            resp = f"⛔ - I don't have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_perms)}`"
+            resp = f"⛔ - I don't have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_permissions)}`"
         elif isinstance(_error, CommandOnCooldown):
             resp = f"ℹ️ - The `{source.command.qualified_name}`command is currently in cooldown, please try again in `{'%.2f' % _error.retry_after}` seconds, this command can be used `{_error.cooldown.rate}` times every `{_error.cooldown.per}` seconds."
         elif isinstance(_error, MaxConcurrencyReached):
@@ -205,7 +212,7 @@ class Omnitron(Bot):
             if isinstance(source, Context):
                 await source.reply(resp, delete_after=20)
             else:
-                await source.response.send_message(resp, delete_after=20)
+                await source.response.send_message(resp, ephemeral=True)
         except Forbidden as f:
             f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {source.channel.mention} (message (replying to {source.author}): `{resp}`)!"
             raise

@@ -36,7 +36,6 @@ class Moderation(Cog, name="moderation.endticket"):
 
     @slash_command(
         name="endticket",
-        aliases=["et"],
         description="Create a procedure to delete a ticket. (can only be used in a ticket channel)",
     )
     @Utils.check_bot_starting()

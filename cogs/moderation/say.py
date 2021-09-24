@@ -64,7 +64,6 @@ class Moderation(Cog, name="moderation.say"):
 
     @slash_command(
         name="say",
-        aliases=["acc", "announcement", "talk"],
         description="Send a message to a specified salon or the current one!",
         options=[
             Option(

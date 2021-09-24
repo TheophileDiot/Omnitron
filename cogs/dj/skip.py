@@ -1,3 +1,6 @@
+from typing import Union
+
+from disnake import ApplicationCommandInteraction, Option, OptionType
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -5,6 +8,7 @@ from disnake.ext.commands import (
     command,
     Context,
     max_concurrency,
+    slash_command,
 )
 
 from data import Utils
@@ -25,29 +29,87 @@ class Dj(Cog, name="dj.skip"):
     @bot_has_permissions(send_messages=True)
     @max_concurrency(1, per=BucketType.guild)
     async def skip_command(self, ctx: Context, skips: int = 1):
-        """skip the musics a given number of times."""
-        player = self.bot.lavalink.player_manager.get(ctx.guild.id)
+        await self.handle_skip(ctx, skips)
 
-        if not player.is_connected:
+    @slash_command(
+        name="skip",
+        description="Skip the music a given number of times!",
+        options=[
+            Option(
+                name="skips",
+                description="The number of skips to do",
+                type=OptionType.number,
+                required=False,
+            ),
+        ],
+    )
+    @Utils.check_bot_starting()
+    @Utils.check_dj()
+    @max_concurrency(1, per=BucketType.guild)
+    async def skip_slash_command(
+        self, inter: ApplicationCommandInteraction, skips: int = 1
+    ):
+        await self.handle_skip(inter, skips)
+
+    """ METHOD(S) """
+
+    async def handle_skip(
+        self, source: Union[Context, ApplicationCommandInteraction], skips: int
+    ):
+        """skip the musics a given number of times."""
+        player = self.bot.lavalink.player_manager.get(source.guild.id)
+
+        if not player or not player.is_playing:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - The bot isn't playing!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⚠️ - {source.author.mention} - The bot isn't playing!",
+                    ephemeral=True,
+                )
+        elif not player.is_connected:
             # We can't disconnect, if we're not connected.
-            return await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - The player isn't connected!",
-                delete_after=20,
-            )
-        elif not ctx.author.voice or (
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - The player isn't connected!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⚠️ - {source.author.mention} - The player isn't connected!",
+                    ephemeral=True,
+                )
+        elif not source.author.voice or (
             player.is_connected
-            and ctx.author.voice.channel.id != int(player.channel_id)
+            and source.author.voice.channel.id != int(player.channel_id)
         ):
             # Abuse prevention. Users not in voice channels, or not in the same voice channel as the bot
             # may not disconnect the bot.
-            return await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - Please be in the same voice room as the bot to control the music!",
-                delete_after=20,
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - Please be in the same voice room as the bot to control the music!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⚠️ - {source.author.mention} - Please be in the same voice room as the bot to control the music!",
+                    ephemeral=True,
+                )
 
         for _ in range(skips):
             await player.skip()
-        await ctx.send(f"⏭️ - Skipping `{skips}` music{'s' if skips > 1 else ''}!")
+
+        if isinstance(source, Context):
+            await source.send(
+                f"⏭️ - Skipping `{skips}` music{'s' if skips > 1 else ''}!"
+            )
+        else:
+            await source.response.send_message(
+                f"⏭️ - Skipping `{skips}` music{'s' if skips > 1 else ''}!"
+            )
 
 
 def setup(bot):
