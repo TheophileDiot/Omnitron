@@ -2,7 +2,16 @@ from inspect import Parameter
 from re import compile as re_compile
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Embed, Option, OptionType
+from disnake import (
+    ApplicationCommandInteraction,
+    Client as botClient,
+    Embed,
+    NotFound,
+    Option,
+    OptionType,
+    VoiceClient,
+)
+from disnake.abc import Connectable
 from disnake.ext.commands import (
     BotMissingPermissions,
     bot_has_permissions,
@@ -15,10 +24,74 @@ from disnake.ext.commands import (
     slash_command,
 )
 from disnake.ext.commands.errors import MissingRequiredArgument
+from lavalink import add_event_hook, Client
+from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
 from lavalink.exceptions import NodeException
 from lavalink.models import AudioTrack
 
 from data import Utils
+from bot import Omnitron
+
+
+class LavalinkVoiceClient(VoiceClient):
+    """
+    This is the preferred way to handle external voice sending
+    This client will be created via a cls in the connect method of the channel
+    see the following documentation:
+    https://discordpy.readthedocs.io/en/latest/api.html#voiceprotocol
+    """
+
+    def __init__(self, client: botClient, channel: Connectable):
+        self.client = client
+        self.channel = channel
+        # ensure there exists a client already
+        if hasattr(self.client, "lavalink"):
+            self.lavalink = self.client.lavalink
+        else:
+            self.client.lavalink = Client(client.user.id)
+            self.client.lavalink.add_node(
+                "localhost", 2333, "youshallnotpass", "us", "default-node"
+            )
+            self.lavalink = self.client.lavalink
+
+    async def on_voice_server_update(self, data):
+        # the data needs to be transformed before being handed down to
+        # voice_update_handler
+        lavalink_data = {"t": "VOICE_SERVER_UPDATE", "d": data}
+        await self.lavalink.voice_update_handler(lavalink_data)
+
+    async def on_voice_state_update(self, data):
+        # the data needs to be transformed before being handed down to
+        # voice_update_handler
+        lavalink_data = {"t": "VOICE_STATE_UPDATE", "d": data}
+        await self.lavalink.voice_update_handler(lavalink_data)
+
+    async def connect(self, *, timeout: float, reconnect: bool) -> None:
+        """
+        Connect the bot to the voice channel and create a player_manager
+        if it doesn't exist yet.
+        """
+        # ensure there is a player_manager when creating a new voice_client
+        self.lavalink.player_manager.create(guild_id=self.channel.guild.id)
+        await self.channel.guild.change_voice_state(channel=self.channel)
+
+    async def disconnect(self, *, force: bool) -> None:
+        """
+        Handles the disconnect.
+        Cleans up running player and leaves the voice client.
+        """
+        player = self.lavalink.player_manager.get(self.channel.guild.id)
+
+        # no need to disconnect if we are not connected
+        if not force and not player.is_connected:
+            return
+
+        # None means disconnect
+        await self.channel.guild.change_voice_state(channel=None)
+
+        # notify lavalink we disconnected
+        self.lavalink.player_manager.remove(self.channel.guild.id)
+        self.cleanup()
 
 
 class Dj(Cog, name="dj.play"):
@@ -28,6 +101,51 @@ class Dj(Cog, name="dj.play"):
         self.yt_rx = re_compile(
             r"http(?:s?):\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?‌​[\w\?‌​=]*)?"
         )
+
+    """ EVENTS """
+
+    @Cog.listener()
+    async def on_ready(self):
+        # This ensures the client isn't overwritten during cog reloads.
+        if not hasattr(self.bot, "lavalink"):
+            self.bot.lavalink = Client(self.bot.user.id)
+            # Host, Port, Password, Region, Name
+            self.bot.lavalink.add_node(
+                "127.0.0.1", 2333, "youshallnotpass", "eu", "default-node"
+            )
+            # self.bot.add_listener(
+            #     self.bot.lavalink.voice_update_handler, "on_socket_response"
+            # )
+
+        add_event_hook(self.track_hook)
+
+    """ METHODS """
+
+    async def track_hook(self, event: Union[TrackEndEvent, QueueEndEvent, NodeConnectedEvent]):
+        if isinstance(event, QueueEndEvent):
+            # When this track_hook receives a "QueueEndEvent" from lavalink.py
+            # it indicates that there are no tracks left in the player's queue.
+            # To save on resources, we can tell the bot to disconnect from the voicechannel.
+            guild_id = int(event.player.guild_id)
+
+            try:
+                guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(
+                    guild_id
+                )
+            except NotFound:
+                return
+
+            await guild.voice_client.disconnect(force=True)
+            self.bot.playlists[guild_id].clear()
+        elif isinstance(event, TrackEndEvent):
+            guild_id = int(event.player.guild_id)
+
+            try:
+                del self.bot.playlists[guild_id][0]
+            except IndexError:
+                pass
+        elif isinstance(event, NodeConnectedEvent):
+            print("Lavalink node connected!")
 
     """ CHECKS """
 
@@ -114,9 +232,7 @@ class Dj(Cog, name="dj.play"):
                     raise BotMissingPermissions(["connect", "speak"])
 
                 player.store("channel", source.channel.id)
-                await source.guild.change_voice_state(
-                    channel=source.author.voice.channel
-                )
+                await source.author.voice.channel.connect(cls=LavalinkVoiceClient)
             else:
                 if int(player.channel_id) != source.author.voice.channel.id:
                     if isinstance(source, Context):
@@ -269,17 +385,24 @@ class Dj(Cog, name="dj.play"):
 
             for track in tracks:
                 # Add all of the tracks from the playlist to the queue.
-                player.add(requester=source.author.id, track=track)
+                audio_track = AudioTrack(track, source.author.id, recommended=True)
+                player.add(requester=source.author.id, track=audio_track)
 
             content = (
                 "🎶 - **Adding the Soundcloud playlist to the server playlist:** - 🎶"
             )
         else:
             track = results["tracks"][0]
+
             if player.is_playing:
                 content = "🎶 - **Adding to the server playlist:** - 🎶"
             else:
                 content = "🎶 - **Playing:** - 🎶"
+
+            # You can attach additional information to audiotracks through kwargs, however this involves
+            # constructing the AudioTrack class yourself.
+            audio_track = AudioTrack(track, source.author.id, recommended=True)
+            player.add(requester=source.author.id, track=audio_track)
 
         title = (
             track["info"]["title"]
@@ -321,11 +444,6 @@ class Dj(Cog, name="dj.play"):
                 "duration": duration,
             }
         )
-
-        # You can attach additional information to audiotracks through kwargs, however this involves
-        # constructing the AudioTrack class yourself.
-        track = AudioTrack(track, source.author.id, recommended=True)
-        player.add(requester=source.author.id, track=track)
 
         if isinstance(source, Context):
             await source.send(content=content, embed=em)

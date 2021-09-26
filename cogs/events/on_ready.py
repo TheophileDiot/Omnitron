@@ -1,10 +1,7 @@
 from logging import info
-from typing import Union
 
-from disnake import Activity, ActivityType, NotFound
+from disnake import Activity, ActivityType
 from disnake.ext.commands import Cog
-from lavalink import add_event_hook, Client
-from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
 
 from bot import Omnitron
 
@@ -38,19 +35,6 @@ class Events(Cog, name="events.on_ready"):
         print("Omnitron is ready.")
         info("Omnitron successfully started")
 
-        # This ensures the client isn't overwritten during cog reloads.
-        if not hasattr(self.bot, "lavalink"):
-            self.bot.lavalink = Client(self.bot.user.id)
-            # Host, Port, Password, Region, Name
-            self.bot.lavalink.add_node(
-                "127.0.0.1", 2333, "youshallnotpass", "eu", "default-node"
-            )
-            self.bot.add_listener(
-                self.bot.lavalink.voice_update_handler, "on_socket_response"
-            )
-
-        add_event_hook(self.track_hook)
-
         await self.bot.change_presence(
             activity=Activity(type=ActivityType.listening, name=f"Ping me for prefix")
         )
@@ -59,35 +43,7 @@ class Events(Cog, name="events.on_ready"):
 
     def cog_unload(self):
         """Cog unload handler. This removes any event hooks that were registered."""
-        self.bot.lavalink._event_hooks.clear()
-
-    """ METHOD(S) """
-
-    async def track_hook(self, event: Union[TrackEndEvent, QueueEndEvent]):
-        if isinstance(event, QueueEndEvent):
-            # When this track_hook receives a "QueueEndEvent" from lavalink.py
-            # it indicates that there are no tracks left in the player's queue.
-            # To save on resources, we can tell the bot to disconnect from the voicechannel.
-            guild_id = int(event.player.guild_id)
-
-            try:
-                guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(
-                    guild_id
-                )
-            except NotFound:
-                return
-
-            await self.bot.utils_class.clear_playlist(guild)
-            await guild.change_voice_state(channel=None)
-        elif isinstance(event, TrackEndEvent):
-            guild_id = int(event.player.guild_id)
-
-            try:
-                del self.bot.playlists[guild_id][0]
-            except IndexError:
-                pass
-        elif isinstance(event, NodeConnectedEvent):
-            print("Lavalink node connected!")
+        self.bot.lavalink_event_hooks.clear()
 
 
 def setup(bot: Omnitron):

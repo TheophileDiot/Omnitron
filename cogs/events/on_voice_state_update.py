@@ -64,7 +64,10 @@ class Events(Cog, name="events.on_voice_state_update"):
 
         if not member.bot and after.channel is None:
             if not [m for m in before.channel.members if not m.bot]:
-                await self.bot.utils_class.clear_playlist(member.guild)
+                if member.guild.voice_client:
+                    await member.guild.voice_client.disconnect(force=True)
+
+                self.bot.playlists[member.guild.id].clear()
 
     """ METHOD(S) """
 

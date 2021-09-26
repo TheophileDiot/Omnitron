@@ -86,7 +86,8 @@ class Dj(Cog, name="dj.stop"):
                     ephemeral=True,
                 )
 
-        await self.bot.utils_class.clear_playlist(source.guild)
+        await source.guild.voice_client.disconnect(force=True)
+        self.bot.playlists[source.guild.id].clear()
 
         if isinstance(source, Context):
             await source.send(f"⏹️ - Music off!")
