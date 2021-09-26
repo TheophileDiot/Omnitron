@@ -483,20 +483,6 @@ class Utils:
 
         return [prefix, prefix.lower(), prefix.upper()]
 
-    async def clear_playlist(self, guild: Guild):
-        player = self.bot.lavalink.player_manager.get(guild.id)
-
-        if player:
-            # Clear the queue to ensure old tracks don't start playing
-            # when someone else queues something.
-            player.queue.clear()
-            # Stop the current track so Lavalink consumes less resources.
-            await player.stop()
-
-            # Disconnect from the voice channel.
-            await guild.change_voice_state(channel=None)
-            self.bot.playlists[guild.id].clear()
-
     async def poll_completion(self, *args):
         await self.bot.wait_until_ready()
         guild = args[0]

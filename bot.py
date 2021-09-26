@@ -109,10 +109,12 @@ class Omnitron(Bot):
         self.playlists = {}
         self.tasks = {}
 
-        # process = Process(target=self.start_lavalink) # Disable temporarly because there is a problem with Lavalink
-        # process.start()  # start the process
-        # print("Lavalink successfully initialized.")
-        # info("Lavalink started")
+        process = Process(
+            target=self.start_lavalink
+        )
+        process.start()  # start the process
+        print("Lavalink successfully initialized.")
+        info("Lavalink started")
 
         self.color = Colour(BOT_COLOR) or self.user.color
 
