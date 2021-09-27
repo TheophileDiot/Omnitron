@@ -1,4 +1,14 @@
-from disnake import Embed, Forbidden, Member, Permissions
+from typing import Union
+
+from disnake import (
+    ApplicationCommandInteraction,
+    Embed,
+    Forbidden,
+    Member,
+    Option,
+    OptionChoice,
+    OptionType,
+)
 from disnake.ext.commands import (
     bot_has_permissions,
     bot_has_guild_permissions,
@@ -8,6 +18,7 @@ from disnake.ext.commands import (
     group,
     has_guild_permissions,
     max_concurrency,
+    slash_command,
 )
 from time import time
 
@@ -39,6 +50,15 @@ class Moderation(Cog, name="moderation.sanction"):
                 )
             )
 
+    @slash_command(
+        name="sanction",
+        description="This command manage the server's sanctions",
+    )
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def sanction_slash_group(self, inter: ApplicationCommandInteraction):
+        pass
+
     """ MAIN GROUP'S GROUP(S) """
 
     @sanction_group.group(
@@ -58,6 +78,14 @@ class Moderation(Cog, name="moderation.sanction"):
                 )
             )
 
+    @sanction_slash_group.sub_command_group(
+        name="warn",
+        description="This option manage the server's warns",
+    )
+    @max_concurrency(1, per=BucketType.guild)
+    async def sanction_warn_slash_group(self, inter: ApplicationCommandInteraction):
+        pass
+
     @sanction_group.group(
         pass_context=True,
         name="mute",
@@ -75,10 +103,19 @@ class Moderation(Cog, name="moderation.sanction"):
                 )
             )
 
+    @sanction_slash_group.sub_command_group(
+        name="mute",
+        description="This option manage the server's mutes",
+    )
+    @max_concurrency(1, per=BucketType.guild)
+    async def sanction_mute_slash_group(self, inter: ApplicationCommandInteraction):
+        pass
+
     """ MAIN GROUP'S COMMAND(S) """
 
-    @sanction_group.group(
-        pass_context=True,
+    """ KICK """
+
+    @sanction_group.command(
         name="kick",
         brief="⚡",
         usage='@member ("reason")',
@@ -90,39 +127,84 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_kick_command(
         self, ctx: Context, member: Member, *, reason: str = None
     ):
+        await self.handle_kick(ctx, member, reason)
+
+    @sanction_slash_group.sub_command(
+        name="kick",
+        description="Kick a member from the server with a reason attached if specified",
+        options=[
+            Option(
+                name="member",
+                description="The member to kick",
+                type=OptionType.user,
+                required=True,
+            ),
+            Option(
+                name="reason",
+                description="The reason why the member should be kicked",
+                type=OptionType.string,
+                required=False,
+            ),
+        ],
+    )
+    @has_guild_permissions(kick_members=True)
+    @bot_has_guild_permissions(kick_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_kick_slash_command(
+        self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
+    ):
+        await self.handle_kick(inter, member, reason)
+
+    async def handle_kick(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member,
+        reason: Union[str, None] = None,
+    ):
         em = Embed(
             colour=self.bot.color,
             title=f"🚫 - Kick",
-            description=f"The member {member} has been kicked by {ctx.author.mention}",
+            description=f"The member {member} has been kicked by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.author.display_name,
+            name=source.author.display_name,
             icon_url=member.avatar.url if member.avatar else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
 
         if reason:
             em.add_field(name="raison:", value=reason, inline=False)
 
         try:
             await member.kick(
-                reason=f"The member {member} has been kicked by {ctx.author} {f'for the reason: {reason}' if reason else ''}"
+                reason=f"The member {member} has been kicked by {source.author} {f'for the reason: {reason}' if reason else ''}"
             )
         except Forbidden:
-            return await ctx.reply(
-                f"⛔ - {ctx.author.mention} - I can't kick the member `{member}`!",
-                delete_after=20,
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⛔ - {source.author.mention} - I can't kick the member `{member}`!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⛔ - {source.author.mention} - I can't kick the member `{member}`!",
+                    ephemeral=True,
+                )
 
-        await ctx.send(embed=em)
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.response.send_message(embed=em)
 
-    @sanction_group.group(
-        pass_context=True,
+    """ BAN """
+
+    @sanction_group.command(
         name="ban",
         brief="🔨",
         usage='@member ("reason") (<duration_value> <duration_type>)',
@@ -163,8 +245,66 @@ class Moderation(Cog, name="moderation.sanction"):
                 raise
             return
 
+        await self.handle_ban(ctx, member, reason, _duration, type_duration)
+
+    @sanction_slash_group.sub_command(
+        name="ban",
+        description="Ban a member for a certain duration with a reason attached if specified!",
+        options=[
+            Option(
+                name="member",
+                description="The member to ban",
+                type=OptionType.user,
+                required=True,
+            ),
+            Option(
+                name="reason",
+                description="The reason why the member should be banned",
+                type=OptionType.string,
+                required=False,
+            ),
+            Option(
+                name="duration",
+                description='The value of the duration of the ban (default "1")',
+                type=OptionType.integer,
+                required=False,
+            ),
+            Option(
+                name="type_duration",
+                description='The type of the duration of the ban (default "d")',
+                choices=[
+                    OptionChoice(name="seconds", value="s"),
+                    OptionChoice(name="minutes", value="m"),
+                    OptionChoice(name="hours", value="h"),
+                    OptionChoice(name="days", value="d"),
+                ],
+                required=False,
+            ),
+        ],
+    )
+    @has_guild_permissions(ban_members=True)
+    @bot_has_guild_permissions(ban_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_ban_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        member: Member,
+        reason: str = None,
+        duration: int = 1,
+        type_duration: str = "d",
+    ):
+        await self.handle_ban(inter, member, reason, duration, type_duration)
+
+    async def handle_ban(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member,
+        reason: Union[str, None] = None,
+        duration: Union[int, None] = None,
+        type_duration: Union[str, None] = None,
+    ):
         duration_s = await self.bot.utils_class.parse_duration(
-            int(_duration), type_duration, ctx
+            int(duration), type_duration, source
         )
         if not duration_s:
             return
@@ -172,25 +312,26 @@ class Moderation(Cog, name="moderation.sanction"):
         em = Embed(
             colour=self.bot.color,
             title=f"🚫 - Ban",
-            description=f"The member {member} has been banned by {ctx.author.mention}",
+            description=f"The member {member} has been banned by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.author.display_name,
+            name=source.author.display_name,
             icon_url=member.avatar.url if member.avatar else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
 
         if reason:
             em.add_field(name="raison:", value=reason, inline=False)
 
         try:
             await member.ban(
-                reason=f"The member {member} has been banned by {ctx.author}"
+                reason=f"The member {member} has been banned by {source.author}"
                 + (
                     f" for {self.bot.utils_class.duration(duration_s)}"
                     if duration_s
@@ -199,11 +340,11 @@ class Moderation(Cog, name="moderation.sanction"):
                 + (f" for the reason: {reason}'" if reason else "")
             )
             self.bot.user_repo.ban_user(
-                ctx.guild.id,
+                source.guild.id,
                 member.id,
                 duration_s,
                 time(),
-                ctx.author.display_name,
+                source.author.display_name,
                 reason,
             )
 
@@ -212,20 +353,31 @@ class Moderation(Cog, name="moderation.sanction"):
                 self.bot.utils_class.task_launcher(
                     self.bot.utils_class.ban_completion,
                     (
-                        self.bot.user_repo.get_user(ctx.guild.id, member.id),
-                        ctx.guild.id,
+                        self.bot.user_repo.get_user(source.guild.id, member.id),
+                        source.guild.id,
                     ),
                     count=1,
                 )
         except Forbidden:
-            return await ctx.reply(
-                f"⛔ - {ctx.author.mention} - I can't ban the member `{member}`!",
-                delete_after=20,
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⛔ - {source.author.mention} - I can't ban the member `{member}`!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⛔ - {source.author.mention} - I can't ban the member `{member}`!",
+                    ephemeral=True,
+                )
 
-        await ctx.send(embed=em)
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.response.send_message(embed=em)
 
     """ MAIN GROUP'S WARN COMMAND(S) """
+
+    """ WARN ADD """
 
     @sanction_warn_group.command(
         name="add",
@@ -237,35 +389,74 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_warn_add_command(
         self, ctx: Context, member: Member, *, reason: str = None
     ):
-        if "muted_role" not in self.bot.configs[ctx.guild.id]:
-            return await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}config muted_role` to set one!",
-                delete_after=20,
-            )
+        await self.handle_warn_add(ctx, member, reason)
+
+    @sanction_warn_slash_group.sub_command(
+        name="add",
+        description="Warn a member with a reason attached if specified",
+        options=[
+            Option(
+                name="member",
+                description="The member to warn",
+                type=OptionType.user,
+                required=True,
+            ),
+            Option(
+                name="reason",
+                description="The reason why the member should be warned",
+                type=OptionType.string,
+                required=False,
+            ),
+        ],
+    )
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_warn_add_slash_command(
+        self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
+    ):
+        await self.handle_warn_add(inter, member, reason)
+
+    async def handle_warn_add(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member,
+        reason: Union[str, None] = None,
+    ):
+        if "muted_role" not in self.bot.configs[source.guild.id]:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}config muted_role` to set one!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⚠️ - {source.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(source.author)[0]}config muted_role` to set one!",
+                    ephemeral=True,
+                )
 
         em = Embed(
             colour=self.bot.color,
             title=f"🚫 - Warn",
-            description=f"The user `{member}` has been warned by {ctx.author.mention}",
+            description=f"The user `{member}` has been warned by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.author.display_name,
+            name=source.author.display_name,
             icon_url=member.avatar.url if member.avatar else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
 
         if reason:
             em.add_field(name="reason:", value=reason, inline=False)
 
         self.bot.user_repo.warn_user(
-            ctx.guild.id, member.id, time(), ctx.author.display_name, reason
+            source.guild.id, member.id, time(), source.author.display_name, reason
         )
-        warns = len(self.bot.user_repo.get_warns(ctx.guild.id, member.id))
+        warns = len(self.bot.user_repo.get_warns(source.guild.id, member.id))
         em.add_field(
             name=f"**Number of warnings of {member.display_name}:**",
             value=f"{warns}",
@@ -273,7 +464,7 @@ class Moderation(Cog, name="moderation.sanction"):
         )
 
         if warns == 2 or warns == 4:
-            if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
+            if source.channel.permissions_for(source.guild.me).manage_roles:
                 em.add_field(
                     name="sanction",
                     value=f"🔇 - Muted {'3H' if warns == 2 else '24H'} - 🔇",
@@ -281,20 +472,22 @@ class Moderation(Cog, name="moderation.sanction"):
                 )
 
                 try:
-                    await member.add_roles(self.bot.configs[ctx.guild.id]["muted_role"])
+                    await member.add_roles(
+                        self.bot.configs[source.guild.id]["muted_role"]
+                    )
                 except Forbidden as f:
-                    f.text = f"⚠️ - I don't have the right permissions to add the role `{self.bot.configs[ctx.guild.id]['muted_role']}` to {member}! (maybe the role is above mine)"
+                    f.text = f"⚠️ - I don't have the right permissions to add the role `{self.bot.configs[source.guild.id]['muted_role']}` to {member}! (maybe the role is above mine)"
                     raise
 
                 self.bot.user_repo.mute_user(
-                    ctx.guild.id,
+                    source.guild.id,
                     member.id,
                     10800 if warns == 2 else 86400,
                     time(),
                     self.bot.user.display_name,
                     f"{'2nd' if warns == 2 else '4th'} warn",
                 )
-                self.bot.tasks[ctx.guild.id]["mute_completions"][
+                self.bot.tasks[source.guild.id]["mute_completions"][
                     member.id
                 ] = self.bot.utils_class.task_launcher(
                     self.bot.utils_class.mute_completion,
@@ -307,30 +500,45 @@ class Moderation(Cog, name="moderation.sanction"):
             else:
                 await self.bot.utils_class.send_message_to_mods(
                     f"⚠️ - I don't have the right permissions to manage roles in this server (i tried to add the muted role to {member} after his {'2nd' if warns == 2 else '4th'} warn)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                    ctx.guild.id,
+                    source.guild.id,
                 )
         elif warns == 5:
             em.add_field(name="sanction", value="⚠️ - Warning - ⚠", inline=False)
 
             try:
                 await member.send(
-                    f"⚠ - ️️{member.mention} You are on your 5th warn! The next time you're warn, you will be kicked from this server {ctx.guild}! - ⚠️"
+                    f"⚠ - ️️{member.mention} You are on your 5th warn! The next time you're warn, you will be kicked from this server {source.guild}! - ⚠️"
                 )
             except Forbidden:
-                await ctx.send(
-                    f"❌ - ️️{ctx.author.mention} - Couldn't send the message to {member}, please inform him that on the next warn he will be kicked from the server!"
-                )
+                if isinstance(source, Context):
+                    await source.send(
+                        f"❌ - ️️{source.author.mention} - Couldn't send the message to {member}, please inform him that on the next warn he will be kicked from the server!"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"❌ - ️️{source.author.mention} - Couldn't send the message to {member}, please inform him that on the next warn he will be kicked from the server!"
+                    )
         elif warns > 5:
             em.add_field(name="sanction", value="🚫 - kick - 🚫", inline=False)
 
-            if ctx.channel.permissions_for(ctx.guild.me).kick_members:
+            try:
                 await member.kick(reason="6th warn")
-            else:
-                await ctx.send(
-                    f"❌ - {ctx.author.mention} - I don't have the permission to kick members! (try kicking him yourself then!)"
-                )
+            except Forbidden:
+                if isinstance(source, Context):
+                    await source.send(
+                        f"❌ - {source.author.mention} - I don't have the permission to kick members (or I couldn't kick him myself)! (try kicking him yourself then!)"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"❌ - {source.author.mention} - I don't have the permission to kick members (or I couldn't kick him myself)! (try kicking him yourself then!)"
+                    )
 
-        await ctx.send(embed=em)
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.response.send_message(embed=em)
+
+    """ WARN LIST """
 
     @sanction_warn_group.command(
         name="list",
@@ -339,29 +547,59 @@ class Moderation(Cog, name="moderation.sanction"):
         description="Show the list of a member's warns or yours!",
     )
     async def sanction_warn_list_command(self, ctx: Context, member: Member = None):
+        await self.handle_warn_list(ctx, member)
+
+    @sanction_warn_slash_group.sub_command(
+        name="list",
+        description="Show the list of a member's warns or yours!",
+        options=[
+            Option(
+                name="member",
+                description="The member to list the warns",
+                type=OptionType.user,
+                required=False,
+            ),
+        ],
+    )
+    async def sanction_warn_list_slash_command(
+        self, inter: ApplicationCommandInteraction, member: Member = None
+    ):
+        await self.handle_warn_list(inter, member)
+
+    async def handle_warn_list(
+        self, source: Union[Context, ApplicationCommandInteraction], member: Member
+    ):
         if not member:
-            member = ctx.author
+            member = source.author
 
         em = Embed(
             colour=self.bot.color, title=f"⚠️ - list of previous warns from {member}"
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.author.display_name,
+            name=source.author.display_name,
             icon_url=member.avatar.url if member.avatar else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
 
-        warns = self.bot.user_repo.get_warns(ctx.guild.id, member.id)
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
+
+        warns = self.bot.user_repo.get_warns(source.guild.id, member.id)
 
         if not warns:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - {f'The member {member}' if member != ctx.author else 'You'} has never been warned."
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - {f'The member {member}' if member != source.author else 'You'} has never been warned.",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - {f'The member {member}' if member != source.author else 'You'} has never been warned.",
+                    ephemeral=True,
+                )
 
         x = 0
         nl = "\n"
@@ -380,9 +618,14 @@ class Moderation(Cog, name="moderation.sanction"):
                 )
             x += 1
 
-        await ctx.send(embed=em)
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.response.send_message(embed=em)
 
     """ MAIN GROUP'S MUTE COMMAND(S) """
+
+    """ MUTE ADD """
 
     @sanction_mute_group.command(
         name="add",
@@ -393,12 +636,6 @@ class Moderation(Cog, name="moderation.sanction"):
     @bot_has_permissions(manage_roles=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_mute_add_command(self, ctx: Context, member: Member, *args: str):
-        if "muted_role" not in self.bot.configs[ctx.guild.id]:
-            return await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}config muted_role` to set one!",
-                delete_after=20,
-            )
-
         reason = None
         _duration = "10"
         type_duration = "m"
@@ -430,8 +667,77 @@ class Moderation(Cog, name="moderation.sanction"):
                 raise
             return
 
+        await self.handle_mute_add(ctx, member, reason, _duration, type_duration)
+
+    @sanction_mute_slash_group.sub_command(
+        name="add",
+        description="Mute a member for a certain duration with a reason attached if specified!",
+        options=[
+            Option(
+                name="member",
+                description="The member to ban",
+                type=OptionType.user,
+                required=True,
+            ),
+            Option(
+                name="reason",
+                description="The reason why the member should be banned",
+                type=OptionType.string,
+                required=False,
+            ),
+            Option(
+                name="duration",
+                description='The value of the duration of the ban (default "10")',
+                type=OptionType.integer,
+                required=False,
+            ),
+            Option(
+                name="type_duration",
+                description='The type of the duration of the ban (default "m")',
+                choices=[
+                    OptionChoice(name="seconds", value="s"),
+                    OptionChoice(name="minutes", value="m"),
+                    OptionChoice(name="hours", value="h"),
+                    OptionChoice(name="days", value="d"),
+                ],
+                required=False,
+            ),
+        ],
+    )
+    @bot_has_permissions(manage_roles=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_mute_add_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        member: Member,
+        reason: str = None,
+        duration: int = 10,
+        type_duration: str = "m",
+    ):
+        await self.handle_mute_add(inter, member, reason, duration, type_duration)
+
+    async def handle_mute_add(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member,
+        reason: str,
+        duration: int,
+        type_duration: str,
+    ):
+        if "muted_role" not in self.bot.configs[source.guild.id]:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}config muted_role` to set one!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⚠️ - {source.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(source.author)[0]}config muted_role` to set one!",
+                    ephemeral=True,
+                )
+
         duration_s = await self.bot.utils_class.parse_duration(
-            int(_duration), type_duration, ctx
+            int(duration), type_duration, source
         )
         if not duration_s:
             return
@@ -439,53 +745,54 @@ class Moderation(Cog, name="moderation.sanction"):
         em = Embed(
             colour=self.bot.color,
             title=f"🔇 - Mute",
-            description=f"The member `{member}` has been muted by {ctx.author.mention}",
+            description=f"The member `{member}` has been muted by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.author.display_name,
+            name=source.author.display_name,
             icon_url=member.avatar.url if member.avatar else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
 
         if reason:
             em.add_field(name="reason:", value=reason, inline=False)
 
-        db_user = self.bot.user_repo.get_user(ctx.guild.id, member.id)
+        db_user = self.bot.user_repo.get_user(source.guild.id, member.id)
 
         if (
-            self.bot.configs[ctx.guild.id]["muted_role"] not in member.roles
+            self.bot.configs[source.guild.id]["muted_role"] not in member.roles
             or not db_user["muted"]
         ):
-            em.description = f"The member `{member}` has been muted by {ctx.author.mention} for {self.bot.utils_class.duration(duration_s)}"
+            em.description = f"The member `{member}` has been muted by {source.author.mention} for {self.bot.utils_class.duration(duration_s)}"
             await member.add_roles(
-                self.bot.configs[ctx.guild.id]["muted_role"],
+                self.bot.configs[source.guild.id]["muted_role"],
                 reason="Muted from command sanction.",
             )
             self.bot.user_repo.mute_user(
-                ctx.guild.id,
+                source.guild.id,
                 member.id,
                 duration_s,
                 time(),
-                ctx.author.display_name,
+                source.author.display_name,
                 reason,
             )
-            self.bot.tasks[ctx.guild.id]["mute_completions"][
+            self.bot.tasks[source.guild.id]["mute_completions"][
                 member.id
             ] = self.bot.utils_class.task_launcher(
                 self.bot.utils_class.mute_completion,
                 (
-                    self.bot.user_repo.get_user(ctx.guild.id, member.id),
-                    ctx.guild.id,
+                    self.bot.user_repo.get_user(source.guild.id, member.id),
+                    source.guild.id,
                 ),
                 count=1,
             )
         else:
-            last_mute = self.bot.user_repo.get_last_mute(ctx.guild.id, member.id)
+            last_mute = self.bot.user_repo.get_last_mute(source.guild.id, member.id)
             em.description = f"The member {member} is already muted"
 
             em.remove_field(0)
@@ -504,7 +811,12 @@ class Moderation(Cog, name="moderation.sanction"):
             if "reason" in last_mute:
                 em.add_field(name="**reason:**", value=last_mute["reason"], inline=True)
 
-        await ctx.send(embed=em)
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.response.send_message(embed=em)
+
+    """ MUTE LIST """
 
     @sanction_mute_group.command(
         name="list",
@@ -517,30 +829,62 @@ class Moderation(Cog, name="moderation.sanction"):
         ctx: Context,
         member: Member = None,
     ):
+        await self.handle_mute_list(ctx, member)
+
+    @sanction_mute_slash_group.sub_command(
+        name="list",
+        description="Show the list of a member's mutes or yours!",
+        options=[
+            Option(
+                name="member",
+                description="The member to list the mutes",
+                type=OptionType.user,
+                required=False,
+            ),
+        ],
+    )
+    async def sanction_mute_list_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        member: Member = None,
+    ):
+        await self.handle_mute_list(inter, member)
+
+    async def handle_mute_list(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Union[Member, None] = None,
+    ):
         if not member:
-            member = ctx.author
+            member = source.author
 
         em = Embed(
             colour=self.bot.color,
             title=f"🔇 - List of previous mutes of {member}",
         )
 
-        em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
         em.set_author(
-            name=ctx.author.display_name,
+            name=source.author.display_name,
             icon_url=member.avatar.url if member.avatar else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
 
-        db_user = self.bot.user_repo.get_user(ctx.guild.id, member.id)
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
+
+        db_user = self.bot.user_repo.get_user(source.guild.id, member.id)
 
         if "mutes" not in db_user or len(db_user["mutes"]) < 1:
-            return await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - {f'The member {member}' if member != ctx.author else 'You'} has never been muted."
-            )
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - {f'The member {member}' if member != source.author else 'You'} has never been muted."
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - {f'The member {member}' if member != source.author else 'You'} has never been muted."
+                )
 
         x = 0
         nl = "\n"
@@ -559,7 +903,12 @@ class Moderation(Cog, name="moderation.sanction"):
                 )
             x += 1
 
-        await ctx.send(embed=em)
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.response.send_message(embed=em)
+
+    """ MUTE REMOVE """
 
     @sanction_mute_group.command(
         name="remove",
@@ -576,31 +925,71 @@ class Moderation(Cog, name="moderation.sanction"):
         *,
         reason: str = None,
     ):
-        db_user = self.bot.user_repo.get_user(ctx.guild.id, member.id)
+        await self.handle_mute_remove(ctx, member, reason)
+
+    @sanction_mute_slash_group.sub_command(
+        name="remove",
+        description="Unmute a member with a reason attached if specified!",
+        options=[
+            Option(
+                name="member",
+                description="The member to unmute",
+                type=OptionType.user,
+                required=True,
+            ),
+            Option(
+                name="reason",
+                description="The reason why the member should be no longer muted",
+                type=OptionType.string,
+                required=False,
+            ),
+        ],
+    )
+    @bot_has_permissions(manage_roles=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_mute_remove_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        member: Member,
+        *,
+        reason: str = None,
+    ):
+        await self.handle_mute_remove(inter, member, reason)
+
+    async def handle_mute_remove(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member,
+        reason: str,
+    ):
+        db_user = self.bot.user_repo.get_user(source.guild.id, member.id)
 
         if (
-            self.bot.configs[ctx.guild.id]["muted_role"] in member.roles
+            self.bot.configs[source.guild.id]["muted_role"] in member.roles
             or db_user["muted"]
         ):
             await member.remove_roles(
-                self.bot.configs[ctx.guild.id]["muted_role"], reason=reason
+                self.bot.configs[source.guild.id]["muted_role"], reason=reason
             )
-            self.bot.user_repo.unmute_user(ctx.guild.id, member.id)
+            self.bot.user_repo.unmute_user(source.guild.id, member.id)
 
             if (
                 "reason" in db_user["mutes"][-1]
                 and db_user["mutes"][-1]["reason"] != "joined the server"
             ):
-                self.bot.tasks[ctx.guild.id]["mute_completions"][member.id].cancel()
-                del self.bot.tasks[ctx.guild.id]["mute_completions"][member.id]
+                self.bot.tasks[source.guild.id]["mute_completions"][member.id].cancel()
+                del self.bot.tasks[source.guild.id]["mute_completions"][member.id]
 
-            await ctx.send(
-                f"🔊 - The member {member} has been unmuted by {ctx.author.mention}."
+            resp = (
+                f"🔊 - The member {member} has been unmuted by {source.author.mention}."
             )
         else:
-            await ctx.send(
-                f"🔊 - {ctx.author.mention} - The member {member} is not or no longer muted."
-            )
+            resp = f"🔊 - {source.author.mention} - The member {member} is not or no longer muted."
+
+        if isinstance(source, Context):
+            await source.send(resp)
+        else:
+            await source.response.send_message(resp)
 
 
 def setup(bot):

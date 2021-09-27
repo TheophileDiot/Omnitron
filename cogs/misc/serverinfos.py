@@ -46,10 +46,11 @@ class Miscellaneous(Cog, name="misc.serverinfos"):
             name=source.guild.name,
             icon_url=source.guild.icon.url if source.guild.icon else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
 
         em.add_field(name="**Server's name:**", value=source.guild.name, inline=True)
         em.add_field(

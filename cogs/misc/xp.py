@@ -609,10 +609,13 @@ class Miscellaneous(Cog, name="misc.xp"):
                 name=source.guild.name,
                 icon_url=source.guild.icon.url if source.guild.icon else None,
             )
-            em.set_footer(
-                text=self.bot.user.name,
-                icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-            )
+
+            if self.bot.user.avatar:
+                em.set_footer(
+                    text=self.bot.user.name, icon_url=self.bot.user.avatar.url
+                )
+            else:
+                em.set_footer(text=self.bot.user.name)
 
             x = 1
             for df_user in df_users.index.values:
