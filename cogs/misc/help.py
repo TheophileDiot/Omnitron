@@ -96,6 +96,12 @@ class Miscellaneous(Cog, name="misc.help"):
                     inline=False,
                 )
 
+        em.add_field(
+            name="Documentation",
+            value="[Link to the documentation](https://theophilediot.github.io/Omnitron/)",
+            inline=False,
+        )
+
         await ctx.send(embed=em)
 
 
