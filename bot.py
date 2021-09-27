@@ -23,8 +23,8 @@ from disnake import (
     ApplicationCommandInteraction,
     Colour,
     Forbidden,
-    HTTPException,
     Intents,
+    Member,
     Message,
 )
 from disnake.ext.commands import Bot, Context
@@ -109,9 +109,7 @@ class Omnitron(Bot):
         self.playlists = {}
         self.tasks = {}
 
-        process = Process(
-            target=self.start_lavalink
-        )
+        process = Process(target=self.start_lavalink)
         process.start()  # start the process
         print("Lavalink successfully initialized.")
         info("Lavalink started")
@@ -135,6 +133,7 @@ class Omnitron(Bot):
         print(event)
         print(format_exc())
         _error = exc_info()[1]
+
         if isinstance(_error, Forbidden):
             try:
                 await self.utils_class.send_message_to_mods(
@@ -146,6 +145,17 @@ class Omnitron(Bot):
                 )
         else:
             # Log that the bot had an error
+            source = args[0]
+
+            if isinstance(source, Context) or isinstance(source, Member):
+                await source.send(
+                    f"⚠️ - An error happened, the developer has been informed about this! If you want help contact `Batgregate900#2562`"
+                )
+            elif isinstance(source, ApplicationCommandInteraction):
+                await source.response.send_message(
+                    f"⚠️ - An error happened, the developer has been informed about this! If you want help contact `Batgregate900#2562`"
+                )
+
             bot_owner = self.owner
 
             if not bot_owner:

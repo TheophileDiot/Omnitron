@@ -227,10 +227,13 @@ class Miscellaneous(Cog, name="misc.activity"):
             name=source.author.display_name,
             icon_url=source.author.avatar.url if source.author.avatar else None,
         )
-        em.set_footer(
-            text=f"Requested by {source.author}",
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(
+                text=f"Requested by {source.author}", icon_url=self.bot.user.avatar.url
+            )
+        else:
+            em.set_footer(text=f"Requested by {source.author}")
 
         return em
 

@@ -295,9 +295,11 @@ class Utils:
             name=self.bot.user.name,
             icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
         )
-        em.set_footer(
-            text=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None
-        )
+
+        if ctx.guild.icon:
+            em.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon.url)
+        else:
+            em.set_footer(text=ctx.guild.name)
 
         cmds = OrderedDict(
             sorted(

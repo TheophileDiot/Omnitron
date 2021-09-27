@@ -98,13 +98,13 @@ class Moderation(Cog, name="moderation.poll"):
             ),
             Option(
                 name="duration",
-                description="The value of the duration of the poll",
+                description='The value of the duration of the poll (default "10")',
                 type=OptionType.integer,
                 required=False,
             ),
             Option(
                 name="type_duration",
-                description="The type of the duration of the poll",
+                description='The type of the duration of the poll (default "m")',
                 choices=[
                     OptionChoice(name="seconds", value="s"),
                     OptionChoice(name="minutes", value="m"),
@@ -180,10 +180,12 @@ class Moderation(Cog, name="moderation.poll"):
             name=source.guild.name,
             icon_url=source.guild.icon.url if source.guild.icon else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
+
         em.add_field(name="**Number of answers:**", value="`0`", inline=False)
         view = View(timeout=None)
 
@@ -346,10 +348,11 @@ class Moderation(Cog, name="moderation.poll"):
             name=source.guild.name,
             icon_url=source.guild.icon.url if source.guild.icon else None,
         )
-        em.set_footer(
-            text=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
 
         if poll:
             em.title = f"Poll information *{poll_message.embeds[0].title}*!"

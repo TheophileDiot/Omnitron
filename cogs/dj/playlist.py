@@ -136,12 +136,11 @@ class Dj(Cog, name="dj.playlist"):
             name=source.author.display_name,
             icon_url=source.author.avatar.url if source.author.avatar else None,
         )
-        em.set_footer(
-            text=source.guild.owner.display_name,
-            icon_url=source.guild.owner.avatar.url
-            if source.guild.owner.avatar
-            else None,
-        )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
 
         x = 0
         nl = "\n"

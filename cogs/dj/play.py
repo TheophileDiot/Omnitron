@@ -121,7 +121,9 @@ class Dj(Cog, name="dj.play"):
 
     """ METHODS """
 
-    async def track_hook(self, event: Union[TrackEndEvent, QueueEndEvent, NodeConnectedEvent]):
+    async def track_hook(
+        self, event: Union[TrackEndEvent, QueueEndEvent, NodeConnectedEvent]
+    ):
         if isinstance(event, QueueEndEvent):
             # When this track_hook receives a "QueueEndEvent" from lavalink.py
             # it indicates that there are no tracks left in the player's queue.

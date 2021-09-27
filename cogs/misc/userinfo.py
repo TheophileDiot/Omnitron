@@ -60,10 +60,16 @@ class Miscellaneous(Cog, name="misc.userinfo"):
             name=f"Infos on {member}",
             icon_url=member.avatar.url if member.avatar else None,
         )
-        em.set_footer(
-            text=source.author.name,
-            icon_url=source.author.avatar.url if source.author.avatar else None,
-        )
+
+        if source.author.avatar:
+            em.set_footer(
+                text=source.author.name,
+                icon_url=source.author.avatar.url,
+            )
+        else:
+            em.set_footer(
+                text=source.author.name,
+            )
 
         em.add_field(name="**User name**", value=member.name, inline=True)
         em.add_field(name="**Discriminator:**", value=member.discriminator, inline=True)

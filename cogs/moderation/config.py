@@ -29,7 +29,7 @@ from data import Utils, Xp_class
 BOOL2VAL = {True: "ON", False: "OFF"}
 
 
-class Moderation(Cog, name="moderation.config"):
+class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.xp_class = Xp_class(bot)
@@ -688,12 +688,14 @@ class Moderation(Cog, name="moderation.config"):
                         em.set_thumbnail(
                             url=ctx.guild.icon.url if ctx.guild.icon else None
                         )
-                        em.set_footer(
-                            text=self.bot.user.name,
-                            icon_url=self.bot.user.avatar.url
-                            if self.bot.user.avatar
-                            else None,
-                        )
+
+                        if self.bot.user.avatar:
+                            em.set_footer(
+                                text=self.bot.user.name,
+                                icon_url=self.bot.user.avatar.url,
+                            )
+                        else:
+                            em.set_footer(text=self.bot.user.name)
 
                         if (
                             self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
@@ -989,12 +991,14 @@ class Moderation(Cog, name="moderation.config"):
                     )
 
                     em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-                    em.set_footer(
-                        text=self.bot.user.name,
-                        icon_url=self.bot.user.avatar.url
-                        if self.bot.user.avatar
-                        else None,
-                    )
+
+                    if self.bot.user.avatar:
+                        em.set_footer(
+                            text=self.bot.user.name, icon_url=self.bot.user.avatar.url
+                        )
+                    else:
+                        em.set_footer(text=self.bot.user.name)
+
                     em.set_author(
                         name=ctx.guild.name,
                         icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
@@ -2817,12 +2821,14 @@ class Moderation(Cog, name="moderation.config"):
                     )
 
                     em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-                    em.set_footer(
-                        text=self.bot.user.name,
-                        icon_url=self.bot.user.avatar.url
-                        if self.bot.user.avatar
-                        else None,
-                    )
+
+                    if self.bot.user.avatar:
+                        em.set_footer(
+                            text=self.bot.user.name, icon_url=self.bot.user.avatar.url
+                        )
+                    else:
+                        em.set_footer(text=self.bot.user.name)
+
                     em.set_author(
                         name=ctx.guild.name,
                         icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
