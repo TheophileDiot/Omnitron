@@ -38,7 +38,16 @@ async def handle_say(
     ):
         await source.message.delete()
 
-    await channel.send(message)
+    if channel == source.channel and isinstance(source, ApplicationCommandInteraction):
+        await source.response.send_message(message)
+    else:
+        await channel.send(message)
+
+        if channel != source.channel:
+            if isinstance(source, Context):
+                await source.send(f"Your message has successfully been sent to the channel {channel.mention}")
+            else:
+                await source.response.send_message(f"Your message has successfully been sent to the channel {channel.mention}")
 
 
 class Moderation(Cog, name="moderation.say"):
