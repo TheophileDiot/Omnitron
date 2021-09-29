@@ -129,9 +129,8 @@ class Omnitron(Bot):
         await self.handle_error(ctx, _error)
 
     async def on_error(self, event, *args, **kwargs):
-        error(format_exc())
-        print(event)
-        print(format_exc())
+        error(f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)")
+        print(f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)")
         _error = exc_info()[1]
 
         if isinstance(_error, Forbidden):
