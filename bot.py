@@ -129,9 +129,8 @@ class Omnitron(Bot):
         await self.handle_error(ctx, _error)
 
     async def on_error(self, event, *args, **kwargs):
-        error(format_exc())
-        print(event)
-        print(format_exc())
+        error(f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)")
+        print(f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)")
         _error = exc_info()[1]
 
         if isinstance(_error, Forbidden):
@@ -158,18 +157,18 @@ class Omnitron(Bot):
 
             bot_owner = self.owner
 
-            if not bot_owner:
-                bot_owner = await self.fetch_user(
-                    int(
-                        self.owner_id or list(self.owner_ids)[0]
-                        if self.owner_ids
-                        else self.get_ownerid()
-                    )
-                )
-
-            return await bot_owner.send(
-                f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)"
-            )
+            # if not bot_owner: # TODO uncomment this
+            #     bot_owner = await self.fetch_user(
+            #         int(
+            #             self.owner_id or list(self.owner_ids)[0]
+            #             if self.owner_ids
+            #             else self.get_ownerid()
+            #         )
+            #     )
+            #
+            # return await bot_owner.send(
+            #     f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)"
+            # )
 
     async def on_message(self, message: Message):
         if (

@@ -12,38 +12,37 @@ from disnake.ext.commands import (
 from bot import Omnitron
 
 
-class Miscellaneous(Cog, name="misc.serverinfos"):
+class Miscellaneous(Cog, name="misc.serverinfo"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
 
     @command(
-        name="serverinfos",
-        aliases=["si", "serverinfo"],
+        name="serverinfo",
+        aliases=["si", "serverinfos"],
         description="Get server's information!",
     )
     @bot_has_permissions(send_messages=True)
-    async def serverinfos_command(self, ctx: Context):
-        await self.handle_serverinfos(ctx)
+    async def serverinfo_command(self, ctx: Context):
+        await self.handle_serverinfo(ctx)
 
     @slash_command(
-        name="serverinfos",
+        name="serverinfo",
         description="Get server's information!",
     )
-    async def serverinfos_slash_command(self, inter: ApplicationCommandInteraction):
-        await self.handle_serverinfos(inter)
+    async def serverinfo_slash_command(self, inter: ApplicationCommandInteraction):
+        await self.handle_serverinfo(inter)
 
     """ METHOD(S) """
 
-    async def handle_serverinfos(
+    async def handle_serverinfo(
         self, source: Union[Context, ApplicationCommandInteraction]
     ):
         em = Embed(
             title=f"{source.guild.name} server information", colour=self.bot.color
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-
         if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
             em.set_author(name=source.guild.name, icon_url=source.guild.icon.url)
         else:
             em.set_author(name=source.guild.name)
