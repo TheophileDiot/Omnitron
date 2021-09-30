@@ -1,21 +1,33 @@
 from inspect import Parameter
 from time import time
-from typing import Union
+from typing import List, Literal, Union
+from re import findall
 
 from disnake import (
+    ApplicationCommandInteraction,
     ButtonStyle,
     CategoryChannel,
     Embed,
     Forbidden,
     Member,
     NotFound,
+    Option,
+    OptionChoice,
+    OptionType,
     Role,
     SelectOption,
     TextChannel,
     VoiceChannel,
     Message,
 )
-from disnake.ext.commands import bot_has_permissions, Context, Cog, group
+from disnake.ext.commands import (
+    bot_has_permissions,
+    Context,
+    Cog,
+    group,
+    Param,
+    slash_command,
+)
 from disnake.ext.commands.errors import (
     BadArgument,
     BadUnionArgument,
@@ -27,6 +39,25 @@ from bot import Omnitron
 from data import Utils, Xp_class
 
 BOOL2VAL = {True: "ON", False: "OFF"}
+
+
+async def mentionable_converter(inter: ApplicationCommandInteraction, argument: str):
+    ids = findall(r"([0-9]{15,20})", argument)
+    result = []
+    for id in ids:
+        try:
+            result.append(
+                inter.guild.get_role(id)
+                or inter.guild.get_member(id)
+                or await inter.guild.fetch_member(id)
+            )
+        except NotFound:
+            continue
+
+    if not all(result):
+        raise BadUnionArgument
+
+    return result
 
 
 class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
@@ -55,6 +86,15 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 )
             )
 
+    @slash_command(
+        name="config",
+        description="This command manage the server's configuration",
+    )
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_slash_group(self, ctx: Context):
+        pass
+
     """ MAIN GROUP'S GROUP(S) """
 
     @config_group.group(
@@ -75,6 +115,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 )
             )
 
+    @config_slash_group.sub_command_group(
+        name="security",
+        description="This option manage the server's security",
+    )
+    async def config_security_slash_group(self, ctx: Context):
+        pass
+
     @config_group.group(
         pass_context=True,
         case_insensitive=True,
@@ -92,6 +139,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     title=f"{ctx.command.brief} Server's experience configuration",
                 )
             )
+
+    @config_slash_group.sub_command_group(
+        name="xp",
+        description="This option manage the server's experience feature",
+    )
+    async def config_xp_slash_group(self, ctx: Context):
+        pass
 
     @config_group.group(
         pass_context=True,
@@ -111,7 +165,16 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 )
             )
 
+    @config_slash_group.sub_command_group(
+        name="channels",
+        description="This option manage the server's special channels",
+    )
+    async def config_channels_slash_group(self, ctx: Context):
+        pass
+
     """ MAIN GROUP'S COMMAND(S) """
+
+    """ MODERATORS """
 
     @config_group.command(
         pass_context=True,
@@ -295,6 +358,29 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else ""
                 )
             )
+
+    @config_slash_group.sub_command(
+        name="moderators",
+        description="This option manage the server's moderators (role & members) (can add/remove multiple at a time)",
+    )
+    async def config_moderators_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        option: Literal["add", "remove", "purge"],
+        mods: List[Union[Member, Role]] = Param(converter=mentionable_converter),
+    ):
+        await self.handle_moderators(inter, option, *mods)
+
+    async def handle_moderators(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        option: str,
+        *mods: Union[Member, Role],
+    ):
+        print(type(mods[0]))
+        pass
+
+    """ DJS """
 
     @config_group.command(
         pass_context=True,

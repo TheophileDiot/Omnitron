@@ -1,7 +1,7 @@
 from re import compile as re_compile
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Colour, Embed, Option, OptionType
+from disnake import Colour, Embed, GuildCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -36,20 +36,12 @@ class Dj(Cog, name="dj.playlist"):
     @slash_command(
         name="playlist",
         description="Displays the information for the music in the playlist or for a particular one.",
-        options=[
-            Option(
-                name="position",
-                description="The position of the song in the playlist",
-                type=OptionType.number,
-                required=False,
-            ),
-        ],
     )
     @Utils.check_bot_starting()
     @bot_has_permissions(embed_links=True)
     @max_concurrency(1, per=BucketType.guild)
     async def playlist_slash_command(
-        self, inter: ApplicationCommandInteraction, position: int = None
+        self, inter: GuildCommandInteraction, position: int = None
     ):
         await self.handle_playlist(inter, position)
 
@@ -57,7 +49,7 @@ class Dj(Cog, name="dj.playlist"):
 
     async def handle_playlist(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         position: Union[int, None],
     ):
         player = self.bot.lavalink.player_manager.get(source.guild.id)

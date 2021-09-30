@@ -3,12 +3,10 @@ from re import compile as re_compile
 from typing import Union
 
 from disnake import (
-    ApplicationCommandInteraction,
     Client as botClient,
     Embed,
+    GuildCommandInteraction,
     NotFound,
-    Option,
-    OptionType,
     VoiceClient,
 )
 from disnake.abc import Connectable
@@ -29,8 +27,8 @@ from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
 from lavalink.exceptions import NodeException
 from lavalink.models import AudioTrack
 
-from data import Utils
 from bot import Omnitron
+from data import Utils
 
 
 class LavalinkVoiceClient(VoiceClient):
@@ -95,7 +93,7 @@ class LavalinkVoiceClient(VoiceClient):
 
 
 class Dj(Cog, name="dj.play"):
-    def __init__(self, bot):
+    def __init__(self, bot: Omnitron):
         self.bot = bot
         self.url_rx = re_compile(r"https?://(?:www\.)?.+")
         self.yt_rx = re_compile(
@@ -154,7 +152,7 @@ class Dj(Cog, name="dj.play"):
     def __ensure_voice(function):
         async def check(
             self,
-            source: Union[Context, ApplicationCommandInteraction],
+            source: Union[Context, GuildCommandInteraction],
             *,
             query: str = None,
             **kwargs,
@@ -272,14 +270,6 @@ class Dj(Cog, name="dj.play"):
     @slash_command(
         name="play",
         description="Plays a link or title from a SoundCloud song! (supports playlists!)",
-        options=[
-            Option(
-                name="query",
-                description="The link or title of the song!",
-                type=OptionType.string,
-                required=True,
-            ),
-        ],
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
@@ -288,7 +278,7 @@ class Dj(Cog, name="dj.play"):
     @__ensure_voice
     @max_concurrency(1, per=BucketType.guild)
     async def play_slash_command(
-        self, inter: ApplicationCommandInteraction, query: str
+        self, inter: GuildCommandInteraction, query: str = None
     ):
         await self.handle_play(inter, query)
 
@@ -296,7 +286,7 @@ class Dj(Cog, name="dj.play"):
 
     async def handle_play(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         query: Union[str, None],
     ):
         """Searches and plays a song from a given query."""
@@ -307,14 +297,14 @@ class Dj(Cog, name="dj.play"):
             await player.set_pause(False)
             return await source.send(f"▶️ - Resume Playing!")
         elif not query and (
-            isinstance(source, ApplicationCommandInteraction)
+            isinstance(source, GuildCommandInteraction)
             or not source.message.attachments
         ):
             raise MissingRequiredArgument(
                 param=Parameter(name="query", kind=Parameter.KEYWORD_ONLY)
             )
         elif query and (
-            isinstance(source, ApplicationCommandInteraction)
+            isinstance(source, GuildCommandInteraction)
             or not source.message.attachments
         ):
             # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.

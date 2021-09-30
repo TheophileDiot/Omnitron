@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Embed, Member, Option, OptionType
+from disnake import Embed, GuildCommandInteraction, Member
 from disnake.ext.commands import (
     bot_has_permissions,
     Cog,
@@ -29,23 +29,15 @@ class Miscellaneous(Cog, name="misc.userinfo"):
     @slash_command(
         name="userinfo",
         description="Get the information from a member or from yourself!",
-        options=[
-            Option(
-                name="member",
-                description="Mention the member to get information from",
-                type=OptionType.user,
-                required=False,
-            ),
-        ],
     )
     @bot_has_permissions(send_messages=True)
-    async def userinfo_slash_command(self, ctx: Context, member: Member = None):
-        await self.handle_userinfo(ctx, member)
+    async def userinfo_slash_command(self, inter: GuildCommandInteraction, member: Member = None):
+        await self.handle_userinfo(inter, member)
 
     """ METHOD(S) """
 
     async def handle_userinfo(
-        self, source: Union[Context, ApplicationCommandInteraction], member: Member
+        self, source: Union[Context, GuildCommandInteraction], member: Member
     ):
         if not member:
             member = source.author

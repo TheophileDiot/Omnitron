@@ -78,20 +78,6 @@ class Moderation(Cog, name="moderation.say"):
     @slash_command(
         name="say",
         description="Send a message to a specified salon or the current one!",
-        options=[
-            Option(
-                name="message",
-                description="Enter the message you want to send through the bot",
-                type=OptionType.string,
-                required=True,
-            ),
-            Option(
-                name="channel",
-                description="Enter the channel you want to send the message in",
-                type=OptionType.channel,
-                required=False,
-            ),
-        ],
     )
     @Utils.check_moderator()
     @bot_has_permissions(send_messages=True)

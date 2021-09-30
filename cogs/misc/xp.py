@@ -93,20 +93,6 @@ class Miscellaneous(Cog, name="misc.xp"):
     @xp_levels_slash_group.sub_command(
         name="add",
         description="Add levels to a specific member or yourself! (default levels added = 1)",
-        options=[
-            Option(
-                name="member",
-                description="The member to add levels to",
-                type=OptionType.user,
-                required=False,
-            ),
-            Option(
-                name="value",
-                description="The number of levels to add",
-                type=OptionType.integer,
-                required=False,
-            ),
-        ],
     )
     async def xp_levels_add_slash_command(
         self,
@@ -121,20 +107,6 @@ class Miscellaneous(Cog, name="misc.xp"):
     @xp_levels_slash_group.sub_command(
         name="set",
         description="Set the levels of a specific member or yourself!",
-        options=[
-            Option(
-                name="value",
-                description="The value of levels to set",
-                type=OptionType.integer,
-                required=True,
-            ),
-            Option(
-                name="member",
-                description="The member to set levels to",
-                type=OptionType.user,
-                required=False,
-            ),
-        ],
     )
     async def xp_levels_set_slash_command(
         self,
@@ -149,20 +121,6 @@ class Miscellaneous(Cog, name="misc.xp"):
     @xp_levels_slash_group.sub_command(
         name="remove",
         description="Remove levels from a specific member or yourself! (default levels removed = 1)",
-        options=[
-            Option(
-                name="member",
-                description="The member to remove levels from",
-                type=OptionType.user,
-                required=False,
-            ),
-            Option(
-                name="value",
-                description="The number of levels to remove",
-                type=OptionType.integer,
-                required=False,
-            ),
-        ],
     )
     async def xp_levels_remove_slash_command(
         self,
@@ -417,14 +375,6 @@ class Miscellaneous(Cog, name="misc.xp"):
     @xp_slash_group.sub_command(
         name="info",
         description="Displays information about the current level for yourself or someone on the server!",
-        options=[
-            Option(
-                name="member",
-                description="The member to get info from",
-                type=OptionType.user,
-                required=False,
-            ),
-        ],
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_info_slash_command(
