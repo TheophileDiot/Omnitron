@@ -1,15 +1,12 @@
 from typing import Union
 
 from disnake import (
-    ApplicationCommandInteraction,
     Embed,
+    Enum,
+    GuildCommandInteraction,
     HTTPException,
-    Option,
-    OptionChoice,
-    OptionType,
     VoiceChannel,
 )
-from disnake.abc import GuildChannel
 from disnake.ext.commands import (
     bot_has_guild_permissions,
     bot_has_permissions,
@@ -23,6 +20,15 @@ from disnake.http import Route
 from bot import Omnitron
 from data import Utils
 
+class PartyType(Enum):
+    youtube = "755600276941176913"
+    poker = "755827207812677713"
+    betrayal = "773336526917861400"
+    fishing = "814288819477020702"
+    chess = "832012774040141894"
+    letter_tile = "879863686565621790"
+    word_snack = "879863976006127627"
+    doodle_crew = "878067389634314250"
 
 class Miscellaneous(Cog, name="misc.activity"):
     def __init__(self, bot: Omnitron):
@@ -52,38 +58,13 @@ class Miscellaneous(Cog, name="misc.activity"):
     @slash_command(
         name="activity",
         description="This command manage the server's activities",
-        options=[
-            Option(
-                name="channel",
-                description="Enter the channel you want to create the activity in",
-                type=OptionType.channel,
-                required=True,
-            ),
-            Option(
-                name="activity",
-                description="Select the activity you want to create",
-                choices=[
-                    OptionChoice(name="youtube_together", value="755600276941176913"),
-                    OptionChoice(name="poker_night", value="755827207812677713"),
-                    OptionChoice(name="betrayal_io", value="773336526917861400"),
-                    OptionChoice(name="fishington_io", value="814288819477020702"),
-                ],
-                required=False,
-            ),
-            Option(
-                name="custom_activity",
-                description="Enter the activity ID of the custom activity you want to create",
-                type=OptionType.string,
-                required=False,
-            ),
-        ],
     )
     @Utils.check_bot_starting()
     async def activity_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channel: VoiceChannel,
-        activity: int = None,
+        activity: PartyType = None,
         custom_activity: int = None,
     ):
         if not isinstance(channel, VoiceChannel):
@@ -158,6 +139,58 @@ class Miscellaneous(Cog, name="misc.activity"):
         )
 
     @activity_group.command(
+        name="chess",
+        aliases=["chess_in_the_park"],
+        brief="♟️",
+        usage="#voice_channel",
+        description="Create an instant invite link into the activity Chess In The Park in the specified channel",
+    )
+    @bot_has_guild_permissions(create_instant_invite=True)
+    async def activity_chess_command(self, ctx: Context, channel: VoiceChannel):
+        await ctx.send(
+            embed=await self.create_activity(ctx, channel, 832012774040141894)
+        )
+
+    @activity_group.command(
+        name="letter_tile",
+        aliases=["l_tile"],
+        brief="🇱",
+        usage="#voice_channel",
+        description="Create an instant invite link into the activity Letter Tile in the specified channel",
+    )
+    @bot_has_guild_permissions(create_instant_invite=True)
+    async def activity_letter_tile_command(self, ctx: Context, channel: VoiceChannel):
+        await ctx.send(
+            embed=await self.create_activity(ctx, channel, 879863686565621790)
+        )
+
+    @activity_group.command(
+        name="word_snack",
+        aliases=["w_snack"],
+        brief="💬",
+        usage="#voice_channel",
+        description="Create an instant invite link into the activity Word Snack in the specified channel",
+    )
+    @bot_has_guild_permissions(create_instant_invite=True)
+    async def activity_word_snack_command(self, ctx: Context, channel: VoiceChannel):
+        await ctx.send(
+            embed=await self.create_activity(ctx, channel, 879863976006127627)
+        )
+
+    @activity_group.command(
+        name="doodle_crew",
+        aliases=["d_crew"],
+        brief="🖌️",
+        usage="#voice_channel",
+        description="Create an instant invite link into the activity Doodle Crew in the specified channel",
+    )
+    @bot_has_guild_permissions(create_instant_invite=True)
+    async def activity_doodle_crew_command(self, ctx: Context, channel: VoiceChannel):
+        await ctx.send(
+            embed=await self.create_activity(ctx, channel, 878067389634314250)
+        )
+
+    @activity_group.command(
         name="custom",
         aliases=["cstm"],
         brief="❓",
@@ -174,7 +207,7 @@ class Miscellaneous(Cog, name="misc.activity"):
 
     async def create_activity(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         channel: VoiceChannel,
         activity: int,
     ) -> Embed or None:

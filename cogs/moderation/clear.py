@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Member, Option, OptionType
+from disnake import Member, GuildCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -38,27 +38,13 @@ class Moderation(Cog, name="moderation.clear"):
     @slash_command(
         name="clear",
         description="Delete a given number of messages in the channel from everyone or a certain member! (default: 10)",
-        options=[
-            Option(
-                name="number_messages",
-                description="Enter the number of messages you want to clear",
-                type=OptionType.integer,
-                required=False,
-            ),
-            Option(
-                name="member",
-                description="Enter the member you want to clear the messages from",
-                type=OptionType.user,
-                required=False,
-            ),
-        ],
     )
     @has_permissions(manage_messages=True)
     @bot_has_permissions(read_message_history=True, manage_messages=True)
     @max_concurrency(1, per=BucketType.channel)
     async def clear_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         number_messages: int = 10,
         member: Member = None,
     ):
@@ -68,7 +54,7 @@ class Moderation(Cog, name="moderation.clear"):
 
     async def handle_clear(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         nbr_msgs: int,
         member: Union[Member, None],
     ):
@@ -84,7 +70,7 @@ class Moderation(Cog, name="moderation.clear"):
                     ephemeral=True,
                 )
 
-        if isinstance(source, ApplicationCommandInteraction):
+        if isinstance(source, GuildCommandInteraction):
             await source.response.defer(ephemeral=True)
 
         if member:

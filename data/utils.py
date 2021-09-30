@@ -8,6 +8,7 @@ from typing import Union
 from disnake import (
     ApplicationCommandInteraction,
     Embed,
+    Enum,
     Forbidden,
     Guild,
     Message,
@@ -19,7 +20,6 @@ from disnake.ext.commands.errors import BadArgument
 from disnake.ext.tasks import loop
 
 from bot import Omnitron
-
 
 class Utils:
     def __init__(self, bot: Omnitron) -> None:

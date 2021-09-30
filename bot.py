@@ -58,7 +58,7 @@ class Omnitron(Bot):
             case_insensitive=True,
             strip_after_prefix=True,
             self_bot=False,
-            test_guilds=[872500404540280893, 880384324027969556],
+            test_guilds=[872500404540280893, 880384324027969556, 892737630557581322],
             **kwargs,
         )
 
@@ -129,8 +129,12 @@ class Omnitron(Bot):
         await self.handle_error(ctx, _error)
 
     async def on_error(self, event, *args, **kwargs):
-        error(f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)")
-        print(f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)")
+        error(
+            f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)"
+        )
+        print(
+            f"{exc_info()[0]}\n{exc_info()[1]}\n{exc_info()[2]}\n\n{format_exc()}\n\nIn guild `{args[0].guild if args else 'not found'}` (ID: `{args[0].guild.id if args else 'not found'}`)"
+        )
         _error = exc_info()[1]
 
         if isinstance(_error, Forbidden):

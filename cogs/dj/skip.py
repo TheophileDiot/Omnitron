@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Option, OptionType
+from disnake import GuildCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -34,27 +34,17 @@ class Dj(Cog, name="dj.skip"):
     @slash_command(
         name="skip",
         description="Skip the music a given number of times!",
-        options=[
-            Option(
-                name="skips",
-                description="The number of skips to do",
-                type=OptionType.number,
-                required=False,
-            ),
-        ],
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
-    async def skip_slash_command(
-        self, inter: ApplicationCommandInteraction, skips: int = 1
-    ):
+    async def skip_slash_command(self, inter: GuildCommandInteraction, skips: int = 1):
         await self.handle_skip(inter, skips)
 
     """ METHOD(S) """
 
     async def handle_skip(
-        self, source: Union[Context, ApplicationCommandInteraction], skips: int
+        self, source: Union[Context, GuildCommandInteraction], skips: int
     ):
         """skip the musics a given number of times."""
         player = self.bot.lavalink.player_manager.get(source.guild.id)

@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, ButtonStyle
+from disnake import ButtonStyle, GuildCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -42,13 +42,13 @@ class Moderation(Cog, name="moderation.endticket"):
     @Utils.check_moderator()
     @bot_has_guild_permissions(manage_channels=True)
     @max_concurrency(1, BucketType.channel)
-    async def endticket_slash_command(self, ctx: Context):
-        await self.handle_endticket(ctx)
+    async def endticket_slash_command(self, inter: GuildCommandInteraction):
+        await self.handle_endticket(inter)
 
     """ METHOD(S) """
 
     async def handle_endticket(
-        self, source: Union[Context, ApplicationCommandInteraction]
+        self, source: Union[Context, GuildCommandInteraction]
     ):
         tickets = self.bot.ticket_repo.get_tickets(source.guild.id)
 
