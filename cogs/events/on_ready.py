@@ -27,7 +27,9 @@ class Events(Cog, name="events.on_ready"):
 
             db_guild = self.bot.main_repo.get_guild(guild.id)
 
-            if not db_guild["present"]:
+            if guild.id in db_guilds and not db_guild["present"]:
+                self.bot.main_repo.update_guild(guild.id, {"present": True})
+            elif not db_guild["present"]:
                 continue
 
             self.bot.utils_class.init_guild(guild)

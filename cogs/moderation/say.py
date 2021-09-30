@@ -45,9 +45,13 @@ async def handle_say(
 
         if channel != source.channel:
             if isinstance(source, Context):
-                await source.send(f"Your message has successfully been sent to the channel {channel.mention}")
+                await source.send(
+                    f"Your message has successfully been sent to the channel {channel.mention}"
+                )
             else:
-                await source.response.send_message(f"Your message has successfully been sent to the channel {channel.mention}")
+                await source.response.send_message(
+                    f"Your message has successfully been sent to the channel {channel.mention}"
+                )
 
 
 class Moderation(Cog, name="moderation.say"):
