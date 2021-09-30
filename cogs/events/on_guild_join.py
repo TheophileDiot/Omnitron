@@ -20,7 +20,8 @@ class Events(Cog, name="events.on_guild_join"):
             self.bot.main_repo.create_guild(guild.id, guild.name, f"{guild.owner}")
         else:
             self.bot.main_repo.update_guild(
-                guild.id, {"name": guild.name, "owner": f"{guild.owner}"}
+                guild.id,
+                {"name": guild.name, "owner": f"{guild.owner}", "present": True},
             )
 
         self.bot.utils_class.init_guild(guild)
