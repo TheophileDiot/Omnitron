@@ -2,24 +2,27 @@ from asyncio import sleep
 from collections import OrderedDict
 from math import floor
 from re import compile as re_compile
+from re import findall
 from time import time
-from typing import Union
+from typing import Union, List
 
 from disnake import (
     ApplicationCommandInteraction,
     Embed,
-    Enum,
     Forbidden,
     Guild,
+    GuildCommandInteraction,
     Message,
     Member,
     NotFound,
+    Role,
 )
 from disnake.ext.commands import Context, check
 from disnake.ext.commands.errors import BadArgument
 from disnake.ext.tasks import loop
 
 from bot import Omnitron
+
 
 class Utils:
     def __init__(self, bot: Omnitron) -> None:
@@ -290,11 +293,16 @@ class Utils:
             description=f"Use the command format `{self.get_guild_pre(ctx.message)[0]}{ctx.command.qualified_name} <option>` to view more info about an option.",
         )
 
-        em.set_thumbnail(url=self.bot.user.avatar.url if self.bot.user.avatar else None)
-        em.set_author(
-            name=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+        if self.bot.user.avatar:
+            em.set_thumbnail(url=self.bot.user.avatar.url)
+            em.set_author(
+                name=self.bot.user.name,
+                icon_url=self.bot.user.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=self.bot.user.name,
+            )
 
         if ctx.guild.icon:
             em.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon.url)
@@ -344,7 +352,7 @@ class Utils:
         self,
         _duration: int,
         type_duration: str,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction, GuildCommandInteraction],
     ) -> bool or int or None:
         type_duration = self.to_lower(type_duration)
 
@@ -561,7 +569,11 @@ class Utils:
 
     @staticmethod
     def check_bot_starting():
-        def predicate(source: Union[Context, ApplicationCommandInteraction]):
+        def predicate(
+            source: Union[
+                Context, ApplicationCommandInteraction, GuildCommandInteraction
+            ]
+        ):
             return not source.bot.starting
 
         return check(predicate)
@@ -836,7 +848,11 @@ class Utils:
 
     @classmethod
     def check_moderator(cls):
-        def predicate(source: Union[Context, ApplicationCommandInteraction]):
+        def predicate(
+            source: Union[
+                Context, ApplicationCommandInteraction, GuildCommandInteraction
+            ]
+        ):
             source.bot.last_check = "moderator"
             return cls.is_mod(source.author, source.bot)
 
@@ -844,7 +860,11 @@ class Utils:
 
     @classmethod
     def check_dj(cls):
-        def predicate(source: Union[Context, ApplicationCommandInteraction]):
+        def predicate(
+            source: Union[
+                Context, ApplicationCommandInteraction, GuildCommandInteraction
+            ]
+        ):
             source.bot.last_check = "dj"
             return cls.is_dj(source.author, source.bot)
 
@@ -877,3 +897,29 @@ class Utils:
             or member.id in set(bot.djs[member.guild.id])
             or member.guild_permissions.administrator
         )
+
+    @staticmethod
+    async def mentionable_converter(
+        inter: Union[ApplicationCommandInteraction, GuildCommandInteraction],
+        argument: str,
+    ) -> List[Union[Member, Role]] or None:
+        ids = findall(r"([0-9]{15,20})", argument)
+        result = []
+        for id in ids:
+            try:
+                result.append(
+                    inter.guild.get_role(id)
+                    or inter.guild.get_member(id)
+                    or await inter.guild.fetch_member(id)
+                )
+            except NotFound:
+                continue
+
+        if not result or not all(result):
+            await inter.channel.send(
+                f"⚠️ - {inter.author.mention} - None of the mods you gave are valid ones!",
+                delete_after=20,
+            )
+            return None
+
+        return result

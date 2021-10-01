@@ -34,9 +34,7 @@ class Miscellaneous(Cog, name="misc.serverinfo"):
 
     """ METHOD(S) """
 
-    async def handle_serverinfo(
-        self, source: Union[Context, GuildCommandInteraction]
-    ):
+    async def handle_serverinfo(self, source: Union[Context, GuildCommandInteraction]):
         em = Embed(
             title=f"{source.guild.name} server information", colour=self.bot.color
         )

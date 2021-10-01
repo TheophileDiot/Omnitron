@@ -1,19 +1,15 @@
 from inspect import Parameter
 from time import time
 from typing import List, Literal, Union
-from re import findall
 
 from disnake import (
-    ApplicationCommandInteraction,
     ButtonStyle,
     CategoryChannel,
     Embed,
     Forbidden,
+    GuildCommandInteraction,
     Member,
     NotFound,
-    Option,
-    OptionChoice,
-    OptionType,
     Role,
     SelectOption,
     TextChannel,
@@ -39,25 +35,6 @@ from bot import Omnitron
 from data import Utils, Xp_class
 
 BOOL2VAL = {True: "ON", False: "OFF"}
-
-
-async def mentionable_converter(inter: ApplicationCommandInteraction, argument: str):
-    ids = findall(r"([0-9]{15,20})", argument)
-    result = []
-    for id in ids:
-        try:
-            result.append(
-                inter.guild.get_role(id)
-                or inter.guild.get_member(id)
-                or await inter.guild.fetch_member(id)
-            )
-        except NotFound:
-            continue
-
-    if not all(result):
-        raise BadUnionArgument
-
-    return result
 
 
 class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
@@ -190,6 +167,31 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         *mods: Union[Role, Member],
     ):
+        await self.handle_moderators(ctx, option, mods)
+
+    @config_slash_group.sub_command(
+        name="moderators",
+        description="This option manage the server's moderators (role & members) (can add/remove multiple at a time)",
+    )
+    async def config_moderators_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        option: Literal["add", "remove", "purge"] = None,
+        mods: List[Union[Member, Role]] = Param(
+            default=None, converter=Utils.mentionable_converter
+        ),
+    ):
+        if mods:
+            await self.handle_moderators(inter, option, *mods)
+        else:
+            await self.handle_moderators(inter, option)
+
+    async def handle_moderators(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None],
+        *mods: Union[Member, Role],
+    ):
         if option:
             try:
                 if option in ("add", "remove"):
@@ -207,33 +209,34 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     bot_mods = []
                     for mod in _mods:
                         if option == "add":
-                            if mod.id in set(self.bot.moderators[ctx.guild.id]):
+                            if mod.id in set(self.bot.moderators[source.guild.id]):
                                 del mods[mods.index(mod)]
                                 dropped_mods.append(mod)
                                 continue
-                            elif mod.id in set(self.bot.djs[ctx.guild.id]):
+                            elif mod.id in set(self.bot.djs[source.guild.id]):
                                 del mods[mods.index(mod)]
                                 warning_mods.append([mod, "dj"])
                                 continue
                             elif (
-                                "muted_role" in self.bot.configs[ctx.guild.id]
-                                and self.bot.configs[ctx.guild.id]["muted_role"] == mod
+                                "muted_role" in self.bot.configs[source.guild.id]
+                                and self.bot.configs[source.guild.id]["muted_role"]
+                                == mod
                             ):
                                 del mods[mods.index(mod)]
                                 warning_mods.append([mod, "muted_role"])
                                 continue
                             elif mod in set(
-                                self.bot.configs[ctx.guild.id]["xp"][
+                                self.bot.configs[source.guild.id]["xp"][
                                     "prestiges"
                                 ].values()
                             ):
                                 del mods[mods.index(mod)]
                                 warning_mods.append([mod, "prestige"])
                                 continue
-                            elif "lvl2role" in self.bot.configs[ctx.guild.id][
+                            elif "lvl2role" in self.bot.configs[source.guild.id][
                                 "xp"
                             ] and mod in set(
-                                self.bot.configs[ctx.guild.id]["xp"][
+                                self.bot.configs[source.guild.id]["xp"][
                                     "lvl2role"
                                 ].values()
                             ):
@@ -241,13 +244,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 warning_mods.append([mod, "lvl2role"])
                                 continue
                             elif (
-                                "select2role" in self.bot.configs[ctx.guild.id]
+                                "select2role" in self.bot.configs[source.guild.id]
                                 and "selects"
-                                in self.bot.configs[ctx.guild.id]["select2role"]
+                                in self.bot.configs[source.guild.id]["select2role"]
                                 and mod
                                 in {
                                     v["role"]
-                                    for v in self.bot.configs[ctx.guild.id][
+                                    for v in self.bot.configs[source.guild.id][
                                         "select2role"
                                     ]["selects"].values()
                                 }
@@ -261,59 +264,84 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 continue
 
                             self.bot.config_repo.add_moderator(
-                                ctx.guild.id, mod.id, f"{mod}", type(mod).__name__
+                                source.guild.id, mod.id, f"{mod}", type(mod).__name__
                             )
-                            self.bot.moderators[ctx.guild.id].append(mod.id)
+                            self.bot.moderators[source.guild.id].append(mod.id)
                         elif option == "remove":
-                            if mod.id not in set(self.bot.moderators[ctx.guild.id]):
+                            if mod.id not in set(self.bot.moderators[source.guild.id]):
                                 del mods[mods.index(mod)]
                                 dropped_mods.append(mod)
                                 continue
 
-                            self.bot.config_repo.remove_moderator(ctx.guild.id, mod.id)
-                            del self.bot.moderators[ctx.guild.id][
-                                self.bot.moderators[ctx.guild.id].index(mod.id)
+                            self.bot.config_repo.remove_moderator(
+                                source.guild.id, mod.id
+                            )
+                            del self.bot.moderators[source.guild.id][
+                                self.bot.moderators[source.guild.id].index(mod.id)
                             ]
 
                     resp = ""
 
                     if bot_mods:
-                        resp += f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{mod}`' for mod in bot_mods])} {'is a' if len(bot_mods) == 1 else 'are'} bot user{'s' if len(bot_mods) > 1 else ''} so you can't add {'them' if len(bot_mods) > 1 else 'him'} in the moderators list!"
+                        resp += f"ℹ️ - {source.author.mention} - {', '.join([f'`@{mod}`' for mod in bot_mods])} {'is a' if len(bot_mods) == 1 else 'are'} bot user{'s' if len(bot_mods) > 1 else ''} so you can't add {'them' if len(bot_mods) > 1 else 'him'} in the moderators list!"
 
                     if dropped_mods:
                         resp += (
-                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            ("\n" if resp else f"ℹ️ - {source.author.mention} - ")
                             + f"{', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in dropped_mods])} {'is' if len(dropped_mods) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the moderators list!"
                         )
 
                     if warning_mods:
                         resp += (
-                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            ("\n" if resp else f"ℹ️ - {source.author.mention} - ")
                             + f"{', '.join([f'`@{mod[0]} ({type(mod[0]).__name__})` is already assigned to a {mod[1]} role' for mod in warning_mods])}!"
                         )
 
                     if resp:
-                        await ctx.reply(resp, delete_after=20)
+                        if isinstance(source, Context):
+                            await source.reply(resp, delete_after=20)
+                        else:
+                            await source.channel.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in mods])} {'to' if option == 'add' else 'from'} the moderators list!.",
+                                delete_after=20,
+                            )
 
                     if mods:
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in mods])} {'to' if option == 'add' else 'from'} the moderators list!."
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in mods])} {'to' if option == 'add' else 'from'} the moderators list!."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{mod} ({type(mod).__name__})`' for mod in mods])} {'to' if option == 'add' else 'from'} the moderators list!."
+                            )
                 elif option == "purge":
-                    if not self.bot.moderators[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - No moderators (members & roles) have been added to the list yet!",
-                            delete_after=20,
-                        )
+                    if not self.bot.moderators[source.guild.id]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - No moderators (members & roles) have been added to the list yet!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - No moderators (members & roles) have been added to the list yet!",
+                                ephemeral=True,
+                            )
 
-                    self.bot.config_repo.purge_moderators(ctx.guild.id)
-                    self.bot.moderators[ctx.guild.id] = {}
-                    await ctx.send(
-                        f"ℹ️ - Removed all the moderators from the moderators list."
-                    )
+                    self.bot.config_repo.purge_moderators(source.guild.id)
+                    self.bot.moderators[source.guild.id] = {}
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the moderators from the moderators list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the moderators from the moderators list."
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -323,18 +351,24 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while updating the moderators list! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while updating the moderators list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            server_mods = self.bot.config_repo.get_moderators(ctx.guild.id).values()
+            server_mods = self.bot.config_repo.get_moderators(source.guild.id).values()
 
             if not server_mods:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No moderators (members & roles) have been added to the list yet!",
-                    delete_after=20,
-                )
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No moderators (members & roles) have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No moderators (members & roles) have been added to the list yet!",
+                        ephemeral=True,
+                    )
 
             server_mods_roles = []
             server_mods_members = []
@@ -345,40 +379,34 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 else:
                     server_mods_members.append(m["name"])
 
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's moderators:**\n\n"
-                + (
-                    f"Members: {', '.join(f'`{m}`' for m in server_mods_members)}\n"
-                    if server_mods_members
-                    else ""
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's moderators:**\n\n"
+                    + (
+                        f"Members: {', '.join(f'`{m}`' for m in server_mods_members)}\n"
+                        if server_mods_members
+                        else ""
+                    )
+                    + (
+                        f"Roles: {', '.join(f'`{r}`' for r in server_mods_roles)}\n"
+                        if server_mods_roles
+                        else ""
+                    )
                 )
-                + (
-                    f"Roles: {', '.join(f'`{r}`' for r in server_mods_roles)}\n"
-                    if server_mods_roles
-                    else ""
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's moderators:**\n\n"
+                    + (
+                        f"Members: {', '.join(f'`{m}`' for m in server_mods_members)}\n"
+                        if server_mods_members
+                        else ""
+                    )
+                    + (
+                        f"Roles: {', '.join(f'`{r}`' for r in server_mods_roles)}\n"
+                        if server_mods_roles
+                        else ""
+                    )
                 )
-            )
-
-    @config_slash_group.sub_command(
-        name="moderators",
-        description="This option manage the server's moderators (role & members) (can add/remove multiple at a time)",
-    )
-    async def config_moderators_slash_command(
-        self,
-        inter: ApplicationCommandInteraction,
-        option: Literal["add", "remove", "purge"],
-        mods: List[Union[Member, Role]] = Param(converter=mentionable_converter),
-    ):
-        await self.handle_moderators(inter, option, *mods)
-
-    async def handle_moderators(
-        self,
-        source: Union[Context, ApplicationCommandInteraction],
-        option: str,
-        *mods: Union[Member, Role],
-    ):
-        print(type(mods[0]))
-        pass
 
     """ DJS """
 
@@ -861,11 +889,11 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 raise MissingRequiredArgument(param=mre.param)
             except BadArgument:
                 raise BadArgument
-            except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
-                    delete_after=20,
-                )
+            # except Exception as e:
+            #     await ctx.reply(
+            #         f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
+            #         delete_after=20,
+            #     )
         else:
             await ctx.send(
                 f"ℹ️ - {ctx.author.mention} - The tickets are currently `{BOOL2VAL['tickets' in self.bot.configs[ctx.guild.id]]}` in this guild!"
@@ -1076,7 +1104,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         description="Here are the server's select to role available, choose one or more roles you wish to be assigned.\n\n**If you want the role to be removed, deselect the corresponding role!**",
                     )
 
-                    em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+                    if ctx.guild.icon:
+                        em.set_thumbnail(url=ctx.guild.icon.url)
 
                     if self.bot.user.avatar:
                         em.set_footer(

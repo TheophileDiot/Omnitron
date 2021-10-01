@@ -23,11 +23,11 @@ class Miscellaneous(Cog, name="misc.help"):
     ):
         em = Embed(colour=self.bot.color)
 
-        em.set_thumbnail(url=self.bot.user.avatar.url if self.bot.user.avatar else None)
-        em.set_author(
-            name=self.bot.user.name,
-            icon_url=self.bot.user.avatar.url if self.bot.user.avatar else None,
-        )
+        if self.bot.user.avatar:
+            em.set_thumbnail(url=self.bot.user.avatar.url)
+            em.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_author(name=self.bot.user.name)
 
         if ctx.guild.icon:
             em.set_footer(text=ctx.guild.name, icon_url=ctx.guild.icon.url)
