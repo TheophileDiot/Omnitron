@@ -175,11 +175,11 @@ class Moderation(Cog, name="moderation.poll"):
             description="Please click on the button of your choice, you can only answer once!",
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.guild.name,
-            icon_url=source.guild.icon.url if source.guild.icon else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+            em.set_author(name=source.guild.name, icon_url=source.guild.icon.url)
+        else:
+            em.set_author(name=source.guild.name)
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
@@ -335,11 +335,11 @@ class Moderation(Cog, name="moderation.poll"):
             colour=self.bot.color,
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.guild.name,
-            icon_url=source.guild.icon.url if source.guild.icon else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+            em.set_author(name=source.guild.name, icon_url=source.guild.icon.url)
+        else:
+            em.set_author(name=source.guild.name)
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)

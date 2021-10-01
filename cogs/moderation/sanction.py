@@ -153,11 +153,18 @@ class Moderation(Cog, name="moderation.sanction"):
             description=f"The member {member} has been kicked by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.author.display_name,
-            icon_url=member.avatar.url if member.avatar else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+
+        if member.avatar:
+            em.set_author(
+                name=source.author.display_name,
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=source.author.display_name,
+            )
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
@@ -301,11 +308,18 @@ class Moderation(Cog, name="moderation.sanction"):
             description=f"The member {member} has been banned by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.author.display_name,
-            icon_url=member.avatar.url if member.avatar else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+
+        if member.avatar:
+            em.set_author(
+                name=source.author.display_name,
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=source.author.display_name,
+            )
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
@@ -411,11 +425,18 @@ class Moderation(Cog, name="moderation.sanction"):
             description=f"The user `{member}` has been warned by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.author.display_name,
-            icon_url=member.avatar.url if member.avatar else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+
+        if member.avatar:
+            em.set_author(
+                name=source.author.display_name,
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=source.author.display_name,
+            )
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
@@ -540,11 +561,18 @@ class Moderation(Cog, name="moderation.sanction"):
             colour=self.bot.color, title=f"⚠️ - list of previous warns from {member}"
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.author.display_name,
-            icon_url=member.avatar.url if member.avatar else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+
+        if member.avatar:
+            em.set_author(
+                name=source.author.display_name,
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=source.author.display_name,
+            )
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
@@ -712,11 +740,18 @@ class Moderation(Cog, name="moderation.sanction"):
             description=f"The member `{member}` has been muted by {source.author.mention}",
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.author.display_name,
-            icon_url=member.avatar.url if member.avatar else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+
+        if member.avatar:
+            em.set_author(
+                name=source.author.display_name,
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=source.author.display_name,
+            )
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
@@ -819,11 +854,18 @@ class Moderation(Cog, name="moderation.sanction"):
             title=f"🔇 - List of previous mutes of {member}",
         )
 
-        em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-        em.set_author(
-            name=source.author.display_name,
-            icon_url=member.avatar.url if member.avatar else None,
-        )
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+
+        if member.avatar:
+            em.set_author(
+                name=source.author.display_name,
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=source.author.display_name,
+            )
 
         if self.bot.user.avatar:
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)

@@ -31,7 +31,9 @@ class Miscellaneous(Cog, name="misc.userinfo"):
         description="Get the information from a member or from yourself!",
     )
     @bot_has_permissions(send_messages=True)
-    async def userinfo_slash_command(self, inter: GuildCommandInteraction, member: Member = None):
+    async def userinfo_slash_command(
+        self, inter: GuildCommandInteraction, member: Member = None
+    ):
         await self.handle_userinfo(inter, member)
 
     """ METHOD(S) """
@@ -47,11 +49,14 @@ class Miscellaneous(Cog, name="misc.userinfo"):
             colour=member.colour,
         )
 
-        em.set_thumbnail(url=member.avatar.url if member.avatar else None)
-        em.set_author(
-            name=f"Infos on {member}",
-            icon_url=member.avatar.url if member.avatar else None,
-        )
+        if member.avatar:
+            em.set_thumbnail(url=member.avatar.url)
+            em.set_author(
+                name=f"Infos on {member}",
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(name=f"Infos on {member}")
 
         if source.author.avatar:
             em.set_footer(

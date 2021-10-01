@@ -47,9 +47,7 @@ class Moderation(Cog, name="moderation.endticket"):
 
     """ METHOD(S) """
 
-    async def handle_endticket(
-        self, source: Union[Context, GuildCommandInteraction]
-    ):
+    async def handle_endticket(self, source: Union[Context, GuildCommandInteraction]):
         tickets = self.bot.ticket_repo.get_tickets(source.guild.id)
 
         if not tickets or str(source.channel.id) not in [ticket for ticket in tickets]:

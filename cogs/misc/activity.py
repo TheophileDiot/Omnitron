@@ -20,6 +20,7 @@ from disnake.http import Route
 from bot import Omnitron
 from data import Utils
 
+
 class PartyType(Enum):
     youtube = "755600276941176913"
     poker = "755827207812677713"
@@ -29,6 +30,7 @@ class PartyType(Enum):
     letter_tile = "879863686565621790"
     word_snack = "879863976006127627"
     doodle_crew = "878067389634314250"
+
 
 class Miscellaneous(Cog, name="misc.activity"):
     def __init__(self, bot: Omnitron):

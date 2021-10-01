@@ -554,11 +554,14 @@ class Miscellaneous(Cog, name="misc.xp"):
                 add = "of the server *(including moderators)*"
 
             em = Embed(colour=self.bot.color, title=f"Ranking {add}!")
-            em.set_thumbnail(url=source.guild.icon.url if source.guild.icon else None)
-            em.set_author(
-                name=source.guild.name,
-                icon_url=source.guild.icon.url if source.guild.icon else None,
-            )
+
+            if source.guild.icon:
+                em.set_thumbnail(url=source.guild.icon.url)
+                em.set_author(name=source.guild.name, icon_url=source.guild.icon.url)
+            else:
+                em.set_author(
+                    name=source.guild.name,
+                )
 
             if self.bot.user.avatar:
                 em.set_footer(
