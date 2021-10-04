@@ -1,11 +1,12 @@
 from typing import Union
 
-from disnake import Embed, GuildCommandInteraction, Member
+from disnake import ApplicationCommandInteraction, Embed, Member
 from disnake.ext.commands import (
     bot_has_permissions,
     Cog,
     command,
     Context,
+    guild_only,
     slash_command,
 )
 
@@ -30,16 +31,17 @@ class Miscellaneous(Cog, name="misc.userinfo"):
         name="userinfo",
         description="Get the information from a member or from yourself!",
     )
+    @guild_only()
     @bot_has_permissions(send_messages=True)
     async def userinfo_slash_command(
-        self, inter: GuildCommandInteraction, member: Member = None
+        self, inter: ApplicationCommandInteraction, member: Member = None
     ):
         await self.handle_userinfo(inter, member)
 
     """ METHOD(S) """
 
     async def handle_userinfo(
-        self, source: Union[Context, GuildCommandInteraction], member: Member
+        self, source: Union[Context, ApplicationCommandInteraction], member: Member
     ):
         if not member:
             member = source.author

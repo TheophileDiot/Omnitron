@@ -38,6 +38,7 @@ from disnake.ext.commands.errors import (
     MissingAnyRole,
     MissingRequiredArgument,
     MissingPermissions,
+    NoPrivateMessage,
     NotOwner,
 )
 from dotenv import load_dotenv
@@ -122,6 +123,7 @@ class Omnitron(Bot):
         self, inter: ApplicationCommandInteraction, _error
     ):
         """Override default slash command error handler to log errors and prevent the bot from crashing."""
+        print("yes")
         await self.handle_error(inter, _error)
 
     async def on_command_error(self, ctx: Context, _error):
@@ -193,7 +195,9 @@ class Omnitron(Bot):
     async def handle_error(
         self, source: Union[Context, ApplicationCommandInteraction], _error
     ):
-        if isinstance(_error, MissingRequiredArgument):
+        if isinstance(_error, NoPrivateMessage):
+            resp = f"⚠️ - this command is deactivated outside of guilds!"
+        elif isinstance(_error, MissingRequiredArgument):
             resp = f"ℹ️ - The `{source.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
         elif isinstance(_error, MissingPermissions):
             resp = f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_permissions)}`"

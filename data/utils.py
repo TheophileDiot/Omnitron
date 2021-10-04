@@ -12,7 +12,6 @@ from disnake import (
     Embed,
     Forbidden,
     Guild,
-    GuildCommandInteraction,
     Message,
     Member,
     NotFound,
@@ -362,7 +361,7 @@ class Utils:
         self,
         _duration: int,
         type_duration: str,
-        source: Union[Context, ApplicationCommandInteraction, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
     ) -> bool or int or None:
         type_duration = self.to_lower(type_duration)
 
@@ -579,11 +578,7 @@ class Utils:
 
     @staticmethod
     def check_bot_starting():
-        def predicate(
-            source: Union[
-                Context, ApplicationCommandInteraction, GuildCommandInteraction
-            ]
-        ):
+        def predicate(source: Union[Context, ApplicationCommandInteraction]):
             return not source.bot.starting
 
         return check(predicate)
@@ -858,11 +853,7 @@ class Utils:
 
     @classmethod
     def check_moderator(cls):
-        def predicate(
-            source: Union[
-                Context, ApplicationCommandInteraction, GuildCommandInteraction
-            ]
-        ):
+        def predicate(source: Union[Context, ApplicationCommandInteraction]):
             source.bot.last_check = "moderator"
             return cls.is_mod(source.author, source.bot)
 
@@ -870,11 +861,7 @@ class Utils:
 
     @classmethod
     def check_dj(cls):
-        def predicate(
-            source: Union[
-                Context, ApplicationCommandInteraction, GuildCommandInteraction
-            ]
-        ):
+        def predicate(source: Union[Context, ApplicationCommandInteraction]):
             source.bot.last_check = "dj"
             return cls.is_dj(source.author, source.bot)
 
@@ -910,7 +897,7 @@ class Utils:
 
     @staticmethod
     async def mentionable_converter(
-        inter: Union[ApplicationCommandInteraction, GuildCommandInteraction],
+        inter: ApplicationCommandInteraction,
         argument: str,
     ) -> List[Union[Member, Role]] or None:
         ids = findall(r"([0-9]{15,20})", argument)
@@ -936,7 +923,7 @@ class Utils:
 
     @staticmethod
     async def channel_converter(
-        inter: Union[ApplicationCommandInteraction, GuildCommandInteraction],
+        inter: ApplicationCommandInteraction,
         argument: str,
     ) -> List[Union[TextChannel, VoiceChannel]] or None:
         ids = findall(r"([0-9]{15,20})", argument)

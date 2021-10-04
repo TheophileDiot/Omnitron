@@ -1,9 +1,9 @@
 from typing import Union
 
 from disnake import (
+    ApplicationCommandInteraction,
     Embed,
     Enum,
-    GuildCommandInteraction,
     HTTPException,
     VoiceChannel,
 )
@@ -13,6 +13,7 @@ from disnake.ext.commands import (
     Cog,
     Context,
     group,
+    guild_only,
     slash_command,
 )
 from disnake.http import Route
@@ -61,10 +62,11 @@ class Miscellaneous(Cog, name="misc.activity"):
         name="activity",
         description="This command manage the server's activities",
     )
+    @guild_only()
     @Utils.check_bot_starting()
     async def activity_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channel: VoiceChannel,
         activity: PartyType = None,
         custom_activity: int = None,
@@ -209,7 +211,7 @@ class Miscellaneous(Cog, name="misc.activity"):
 
     async def create_activity(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         channel: VoiceChannel,
         activity: int,
     ) -> Embed or None:

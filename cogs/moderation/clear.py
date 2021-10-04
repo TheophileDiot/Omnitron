@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import Member, GuildCommandInteraction
+from disnake import ApplicationCommandInteraction, Member
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -44,7 +44,7 @@ class Moderation(Cog, name="moderation.clear"):
     @max_concurrency(1, per=BucketType.channel)
     async def clear_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         number_messages: int = 10,
         member: Member = None,
     ):
@@ -54,7 +54,7 @@ class Moderation(Cog, name="moderation.clear"):
 
     async def handle_clear(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         nbr_msgs: int,
         member: Union[Member, None],
     ):

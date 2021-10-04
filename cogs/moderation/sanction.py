@@ -1,13 +1,11 @@
+from time import time
 from typing import Union
 
 from disnake import (
+    ApplicationCommandInteraction,
     Embed,
     Forbidden,
-    GuildCommandInteraction,
     Member,
-    Option,
-    OptionChoice,
-    OptionType,
 )
 from disnake.ext.commands import (
     bot_has_permissions,
@@ -16,11 +14,11 @@ from disnake.ext.commands import (
     Cog,
     Context,
     group,
+    guild_only,
     has_guild_permissions,
     max_concurrency,
     slash_command,
 )
-from time import time
 
 from bot import Omnitron
 from data import DurationType, Utils
@@ -54,9 +52,10 @@ class Moderation(Cog, name="moderation.sanction"):
         name="sanction",
         description="This command manage the server's sanctions",
     )
+    @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def sanction_slash_group(self, inter: GuildCommandInteraction):
+    async def sanction_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     """ MAIN GROUP'S GROUP(S) """
@@ -83,7 +82,7 @@ class Moderation(Cog, name="moderation.sanction"):
         description="This option manage the server's warns",
     )
     @max_concurrency(1, per=BucketType.guild)
-    async def sanction_warn_slash_group(self, inter: GuildCommandInteraction):
+    async def sanction_warn_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @sanction_group.group(
@@ -108,7 +107,7 @@ class Moderation(Cog, name="moderation.sanction"):
         description="This option manage the server's mutes",
     )
     @max_concurrency(1, per=BucketType.guild)
-    async def sanction_mute_slash_group(self, inter: GuildCommandInteraction):
+    async def sanction_mute_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     """ MAIN GROUP'S COMMAND(S) """
@@ -137,13 +136,13 @@ class Moderation(Cog, name="moderation.sanction"):
     @bot_has_guild_permissions(kick_members=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_kick_slash_command(
-        self, inter: GuildCommandInteraction, member: Member, reason: str = None
+        self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
     ):
         await self.handle_kick(inter, member, reason)
 
     async def handle_kick(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         member: Member,
         reason: Union[str, None] = None,
     ):
@@ -249,7 +248,7 @@ class Moderation(Cog, name="moderation.sanction"):
     @max_concurrency(1, per=BucketType.member)
     async def sanction_ban_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         member: Member,
         reason: str = None,
         duration: int = 1,
@@ -259,7 +258,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_ban(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         member: Member,
         reason: Union[str, None] = None,
         duration: Union[int, None] = None,
@@ -366,13 +365,13 @@ class Moderation(Cog, name="moderation.sanction"):
     )
     @max_concurrency(1, per=BucketType.member)
     async def sanction_warn_add_slash_command(
-        self, inter: GuildCommandInteraction, member: Member, reason: str = None
+        self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
     ):
         await self.handle_warn_add(inter, member, reason)
 
     async def handle_warn_add(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         member: Member,
         reason: Union[str, None] = None,
     ):
@@ -516,12 +515,12 @@ class Moderation(Cog, name="moderation.sanction"):
         description="Show the list of a member's warns or yours!",
     )
     async def sanction_warn_list_slash_command(
-        self, inter: GuildCommandInteraction, member: Member = None
+        self, inter: ApplicationCommandInteraction, member: Member = None
     ):
         await self.handle_warn_list(inter, member)
 
     async def handle_warn_list(
-        self, source: Union[Context, GuildCommandInteraction], member: Member
+        self, source: Union[Context, ApplicationCommandInteraction], member: Member
     ):
         if not member:
             member = source.author
@@ -638,7 +637,7 @@ class Moderation(Cog, name="moderation.sanction"):
     @max_concurrency(1, per=BucketType.member)
     async def sanction_mute_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         member: Member,
         reason: str = None,
         duration: int = 10,
@@ -648,7 +647,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_mute_add(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         member: Member,
         reason: str,
         duration: int,
@@ -774,14 +773,14 @@ class Moderation(Cog, name="moderation.sanction"):
     )
     async def sanction_mute_list_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         member: Member = None,
     ):
         await self.handle_mute_list(inter, member)
 
     async def handle_mute_list(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         member: Union[Member, None] = None,
     ):
         if not member:
@@ -871,7 +870,7 @@ class Moderation(Cog, name="moderation.sanction"):
     @max_concurrency(1, per=BucketType.member)
     async def sanction_mute_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         member: Member,
         *,
         reason: str = None,
@@ -880,7 +879,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_mute_remove(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         member: Member,
         reason: str,
     ):

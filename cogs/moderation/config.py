@@ -3,11 +3,11 @@ from time import time
 from typing import List, Literal, Union
 
 from disnake import (
+    ApplicationCommandInteraction,
     ButtonStyle,
     CategoryChannel,
     Embed,
     Forbidden,
-    GuildCommandInteraction,
     Member,
     NotFound,
     Role,
@@ -22,6 +22,7 @@ from disnake.ext.commands import (
     Context,
     Cog,
     group,
+    guild_only,
     Param,
     slash_command,
 )
@@ -88,7 +89,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="security",
         description="This option manage the server's security",
     )
-    async def config_security_slash_group(self, inter: GuildCommandInteraction):
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_security_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @config_group.group(
@@ -113,7 +117,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="config_xp",
         description="This option manage the server's experience feature",
     )
-    async def config_xp_slash_group(self, inter: GuildCommandInteraction):
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_xp_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @config_group.group(
@@ -138,7 +145,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="channels",
         description="This option manage the server's special channels",
     )
-    async def config_channels_slash_group(self, inter: GuildCommandInteraction):
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_channels_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     """ MAIN GROUP'S COMMAND(S) """
@@ -168,7 +178,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="moderators",
         description="This option manage the server's moderators (role & members)",
     )
-    async def config_moderators_slash_group(self, inter: GuildCommandInteraction):
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_moderators_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @config_moderators_slash_group.sub_command(
@@ -177,7 +190,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_moderators_list_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_moderators(inter)
 
@@ -187,7 +200,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_moderators_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
     ):
         if mods:
@@ -201,7 +214,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_moderators_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
     ):
         if mods:
@@ -214,13 +227,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_moderators_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_moderators(inter, "purge")
 
     async def handle_moderators(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         *mods: Union[Member, Role],
     ):
@@ -465,7 +478,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="djs",
         description="This option manage the server's djs (role & members)",
     )
-    async def config_djs_slash_group(self, inter: GuildCommandInteraction):
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_djs_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @config_djs_slash_group.sub_command(
@@ -474,7 +490,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_djs_list_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_djs(inter)
 
@@ -484,7 +500,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_djs_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
     ):
         if mods:
@@ -498,7 +514,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_djs_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
     ):
         if mods:
@@ -511,13 +527,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_djs_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_djs(inter, "purge")
 
     async def handle_djs(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         *djs: Union[Member, Role],
     ):
@@ -757,7 +773,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="prefix",
         description="This option manage the server's prefix",
     )
-    async def config_prefix_slash_group(self, inter: GuildCommandInteraction):
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_prefix_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @config_prefix_slash_group.sub_command(
@@ -766,7 +785,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_prefix_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_prefix(inter)
 
@@ -776,7 +795,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_prefix_set_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         prefix: str,
     ):
         await self.handle_prefix(inter, "set", prefix)
@@ -787,13 +806,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_prefix_reset_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_prefix(inter, "reset")
 
     async def handle_prefix(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         prefix: Union[str, None] = None,
     ):
@@ -876,9 +895,12 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="tickets",
         description="This option manage the server's tickets channel and category!",
     )
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
     async def config_tickets_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -888,7 +910,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_tickets_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_tickets(inter)
 
@@ -898,7 +920,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_tickets_on_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         tickets_channel: TextChannel,
         tickets_category: CategoryChannel,
     ):
@@ -910,7 +932,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_tickets_update_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         tickets_channel: TextChannel = None,
         tickets_category: CategoryChannel = None,
     ):
@@ -926,7 +948,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_tickets_resolve_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_tickets(inter, "resolve")
 
@@ -936,13 +958,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_tickets_off_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_tickets(inter, "off")
 
     async def handle_tickets(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         tickets_channel: Union[TextChannel, CategoryChannel, None] = None,
         tickets_category: Union[CategoryChannel, None] = None,
@@ -1281,9 +1303,12 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="select_to_role",
         description="This option manage the server's select_2_role feature!",
     )
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
     async def config_select_2_role_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -1293,7 +1318,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_select_2_role_list_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_select_to_role(inter)
 
@@ -1303,7 +1328,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_select_2_role_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         title: str,
         role: Role,
         description: str,
@@ -1316,7 +1341,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_select_2_role_update_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         title: str,
         role: Role = None,
         description: str = "",
@@ -1329,7 +1354,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_select_2_role_resolve_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_select_to_role(inter, "resolve")
 
@@ -1339,7 +1364,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_select_2_role_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         title: str,
     ):
         await self.handle_select_to_role(inter, "remove", title)
@@ -1350,13 +1375,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_select_2_role_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_select_to_role(inter, "purge")
 
     async def handle_select_to_role(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         title: Union[str, None] = None,
         role: Union[Role, None] = None,
@@ -1746,7 +1771,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         name="muted_role",
         description="This option manage the server's muted role",
     )
-    async def config_muted_role_slash_group(self, inter: GuildCommandInteraction):
+    @guild_only()
+    @Utils.check_bot_starting()
+    @Utils.check_moderator()
+    async def config_muted_role_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @config_muted_role_slash_group.sub_command(
@@ -1755,7 +1783,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_muted_role_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_muted_role(inter)
 
@@ -1765,7 +1793,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_muted_role_set_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         role: Role,
     ):
         await self.handle_muted_role(inter, "set", role)
@@ -1776,13 +1804,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_muted_role_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_muted_role(inter, "remove")
 
     async def handle_muted_role(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         muted: Union[Role, None] = None,
     ):
@@ -1943,7 +1971,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_prevent_invites_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -1953,7 +1981,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_prevent_invites_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_prevent_invites(inter)
 
@@ -1963,7 +1991,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_prevent_invites_on_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         notify_channel: TextChannel = None,
     ):
         await self.handle_prevent_invites(inter, "on", notify_channel)
@@ -1974,7 +2002,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_prevent_invites_update_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         notify_channel: TextChannel,
     ):
         await self.handle_prevent_invites(inter, "update", notify_channel)
@@ -1985,13 +2013,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_prevent_invites_off_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_prevent_invites(inter, "off")
 
     async def handle_prevent_invites(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         notify_channel: Union[TextChannel, None] = None,
     ):
@@ -2109,7 +2137,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_mute_on_join_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -2119,7 +2147,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_mute_on_join_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_mute_on_join(inter)
 
@@ -2129,7 +2157,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_mute_on_join_on_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         duration: int = None,
         duration_type: DurationType = None,
         notify_channel: TextChannel = None,
@@ -2144,7 +2172,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_mute_on_join_update_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         duration: int = None,
         duration_type: DurationType = None,
         notify_channel: TextChannel = None,
@@ -2159,13 +2187,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_security_mute_on_join_off_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_mute_on_join(inter, "off")
 
     async def handle_mute_on_join(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         _duration: Union[int, None] = None,
         duration_type: Union[str, None] = None,
@@ -2326,13 +2354,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         description="This option turn the server's experience feature on or off",
     )
     async def config_xp_state_slash_command(
-        self, inter: GuildCommandInteraction, option: Literal["on", "off"] = None
+        self, inter: ApplicationCommandInteraction, option: Literal["on", "off"] = None
     ):
         await self.handle_switch(inter, option)
 
     async def handle_switch(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
     ):
         if option:
@@ -2411,7 +2439,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_boost_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -2421,7 +2449,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_boost_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_boost(inter)
 
@@ -2431,7 +2459,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_boost_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         boosted: Snowflake,
         bonus: int = 20,
     ):
@@ -2443,7 +2471,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_boost_update_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         boosted: Snowflake,
         bonus: int,
     ):
@@ -2455,7 +2483,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_boost_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         boosted: Snowflake,
     ):
         await self.handle_boost(inter, "remove", boosted)
@@ -2466,13 +2494,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_boost_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_boost(inter, "purge")
 
     async def handle_boost(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         boosted: Union[Snowflake, None] = None,
         bonus: Union[int, None] = None,
@@ -2711,13 +2739,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         description="This option manage the server's max level",
     )
     async def config_xp_max_lvl_slash_command(
-        self, inter: GuildCommandInteraction, max_lvl: int = None
+        self, inter: ApplicationCommandInteraction, max_lvl: int = None
     ):
         await self.handle_max_lvl(inter, max_lvl)
 
     async def handle_max_lvl(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         max_lvl: Union[int, None] = None,
     ):
         try:
@@ -2804,7 +2832,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_lvl2role_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -2814,7 +2842,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_lvl2role_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_level_to_role(inter)
 
@@ -2824,7 +2852,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_lvl2role_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         lvl: int,
         role: Role,
     ):
@@ -2836,7 +2864,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_lvl2role_update_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         lvl: int,
         role: Role,
     ):
@@ -2848,7 +2876,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_lvl2role_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         lvl: int,
     ):
         await self.handle_level_to_role(inter, "remove", lvl)
@@ -2859,13 +2887,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_lvl2role_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_level_to_role(inter, "purge")
 
     async def handle_level_to_role(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         lvl: Union[int, None] = None,
         role: Union[Role, None] = None,
@@ -3113,7 +3141,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_prestiges_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -3123,7 +3151,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_prestiges_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_prestiges(inter)
 
@@ -3133,7 +3161,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_prestiges_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         role: Role,
         prestige: int,
     ):
@@ -3145,7 +3173,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_prestiges_update_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         role: Role,
         prestige: int,
     ):
@@ -3157,7 +3185,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_prestiges_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_prestiges(inter, "remove")
 
@@ -3167,13 +3195,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_xp_prestiges_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_prestiges(inter, "purge")
 
     async def handle_prestiges(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         role: Union[Role, None] = None,
         prestige: Union[int, None] = None,
@@ -3483,7 +3511,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_commands_channels_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -3493,7 +3521,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_commands_channels_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_commands_channels(inter)
 
@@ -3503,7 +3531,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_commands_channels_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channels: List[TextChannel] = Param(converter=Utils.channel_converter),
     ):
         if channels:
@@ -3517,7 +3545,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_commands_channels_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channels: List[TextChannel] = Param(converter=Utils.channel_converter),
     ):
         if channels:
@@ -3531,13 +3559,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_commands_channels_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_commands_channels(inter, "purge")
 
     async def handle_commands_channels(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         *channels: TextChannel,
     ):
@@ -3718,7 +3746,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_music_channels_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -3728,7 +3756,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_music_channels_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_music_channels(inter)
 
@@ -3738,7 +3766,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_music_channels_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channels: List[VoiceChannel] = Param(converter=Utils.channel_converter),
     ):
         if channels:
@@ -3752,7 +3780,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_music_channels_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channels: List[VoiceChannel] = Param(converter=Utils.channel_converter),
     ):
         if channels:
@@ -3766,13 +3794,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_music_channels_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_music_channels(inter, "purge")
 
     async def handle_music_channels(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         *channels: VoiceChannel,
     ):
@@ -3976,7 +4004,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_gain_channels_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -3986,7 +4014,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_gain_channels_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_xp_gain_channels(inter)
 
@@ -3996,7 +4024,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_gain_channels_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
             converter=Utils.channel_converter
         ),
@@ -4012,7 +4040,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_gain_channels_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
             converter=Utils.channel_converter
         ),
@@ -4028,13 +4056,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_gain_channels_purge_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_xp_gain_channels(inter, "purge")
 
     async def handle_xp_gain_channels(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         *channels: Union[TextChannel, VoiceChannel],
     ):
@@ -4303,7 +4331,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_channel_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -4313,7 +4341,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_channel_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_xp_channel(inter)
 
@@ -4323,7 +4351,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_channel_set_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
         await self.handle_xp_channel(inter, "set", channel)
@@ -4334,13 +4362,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_xp_channel_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_xp_channel(inter, "remove")
 
     async def handle_xp_channel(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         xp_channel: Union[TextChannel, None] = None,
     ):
@@ -4469,7 +4497,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_polls_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -4479,7 +4507,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_polls_channel_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_polls_channel(inter)
 
@@ -4489,7 +4517,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_polls_channel_set_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
         await self.handle_polls_channel(inter, "set", channel)
@@ -4500,13 +4528,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_polls_channel_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_polls_channel(inter, "remove")
 
     async def handle_polls_channel(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         polls_channel: Union[TextChannel, None] = None,
     ):
@@ -4746,7 +4774,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_select2role_channel_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -4756,7 +4784,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_select2role_channel_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_select_to_role_channel(inter)
 
@@ -4766,7 +4794,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_select2role_channel_set_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
         await self.handle_select_to_role_channel(inter, "set", channel)
@@ -4777,13 +4805,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_select2role_channel_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_select_to_role_channel(inter, "remove")
 
     async def handle_select_to_role_channel(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         select2role_channel: Union[TextChannel, None] = None,
     ):
@@ -5028,7 +5056,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_mods_channel_slash_group(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         pass
 
@@ -5038,7 +5066,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_mods_channel_display_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_mods_channel(inter)
 
@@ -5048,7 +5076,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_mods_channel_set_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
         await self.handle_mods_channel(inter, "set", channel)
@@ -5059,13 +5087,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     )
     async def config_channels_mods_channel_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
     ):
         await self.handle_mods_channel(inter, "remove")
 
     async def handle_mods_channel(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Union[str, None] = None,
         mods_channel: Union[TextChannel, None] = None,
     ):
@@ -5159,7 +5187,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     """ METHOD(S) """
 
     async def check_role_duplicates(
-        self, source: Union[Context, GuildCommandInteraction], role: Role
+        self, source: Union[Context, ApplicationCommandInteraction], role: Role
     ) -> bool:
         if (
             "muted_role" in self.bot.configs[source.guild.id]

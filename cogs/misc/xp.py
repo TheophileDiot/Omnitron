@@ -4,7 +4,6 @@ from typing import Union
 from disnake import (
     ApplicationCommandInteraction,
     Embed,
-    GuildCommandInteraction,
     Member,
     NotFound,
     Option,
@@ -16,6 +15,7 @@ from disnake.ext.commands import (
     Cog,
     Context,
     group,
+    guild_only,
     max_concurrency,
     slash_command,
 )
@@ -62,8 +62,9 @@ class Miscellaneous(Cog, name="misc.xp"):
         name="xp",
         description="This command contains every xp related commands",
     )
+    @guild_only()
     @Utils.check_bot_starting()
-    async def xp_slash_group(self, inter: GuildCommandInteraction):
+    async def xp_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     """ GROUP'S COMMAND(S) """
@@ -88,7 +89,7 @@ class Miscellaneous(Cog, name="misc.xp"):
         name="levels",
         description="This option manages member's levels",
     )
-    async def xp_levels_slash_group(self, inter: GuildCommandInteraction):
+    async def xp_levels_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     @xp_levels_slash_group.sub_command(
@@ -97,7 +98,7 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     async def xp_levels_add_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         member: Member = None,
         value: int = 1,
     ):
@@ -111,7 +112,7 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     async def xp_levels_set_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         value: int,
         member: Member = None,
     ):
@@ -125,7 +126,7 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     async def xp_levels_remove_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         member: Member = None,
         value: int = 1,
     ):
@@ -135,7 +136,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
     async def handle_levels(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         option: Utils.to_lower,
         member: Member,
         value: Union[int, None] = None,
@@ -299,11 +300,11 @@ class Miscellaneous(Cog, name="misc.xp"):
         description="Allows you to create a prestige level passage procedure!",
     )
     @max_concurrency(1, per=BucketType.member)
-    async def xp_prestige_slash_command(self, inter: GuildCommandInteraction):
+    async def xp_prestige_slash_command(self, inter: ApplicationCommandInteraction):
         await self.handle_prestige(inter)
 
     async def handle_prestige(
-        self, source: Union[Context, GuildCommandInteraction]
+        self, source: Union[Context, ApplicationCommandInteraction]
     ):
         """Command that creates a prestige level passage procedure
 
@@ -379,13 +380,13 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_info_slash_command(
-        self, inter: GuildCommandInteraction, member: Member = None
+        self, inter: ApplicationCommandInteraction, member: Member = None
     ):
         await self.handle_info(inter, member)
 
     async def handle_info(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         member: Union[Member, None],
     ):
         """Command that displays the current level and the number of xp remaining before the next level for the member that invoked the command or a specified member
@@ -497,13 +498,13 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_leaderboard_command(
-        self, inter: GuildCommandInteraction, me: bool = False, mods: bool = False
+        self, inter: ApplicationCommandInteraction, me: bool = False, mods: bool = False
     ):
         await self.handle_leaderboard(inter, me, mods)
 
     async def handle_leaderboard(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         me: bool = False,
         mods: bool = False,
     ):
