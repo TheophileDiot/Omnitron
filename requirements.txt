@@ -5,7 +5,7 @@ black==21.9b0
 cffi==1.14.6
 chardet==3.0.4
 click==8.0.1
-disnake @ git+https://github.com/EQUENOS/disnake@39ddc840802587d10eb5949c3006d50a30cf6bc4
+disnake @ git+https://github.com/EQUENOS/disnake@4958c9a664f1a07f85f740b3a101ab1bd29a4f51
 gcloud==0.17.0
 googleapis-common-protos==1.53.0
 httplib2==0.19.1
@@ -30,9 +30,9 @@ Pyrebase==3.0.27
 python-dateutil==2.8.2
 python-dotenv==0.19.0
 python-jwt==2.0.1
-pytz==2021.1
+pytz==2021.3
 ratelimiter==1.2.0.post0
-regex==2021.9.24
+regex==2021.9.30
 requests==2.11.1
 requests-toolbelt==0.7.0
 rsa==4.7.2
