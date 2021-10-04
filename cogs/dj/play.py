@@ -397,7 +397,7 @@ class Dj(Cog, name="dj.play"):
         title = (
             track["info"]["title"]
             if track["info"]["title"] != "Unknown title"
-            or isinstance(source, ApplicationCommandInteraction)
+            or not isinstance(source, Context)
             or not source.message.attachments
             else source.message.attachments[0].filename
         )
