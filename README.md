@@ -11,13 +11,15 @@
     This bot has everything you want in a discord server !
     <br />
     <br />
-    <a href="https://github.com/TheophileDiot/Omnitron/issues">Report Bug</a>
+    <a href="https://github.com/TheophileDiot/Omnitron/issues" target="_blank">Report Bug</a>
     ·
-    <a href="https://github.com/TheophileDiot/Omnitron/issues">Request Feature</a>
+    <a href="https://github.com/TheophileDiot/Omnitron/issues" target="_blank">Request Feature</a>
     ·
-    <a href="https://discord.com/oauth2/authorize?client_id=874201843562065930&permissions=395408796759&scope=applications.commands%20bot">Invite me</a>
+    <a href="https://discord.com/oauth2/authorize?client_id=874201843562065930&permissions=395408796759&scope=applications.commands%20bot" target="_blank">Invite me</a>
     ·
-    <a href="https://theophilediot.github.io/Omnitron/">Documentation</a>
+    <a href="https://theophilediot.github.io/Omnitron/" target="_blank">Documentation</a>
+    ·
+    <a href="https://discord.gg/36ggEkj6SY" target="_blank">Discord Server</a>
     <br />
     <a href="https://github.com/TheophileDiot/Omnitron/main/LICENSE"><img alt="License: MIT" src="https://black.readthedocs.io/en/stable/_static/license.svg"></a>
     <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
