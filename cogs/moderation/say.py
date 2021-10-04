@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, TextChannel, Option, OptionType
+from disnake import ApplicationCommandInteraction, TextChannel
 from disnake.ext.commands import (
     bot_has_permissions,
     Context,

@@ -1,12 +1,13 @@
 from typing import Union
 
-from disnake import GuildCommandInteraction
+from disnake import ApplicationCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
     command,
     Context,
+    guild_only,
     max_concurrency,
     slash_command,
 )
@@ -34,15 +35,16 @@ class Dj(Cog, name="dj.stop"):
         name="stop",
         description="Stop the music in progress!",
     )
+    @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
-    async def stop_command(self, inter: GuildCommandInteraction):
+    async def stop_command(self, inter: ApplicationCommandInteraction):
         await self.handle_stop(inter)
 
     """ METHOD(S) """
 
-    async def handle_stop(self, source: Union[Context, GuildCommandInteraction]):
+    async def handle_stop(self, source: Union[Context, ApplicationCommandInteraction]):
         """Disconnects the player from the voice channel and clears its queue."""
         player = self.bot.lavalink.player_manager.get(source.guild.id)
 

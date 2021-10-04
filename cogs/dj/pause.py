@@ -1,12 +1,13 @@
 from typing import Union
 
-from disnake import GuildCommandInteraction
+from disnake import ApplicationCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
     Cog,
     command,
     Context,
+    guild_only,
     max_concurrency,
     slash_command,
 )
@@ -27,15 +28,16 @@ class Dj(Cog, name="dj.pause"):
         await self.handle_pause(ctx)
 
     @slash_command(name="pause", description="Pause the current music!")
+    @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
-    async def pause_slash_command(self, inter: GuildCommandInteraction):
+    async def pause_slash_command(self, inter: ApplicationCommandInteraction):
         await self.handle_pause(inter)
 
     """ METHOD(S) """
 
-    async def handle_pause(self, source: Union[Context, GuildCommandInteraction]):
+    async def handle_pause(self, source: Union[Context, ApplicationCommandInteraction]):
         """pause the player."""
         player = self.bot.lavalink.player_manager.get(source.guild.id)
 

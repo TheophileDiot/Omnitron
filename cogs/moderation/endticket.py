@@ -1,13 +1,14 @@
 from typing import Union
 
-from disnake import ButtonStyle, GuildCommandInteraction
+from disnake import ApplicationCommandInteraction, ButtonStyle
 from disnake.ext.commands import (
+    bot_has_guild_permissions,
     bot_has_permissions,
     BucketType,
     Cog,
     command,
     Context,
-    bot_has_guild_permissions,
+    guild_only,
     max_concurrency,
     slash_command,
 )
@@ -38,16 +39,19 @@ class Moderation(Cog, name="moderation.endticket"):
         name="endticket",
         description="Create a procedure to delete a ticket. (can only be used in a ticket channel)",
     )
+    @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     @bot_has_guild_permissions(manage_channels=True)
     @max_concurrency(1, BucketType.channel)
-    async def endticket_slash_command(self, inter: GuildCommandInteraction):
+    async def endticket_slash_command(self, inter: ApplicationCommandInteraction):
         await self.handle_endticket(inter)
 
     """ METHOD(S) """
 
-    async def handle_endticket(self, source: Union[Context, GuildCommandInteraction]):
+    async def handle_endticket(
+        self, source: Union[Context, ApplicationCommandInteraction]
+    ):
         tickets = self.bot.ticket_repo.get_tickets(source.guild.id)
 
         if not tickets or str(source.channel.id) not in [ticket for ticket in tickets]:

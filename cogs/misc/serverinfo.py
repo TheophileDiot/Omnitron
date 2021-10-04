@@ -1,11 +1,12 @@
 from typing import Union
 
-from disnake import Embed, GuildCommandInteraction
+from disnake import ApplicationCommandInteraction, Embed
 from disnake.ext.commands import (
     bot_has_permissions,
     Cog,
     command,
     Context,
+    guild_only,
     slash_command,
 )
 
@@ -29,12 +30,15 @@ class Miscellaneous(Cog, name="misc.serverinfo"):
         name="serverinfo",
         description="Get server's information!",
     )
-    async def serverinfo_slash_command(self, inter: GuildCommandInteraction):
+    @guild_only()
+    async def serverinfo_slash_command(self, inter: ApplicationCommandInteraction):
         await self.handle_serverinfo(inter)
 
     """ METHOD(S) """
 
-    async def handle_serverinfo(self, source: Union[Context, GuildCommandInteraction]):
+    async def handle_serverinfo(
+        self, source: Union[Context, ApplicationCommandInteraction]
+    ):
         em = Embed(
             title=f"{source.guild.name} server information", colour=self.bot.color
         )

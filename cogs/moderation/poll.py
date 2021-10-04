@@ -2,13 +2,10 @@ from time import time
 from typing import Union
 
 from disnake import (
+    ApplicationCommandInteraction,
     ButtonStyle,
     Embed,
-    GuildCommandInteraction,
     NotFound,
-    Option,
-    OptionChoice,
-    OptionType,
 )
 from disnake.ext.commands import (
     bot_has_permissions,
@@ -16,6 +13,7 @@ from disnake.ext.commands import (
     Cog,
     Context,
     group,
+    guild_only,
     max_concurrency,
     slash_command,
 )
@@ -53,9 +51,10 @@ class Moderation(Cog, name="moderation.poll"):
         name="poll",
         description="This command manage the server's polls",
     )
+    @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def poll_slash_group(self, inter: GuildCommandInteraction):
+    async def poll_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
     """ COMMAND(S) """
@@ -87,7 +86,7 @@ class Moderation(Cog, name="moderation.poll"):
     @max_concurrency(1, per=BucketType.guild)
     async def poll_create_slash_command(
         self,
-        inter: GuildCommandInteraction,
+        inter: ApplicationCommandInteraction,
         title: str,
         choices: str,
         duration: int = 10,
@@ -103,7 +102,7 @@ class Moderation(Cog, name="moderation.poll"):
 
     async def handle_create(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         title: str,
         duration: int,
         type_duration: str,
@@ -214,7 +213,7 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_infos_slash_command(
-        self, inter: GuildCommandInteraction, id_message: int = None
+        self, inter: ApplicationCommandInteraction, id_message: int = None
     ):
         if id_message and not isinstance(id_message, int):
             return await inter.response.send_message(
@@ -225,7 +224,7 @@ class Moderation(Cog, name="moderation.poll"):
 
     async def handle_info(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         poll_id: Union[int, None] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
@@ -424,13 +423,13 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_end_slash_command(
-        self, inter: GuildCommandInteraction, id_message: str
+        self, inter: ApplicationCommandInteraction, id_message: str
     ):
         await self.handle_end(inter, id_message)
 
     async def handle_end(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         poll_id: Union[int, None] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
@@ -497,13 +496,13 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_slash_command(
-        self, inter: GuildCommandInteraction, id_message: str
+        self, inter: ApplicationCommandInteraction, id_message: str
     ):
         await self.handle_delete(inter, id_message)
 
     async def handle_delete(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         poll_id: Union[int, str, None] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:

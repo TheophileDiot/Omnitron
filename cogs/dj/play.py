@@ -3,9 +3,9 @@ from re import compile as re_compile
 from typing import Union
 
 from disnake import (
+    ApplicationCommandInteraction,
     Client as botClient,
     Embed,
-    GuildCommandInteraction,
     NotFound,
     VoiceClient,
 )
@@ -18,6 +18,7 @@ from disnake.ext.commands import (
     Cog,
     command,
     Context,
+    guild_only,
     max_concurrency,
     slash_command,
 )
@@ -152,7 +153,7 @@ class Dj(Cog, name="dj.play"):
     def __ensure_voice(function):
         async def check(
             self,
-            source: Union[Context, GuildCommandInteraction],
+            source: Union[Context, ApplicationCommandInteraction],
             *,
             query: str = None,
             **kwargs,
@@ -271,6 +272,7 @@ class Dj(Cog, name="dj.play"):
         name="play",
         description="Plays a link or title from a SoundCloud song! (supports playlists!)",
     )
+    @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @bot_has_guild_permissions(connect=True, speak=True)
@@ -278,7 +280,7 @@ class Dj(Cog, name="dj.play"):
     @__ensure_voice
     @max_concurrency(1, per=BucketType.guild)
     async def play_slash_command(
-        self, inter: GuildCommandInteraction, query: str = None
+        self, inter: ApplicationCommandInteraction, query: str = None
     ):
         await self.handle_play(inter, query)
 
@@ -286,7 +288,7 @@ class Dj(Cog, name="dj.play"):
 
     async def handle_play(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: Union[Context, ApplicationCommandInteraction],
         query: Union[str, None],
     ):
         """Searches and plays a song from a given query."""
