@@ -17,11 +17,12 @@ Features
 ==================
 
 .. note::
-   More features will come in the near future. Slash commands are on current development.
+   More features will come in the near future.
 
 * High configurability
 * Smart (e.g. if a channel configured to a purpose is deleted it will handle it)
 * Case insensitive for the prefix and the commands
+* Slash commands
 
 
 List of available commands

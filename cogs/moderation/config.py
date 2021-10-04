@@ -16,6 +16,7 @@ from disnake import (
     VoiceChannel,
     Message,
 )
+from disnake.abc import Snowflake
 from disnake.ext.commands import (
     bot_has_permissions,
     Context,
@@ -32,7 +33,7 @@ from disnake.ext.commands.errors import (
 from disnake.ui import Button, Select, View
 
 from bot import Omnitron
-from data import Utils, Xp_class
+from data import DurationType, Utils, Xp_class
 
 BOOL2VAL = {True: "ON", False: "OFF"}
 
@@ -63,15 +64,6 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 )
             )
 
-    @slash_command(
-        name="config",
-        description="This command manage the server's configuration",
-    )
-    @Utils.check_bot_starting()
-    @Utils.check_moderator()
-    async def config_slash_group(self, ctx: Context):
-        pass
-
     """ MAIN GROUP'S GROUP(S) """
 
     @config_group.group(
@@ -92,11 +84,11 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 )
             )
 
-    @config_slash_group.sub_command_group(
+    @slash_command(
         name="security",
         description="This option manage the server's security",
     )
-    async def config_security_slash_group(self, ctx: Context):
+    async def config_security_slash_group(self, inter: GuildCommandInteraction):
         pass
 
     @config_group.group(
@@ -117,11 +109,11 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 )
             )
 
-    @config_slash_group.sub_command_group(
-        name="xp",
+    @slash_command(
+        name="config_xp",
         description="This option manage the server's experience feature",
     )
-    async def config_xp_slash_group(self, ctx: Context):
+    async def config_xp_slash_group(self, inter: GuildCommandInteraction):
         pass
 
     @config_group.group(
@@ -142,11 +134,11 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 )
             )
 
-    @config_slash_group.sub_command_group(
+    @slash_command(
         name="channels",
         description="This option manage the server's special channels",
     )
-    async def config_channels_slash_group(self, ctx: Context):
+    async def config_channels_slash_group(self, inter: GuildCommandInteraction):
         pass
 
     """ MAIN GROUP'S COMMAND(S) """
@@ -167,29 +159,69 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         *mods: Union[Role, Member],
     ):
-        await self.handle_moderators(ctx, option, mods)
+        if mods:
+            await self.handle_moderators(ctx, option, *mods)
+        else:
+            await self.handle_moderators(ctx, option)
 
-    @config_slash_group.sub_command(
+    @slash_command(
         name="moderators",
-        description="This option manage the server's moderators (role & members) (can add/remove multiple at a time)",
+        description="This option manage the server's moderators (role & members)",
     )
-    async def config_moderators_slash_command(
+    async def config_moderators_slash_group(self, inter: GuildCommandInteraction):
+        pass
+
+    @config_moderators_slash_group.sub_command(
+        name="list",
+        description="This option list members/roles in the server's moderators list",
+    )
+    async def config_moderators_list_slash_command(
         self,
         inter: GuildCommandInteraction,
-        option: Literal["add", "remove", "purge"] = None,
-        mods: List[Union[Member, Role]] = Param(
-            default=None, converter=Utils.mentionable_converter
-        ),
+    ):
+        await self.handle_moderators(inter)
+
+    @config_moderators_slash_group.sub_command(
+        name="add",
+        description="This option add members/roles to the server's moderators list (can add multiple at a time)",
+    )
+    async def config_moderators_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
     ):
         if mods:
-            await self.handle_moderators(inter, option, *mods)
+            await self.handle_moderators(inter, "add", *mods)
         else:
-            await self.handle_moderators(inter, option)
+            await self.handle_moderators(inter, "add")
+
+    @config_moderators_slash_group.sub_command(
+        name="remove",
+        description="This option remove members/roles from the server's moderators list (can remove multiple at a time)",
+    )
+    async def config_moderators_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
+    ):
+        if mods:
+            await self.handle_moderators(inter, "remove", *mods)
+        else:
+            await self.handle_moderators(inter, "remove")
+
+    @config_moderators_slash_group.sub_command(
+        name="purge", description="This option purge the server's moderators list"
+    )
+    async def config_moderators_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_moderators(inter, "purge")
 
     async def handle_moderators(
         self,
         source: Union[Context, GuildCommandInteraction],
-        option: Union[str, None],
+        option: Union[str, None] = None,
         *mods: Union[Member, Role],
     ):
         if option:
@@ -424,6 +456,71 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         *djs: Union[Role, Member],
     ):
+        if djs:
+            await self.handle_djs(ctx, option, *djs)
+        else:
+            await self.handle_djs(ctx, option)
+
+    @slash_command(
+        name="djs",
+        description="This option manage the server's djs (role & members)",
+    )
+    async def config_djs_slash_group(self, inter: GuildCommandInteraction):
+        pass
+
+    @config_djs_slash_group.sub_command(
+        name="list",
+        description="This option list members/roles in the server's djs list",
+    )
+    async def config_djs_list_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_djs(inter)
+
+    @config_djs_slash_group.sub_command(
+        name="add",
+        description="This option add members/roles to the server's djs list (can add multiple at a time)",
+    )
+    async def config_djs_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
+    ):
+        if mods:
+            await self.handle_djs(inter, "add", *mods)
+        else:
+            await self.handle_djs(inter, "add")
+
+    @config_djs_slash_group.sub_command(
+        name="remove",
+        description="This option remove members/roles from the server's djs list (can remove multiple at a time)",
+    )
+    async def config_djs_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
+    ):
+        if mods:
+            await self.handle_djs(inter, "remove", *mods)
+        else:
+            await self.handle_djs(inter, "remove")
+
+    @config_djs_slash_group.sub_command(
+        name="purge", description="This option purge the server's djs list"
+    )
+    async def config_djs_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_djs(inter, "purge")
+
+    async def handle_djs(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        *djs: Union[Member, Role],
+    ):
         if option:
             try:
                 if option in ("add", "remove"):
@@ -439,12 +536,12 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     bot_djs = []
                     for dj in _djs:
                         if option == "add":
-                            if dj.id in set(self.bot.djs[ctx.guild.id]):
+                            if dj.id in set(self.bot.djs[source.guild.id]):
                                 del djs[djs.index(dj)]
                                 dropped_djs.append(dj)
                                 continue
                             elif dj in set(
-                                self.bot.configs[ctx.guild.id]["xp"][
+                                self.bot.configs[source.guild.id]["xp"][
                                     "prestiges"
                                 ].values()
                             ):
@@ -452,16 +549,17 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 warning_djs.append([dj, "prestige"])
                                 continue
                             elif (
-                                "muted_role" in self.bot.configs[ctx.guild.id]
-                                and self.bot.configs[ctx.guild.id]["muted_role"] == dj
+                                "muted_role" in self.bot.configs[source.guild.id]
+                                and self.bot.configs[source.guild.id]["muted_role"]
+                                == dj
                             ):
                                 del djs[djs.index(dj)]
                                 warning_djs.append([dj, "muted_role"])
                                 continue
-                            elif "lvl2role" in self.bot.configs[ctx.guild.id][
+                            elif "lvl2role" in self.bot.configs[source.guild.id][
                                 "xp"
                             ] and dj in set(
-                                self.bot.configs[ctx.guild.id]["xp"][
+                                self.bot.configs[source.guild.id]["xp"][
                                     "lvl2role"
                                 ].values()
                             ):
@@ -469,13 +567,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 warning_djs.append([dj, "lvl2role"])
                                 continue
                             elif (
-                                "select2role" in self.bot.configs[ctx.guild.id]
+                                "select2role" in self.bot.configs[source.guild.id]
                                 and "selects"
-                                in self.bot.configs[ctx.guild.id]["select2role"]
+                                in self.bot.configs[source.guild.id]["select2role"]
                                 and dj
                                 in {
                                     v["role"]
-                                    for v in self.bot.configs[ctx.guild.id][
+                                    for v in self.bot.configs[source.guild.id][
                                         "select2role"
                                     ]["selects"].values()
                                 }
@@ -489,63 +587,91 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 continue
 
                             self.bot.config_repo.add_dj(
-                                ctx.guild.id, dj.id, f"{dj}", type(dj).__name__
+                                source.guild.id, dj.id, f"{dj}", type(dj).__name__
                             )
-                            self.bot.djs[ctx.guild.id].append(dj.id)
+                            self.bot.djs[source.guild.id].append(dj.id)
                         elif option == "remove":
-                            if dj.id not in set(self.bot.djs[ctx.guild.id]):
+                            if dj.id not in set(self.bot.djs[source.guild.id]):
                                 del djs[djs.index(dj)]
                                 dropped_djs.append(dj)
                                 continue
 
-                            self.bot.config_repo.remove_dj(ctx.guild.id, dj.id)
-                            del self.bot.djs[ctx.guild.id][
-                                self.bot.djs[ctx.guild.id].index(dj.id)
+                            self.bot.config_repo.remove_dj(source.guild.id, dj.id)
+                            del self.bot.djs[source.guild.id][
+                                self.bot.djs[source.guild.id].index(dj.id)
                             ]
+
                             try:
-                                await ctx.send(
-                                    f"ℹ️ - Removed `@{ctx.guild.get_member(int(dj.id)) or await ctx.guild.fetch_member(int(dj.id)) if isinstance(dj, Member) else ctx.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
-                                )
+                                if isinstance(source, Context):
+                                    await source.send(
+                                        f"ℹ️ - Removed `@{source.guild.get_member(int(dj.id)) or await source.guild.fetch_member(int(dj.id)) if isinstance(dj, Member) else source.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                                    )
+                                else:
+                                    await source.channel.send(
+                                        f"ℹ️ - Removed `@{source.guild.get_member(int(dj.id)) or await source.guild.fetch_member(int(dj.id)) if isinstance(dj, Member) else source.guild.get_role(int(dj.id))}` {'role' if isinstance(dj, Role) else 'member'} from the djs list!."
+                                    )
                             except NotFound:
                                 pass
 
                     resp = ""
 
                     if bot_djs:
-                        resp += f"ℹ️ - {ctx.author.mention} - {', '.join([f'`@{dj}`' for dj in bot_djs])} {'is a' if len(bot_djs) == 1 else 'are'} bot user{'s' if len(bot_djs) > 1 else ''} so you can't add {'them' if len(bot_djs) > 1 else 'him'} in the djs list!"
+                        resp += f"ℹ️ - {source.author.mention} - {', '.join([f'`@{dj}`' for dj in bot_djs])} {'is a' if len(bot_djs) == 1 else 'are'} bot user{'s' if len(bot_djs) > 1 else ''} so you can't add {'them' if len(bot_djs) > 1 else 'him'} in the djs list!"
 
                     if dropped_djs:
                         resp += (
-                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            ("\n" if resp else f"ℹ️ - {source.author.mention} - ")
                             + f"{', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in dropped_djs])} {'is' if len(dropped_djs) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the djs list!"
                         )
 
                     if warning_djs:
                         resp += (
-                            ("\n" if resp else f"ℹ️ - {ctx.author.mention} - ")
+                            ("\n" if resp else f"ℹ️ - {source.author.mention} - ")
                             + f"{', '.join([f'`@{dj[0]} ({type(dj[0]).__name__})` is already assigned to a {dj[1]} role' for dj in warning_djs])}!"
                         )
 
                     if resp:
-                        await ctx.reply(resp, delete_after=20)
+                        if isinstance(source, Context):
+                            await source.reply(resp, delete_after=20)
+                        else:
+                            await source.channel.send(resp, delete_after=20)
 
                     if djs:
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in djs])} {'to' if option == 'add' else 'from'} the djs list!."
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in djs])} {'to' if option == 'add' else 'from'} the djs list!."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([f'`@{dj} ({type(dj).__name__})`' for dj in djs])} {'to' if option == 'add' else 'from'} the djs list!."
+                            )
                 elif option == "purge":
-                    if not self.bot.djs[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - No djs (members & roles) have been added to the list yet!",
-                            delete_after=20,
-                        )
+                    if not self.bot.djs[source.guild.id]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - No djs (members & roles) have been added to the list yet!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - No djs (members & roles) have been added to the list yet!",
+                                ephemeral=True,
+                            )
 
-                    self.bot.config_repo.purge_djs(ctx.guild.id)
-                    self.bot.djs[ctx.guild.id] = {}
-                    await ctx.send(f"ℹ️ - Removed all the djs from the djs list!.")
+                    self.bot.config_repo.purge_djs(source.guild.id)
+                    self.bot.djs[source.guild.id] = {}
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the djs from the djs list!."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the djs from the djs list!."
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -555,18 +681,24 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} `@{dj}` {'role' if isinstance(dj, Role) else 'member'} to the djs list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            server_djs = self.bot.config_repo.get_djs(ctx.guild.id).values()
+            server_djs = self.bot.config_repo.get_djs(source.guild.id).values()
 
             if not server_djs:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No djs (members & roles) have been added to the list yet!",
-                    delete_after=20,
-                )
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No djs (members & roles) have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No djs (members & roles) have been added to the list yet!",
+                        ephemeral=True,
+                    )
 
             server_djs_roles = []
             server_djs_members = []
@@ -577,19 +709,36 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 else:
                     server_djs_members.append(m["name"])
 
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's djs:**\n\n"
-                + (
-                    f"Members: {', '.join(f'`{m}`' for m in server_djs_members)}\n"
-                    if server_djs_members
-                    else ""
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's djs:**\n\n"
+                    + (
+                        f"Members: {', '.join(f'`{m}`' for m in server_djs_members)}\n"
+                        if server_djs_members
+                        else ""
+                    )
+                    + (
+                        f"Roles: {', '.join(f'`{r}`' for r in server_djs_roles)}\n"
+                        if server_djs_roles
+                        else ""
+                    )
                 )
-                + (
-                    f"Roles: {', '.join(f'`{r}`' for r in server_djs_roles)}\n"
-                    if server_djs_roles
-                    else ""
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's djs:**\n\n"
+                    + (
+                        f"Members: {', '.join(f'`{m}`' for m in server_djs_members)}\n"
+                        if server_djs_members
+                        else ""
+                    )
+                    + (
+                        f"Roles: {', '.join(f'`{r}`' for r in server_djs_roles)}\n"
+                        if server_djs_roles
+                        else ""
+                    )
                 )
-            )
+
+    """ PREFIX """
 
     @config_group.command(
         pass_context=True,
@@ -602,6 +751,52 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def config_prefix_command(
         self, ctx: Context, option: Utils.to_lower = None, prefix: str = None
     ):
+        await self.handle_prefix(ctx, option, prefix)
+
+    @slash_command(
+        name="prefix",
+        description="This option manage the server's prefix",
+    )
+    async def config_prefix_slash_group(self, inter: GuildCommandInteraction):
+        pass
+
+    @config_prefix_slash_group.sub_command(
+        name="display",
+        description="This option display the current server's prefix",
+    )
+    async def config_prefix_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_prefix(inter)
+
+    @config_prefix_slash_group.sub_command(
+        name="set",
+        description="This option set the current server's prefix",
+    )
+    async def config_prefix_set_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        prefix: str,
+    ):
+        await self.handle_prefix(inter, "set", prefix)
+
+    @config_prefix_slash_group.sub_command(
+        name="reset",
+        description="This option reset the current server's prefix (o!)",
+    )
+    async def config_prefix_reset_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_prefix(inter, "reset")
+
+    async def handle_prefix(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        prefix: Union[str, None] = None,
+    ):
         if option:
             try:
                 if option == "set":
@@ -609,35 +804,56 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         raise MissingRequiredArgument(
                             param=Parameter(name="prefix", kind=Parameter.KEYWORD_ONLY)
                         )
-                    self.bot.config_repo.set_prefix(ctx.guild.id, prefix)
-                    self.bot.configs[ctx.guild.id]["prefix"] = prefix
-                    await ctx.send(f"ℹ️ - Bot prefix updated to `{prefix}`.")
+
+                    self.bot.config_repo.set_prefix(source.guild.id, prefix)
+                    self.bot.configs[source.guild.id]["prefix"] = prefix
+
+                    if isinstance(source, Context):
+                        await source.send(f"ℹ️ - Bot prefix updated to `{prefix}`.")
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Bot prefix updated to `{prefix}`."
+                        )
                 elif option == "reset":
-                    self.bot.config_repo.set_prefix(ctx.guild.id)
-                    self.bot.configs[ctx.guild.id]["prefix"] = "o!"
-                    await ctx.send(f"ℹ️ - Bot prefix hs been reset to `o!`.")
+                    self.bot.config_repo.set_prefix(source.guild.id)
+                    self.bot.configs[source.guild.id]["prefix"] = "o!"
+
+                    if isinstance(source, Context):
+                        await source.send(f"ℹ️ - Bot prefix has been reset to `o!`.")
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Bot prefix has been reset to `o!`."
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
                 raise MissingRequiredArgument(param=mre.param)
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'resetting the prefix' if option == 'reset' else f'setting the prefix to `{prefix}`'}! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'resetting the prefix' if option == 'reset' else f'setting the prefix to `{prefix}`'}! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            msg = await ctx.send(
-                f"ℹ️ - {ctx.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`!"
-            )
+            if isinstance(source, Context):
+                msg = await source.send(
+                    f"ℹ️ - {source.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(source.author)[0]}`!"
+                )
+            else:
+                await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - Here's my prefix for this guild: `{self.bot.utils_class.get_guild_pre(source.author)[0]}`!"
+                )
+                msg = await source.original_message()
 
             try:
                 await msg.add_reaction("👀")
             except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {ctx.channel.mention} (message: {msg.jump_url}, reaction: 👀)! Required perms: `{', '.join(['ADD_REACTIONS'])}`"
+                f.text = f"⚠️ - I don't have the right permissions to add reactions in the channel {source.channel.mention} (message: {msg.jump_url}, reaction: 👀)! Required perms: `{', '.join(['ADD_REACTIONS'])}`"
                 raise
+
+    """ TICKETS """
 
     @config_group.command(
         pass_context=True,
@@ -654,6 +870,83 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         tickets_channel: Union[TextChannel, CategoryChannel] = None,
         tickets_category: CategoryChannel = None,
     ):
+        await self.handle_tickets(ctx, option, tickets_channel, tickets_category)
+
+    @slash_command(
+        name="tickets",
+        description="This option manage the server's tickets channel and category!",
+    )
+    async def config_tickets_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_tickets_slash_command.sub_command(
+        name="display",
+        description="This option displays the state of the server's tickets feature!",
+    )
+    async def config_tickets_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_tickets(inter)
+
+    @config_tickets_slash_command.sub_command(
+        name="on",
+        description="This option turn on the server's tickets feature!",
+    )
+    async def config_tickets_on_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        tickets_channel: TextChannel,
+        tickets_category: CategoryChannel,
+    ):
+        await self.handle_tickets(inter, "on", tickets_channel, tickets_category)
+
+    @config_tickets_slash_command.sub_command(
+        name="update",
+        description="This option updates the server's tickets feature!",
+    )
+    async def config_tickets_update_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        tickets_channel: TextChannel = None,
+        tickets_category: CategoryChannel = None,
+    ):
+        if not tickets_channel and tickets_category:
+            tickets_channel = tickets_category
+            tickets_category = None
+
+        await self.handle_tickets(inter, "update", tickets_channel, tickets_category)
+
+    @config_tickets_slash_command.sub_command(
+        name="resolve",
+        description="This option resolves the server's tickets feature!",
+    )
+    async def config_tickets_resolve_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_tickets(inter, "resolve")
+
+    @config_tickets_slash_command.sub_command(
+        name="off",
+        description="This option turn off the server's tickets feature!",
+    )
+    async def config_tickets_off_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_tickets(inter, "off")
+
+    async def handle_tickets(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        tickets_channel: Union[TextChannel, CategoryChannel, None] = None,
+        tickets_category: Union[CategoryChannel, None] = None,
+    ):
         if option:
             try:
                 val = False
@@ -662,46 +955,70 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 elif option == "off":
                     val = False
                 else:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
                 if (
-                    "tickets" in self.bot.configs[ctx.guild.id]
+                    "tickets" in self.bot.configs[source.guild.id]
                 ) == val and option not in ("update", "resolve"):
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - The tickets are already set to `{BOOL2VAL[val]}`!"
-                        + (
-                            " Parameters: "
-                            + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
-                            + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
-                            if "tickets" in self.bot.configs[ctx.guild.id]
-                            else ""
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"ℹ️ - {source.author.mention} - The tickets are already set to `{BOOL2VAL[val]}`!"
+                            + (
+                                " Parameters: "
+                                + f"\n'tickets_channel': {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[source.guild.id]['tickets'] else '`No channel specified.`'}"
+                                + f"\n'tickets_category': {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[source.guild.id]['tickets'] else '`No category specified.`'}"
+                                if "tickets" in self.bot.configs[source.guild.id]
+                                else ""
+                            )
                         )
-                    )
+                    else:
+                        return await source.response.send_message(
+                            f"ℹ️ - {source.author.mention} - The tickets are already set to `{BOOL2VAL[val]}`!"
+                            + (
+                                " Parameters: "
+                                + f"\n'tickets_channel': {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[source.guild.id]['tickets'] else '`No channel specified.`'}"
+                                + f"\n'tickets_category': {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[source.guild.id]['tickets'] else '`No category specified.`'}"
+                                if "tickets" in self.bot.configs[source.guild.id]
+                                else ""
+                            )
+                        )
 
                 if val:
-                    if "tickets" not in self.bot.configs[ctx.guild.id] and option in (
+                    if "tickets" not in self.bot.configs[
+                        source.guild.id
+                    ] and option in (
                         "update",
                         "resolve",
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The tickets are set to `OFF`! Please activate them before {'updating' if option == 'update' else 'resolving'}."
-                        )
-                    if option == "resolve":
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - The tickets are set to `OFF`! Please activate them before {'updating' if option == 'update' else 'resolving'}."
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - The tickets are set to `OFF`! Please activate them before {'updating' if option == 'update' else 'resolving'}."
+                            )
+                    elif option == "resolve":
                         if (
                             "tickets_channel"
-                            not in self.bot.configs[ctx.guild.id]["tickets"]
+                            not in self.bot.configs[source.guild.id]["tickets"]
                         ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - There is no tickets_channel configure! Please configure one before resolving."
-                            )
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - There is no tickets_channel configure! Please configure one before resolving."
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - There is no tickets_channel configure! Please configure one before resolving."
+                                )
 
                         if [
                             m
                             for m in set(
-                                await self.bot.configs[ctx.guild.id]["tickets"][
+                                await self.bot.configs[source.guild.id]["tickets"][
                                     "tickets_channel"
                                 ]
                                 .history(limit=10)
@@ -709,11 +1026,16 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             )
                             if m.author.id == self.bot.user.id
                         ]:
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - There is no need for the ticket message to be resolved."
-                            )
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - There is no need for the ticket message to be resolved."
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - There is no need for the ticket message to be resolved."
+                                )
 
-                        tickets_channel = self.bot.configs[ctx.guild.id]["tickets"][
+                        tickets_channel = self.bot.configs[source.guild.id]["tickets"][
                             "tickets_channel"
                         ]
                     elif not tickets_channel:
@@ -735,59 +1057,60 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
 
                     if option == "update":
                         self.bot.config_repo.set_tickets(
-                            ctx.guild.id,
+                            source.guild.id,
                             val,
                             tickets_channel.id
                             if isinstance(tickets_channel, TextChannel)
-                            else self.bot.configs[ctx.guild.id]["tickets"][
+                            else self.bot.configs[source.guild.id]["tickets"][
                                 "tickets_channel"
                             ].id,
                             tickets_channel.id
                             if isinstance(tickets_channel, CategoryChannel)
                             else tickets_category
                             if isinstance(tickets_channel, CategoryChannel)
-                            else self.bot.configs[ctx.guild.id]["tickets"][
+                            else self.bot.configs[source.guild.id]["tickets"][
                                 "tickets_category"
                             ].id,
                         )
 
                         if isinstance(tickets_channel, TextChannel):
-                            perms = self.bot.configs[ctx.guild.id]["tickets"][
+                            perms = self.bot.configs[source.guild.id]["tickets"][
                                 "tickets_channel"
-                            ].permissions_for(ctx.guild.me)
+                            ].permissions_for(source.guild.me)
+
                             if perms.read_message_history and perms.manage_messages:
-                                await self.bot.configs[ctx.guild.id]["tickets"][
+                                await self.bot.configs[source.guild.id]["tickets"][
                                     "tickets_channel"
                                 ].purge(check=lambda m: m.author.id == self.bot.user.id)
                             else:
                                 await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
-                                    ctx.guild.id,
+                                    f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
+                                    source.guild.id,
                                 )
 
-                        self.bot.configs[ctx.guild.id]["tickets"] = {
+                        self.bot.configs[source.guild.id]["tickets"] = {
                             "tickets_channel": tickets_channel
                             if isinstance(tickets_channel, TextChannel)
-                            else self.bot.configs[ctx.guild.id]["tickets"][
+                            else self.bot.configs[source.guild.id]["tickets"][
                                 "tickets_channel"
                             ],
                             "tickets_category": tickets_channel
                             if isinstance(tickets_channel, CategoryChannel)
                             else tickets_category
                             if isinstance(tickets_channel, CategoryChannel)
-                            else self.bot.configs[ctx.guild.id]["tickets"][
+                            else self.bot.configs[source.guild.id]["tickets"][
                                 "tickets_category"
                             ],
                         }
 
                     elif option != "resolve":
                         self.bot.config_repo.set_tickets(
-                            ctx.guild.id,
+                            source.guild.id,
                             val,
                             tickets_channel.id,
                             tickets_category.id,
                         )
-                        self.bot.configs[ctx.guild.id]["tickets"] = {
+                        self.bot.configs[source.guild.id]["tickets"] = {
                             "tickets_channel": tickets_channel,
                             "tickets_category": tickets_category,
                         }
@@ -799,9 +1122,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             description="**To create a ticket please click on the button 📥**\n\nAfter clicking on the button, a private room will be created at the bottom of the ticket category.\n\nYou can only create one ticket at a time.",
                         )
 
-                        em.set_thumbnail(
-                            url=ctx.guild.icon.url if ctx.guild.icon else None
-                        )
+                        if source.guild.icon:
+                            em.set_thumbnail(url=source.guild.icon.url)
 
                         if self.bot.user.avatar:
                             em.set_footer(
@@ -812,8 +1134,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             em.set_footer(text=self.bot.user.name)
 
                         if (
-                            self.bot.configs[ctx.guild.id]["tickets"]["tickets_channel"]
-                            .permissions_for(ctx.guild.me)
+                            self.bot.configs[source.guild.id]["tickets"][
+                                "tickets_channel"
+                            ]
+                            .permissions_for(source.guild.me)
                             .send_messages
                         ):
                             view = View(timeout=None)
@@ -821,10 +1145,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 Button(
                                     style=ButtonStyle.primary,
                                     emoji="📥",
-                                    custom_id=f"{self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].id}.ticket_create",
+                                    custom_id=f"{self.bot.configs[source.guild.id]['tickets']['tickets_channel'].id}.ticket_create",
                                 )
                             )
-                            await self.bot.configs[ctx.guild.id]["tickets"][
+                            await self.bot.configs[source.guild.id]["tickets"][
                                 "tickets_channel"
                             ].send(
                                 embed=em,
@@ -832,79 +1156,107 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             )
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention} (i tried to send the message that allow users to create tickets so please reactivate this feature after changing the permissions)! Required perms: `{', '.join(['SEND_MESSAGE'])}`",
-                                ctx.guild.id,
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention} (i tried to send the message that allow users to create tickets so please reactivate this feature after changing the permissions)! Required perms: `{', '.join(['SEND_MESSAGE'])}`",
+                                source.guild.id,
                             )
                 else:
-                    perms = self.bot.configs[ctx.guild.id]["tickets"][
+                    perms = self.bot.configs[source.guild.id]["tickets"][
                         "tickets_channel"
-                    ].permissions_for(ctx.guild.me)
+                    ].permissions_for(source.guild.me)
+
                     if perms.read_message_history and perms.manage_messages:
-                        await self.bot.configs[ctx.guild.id]["tickets"][
+                        await self.bot.configs[source.guild.id]["tickets"][
                             "tickets_channel"
                         ].purge(check=lambda m: m.author.id == self.bot.user.id)
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
-                            ctx.guild.id,
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
+                            source.guild.id,
                         )
 
                     channels = set(
-                        self.bot.configs[ctx.guild.id]["tickets"][
+                        self.bot.configs[source.guild.id]["tickets"][
                             "tickets_category"
                         ].channels
                     )
 
                     if (
-                        self.bot.configs[ctx.guild.id]["tickets"]["tickets_category"]
-                        .permissions_for(ctx.guild.me)
+                        self.bot.configs[source.guild.id]["tickets"]["tickets_category"]
+                        .permissions_for(source.guild.me)
                         .manage_channels
                     ):
                         for channel in channels:
                             await channel.delete(
-                                reason=f"Tickets turned off by {ctx.author}!"
+                                reason=f"Tickets turned off by {source.author}!"
                             )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention}! Required perms: `{', '.join(['MANAGE_CHANNELS'])}`",
-                            ctx.guild.id,
+                            f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention}! Required perms: `{', '.join(['MANAGE_CHANNELS'])}`",
+                            source.guild.id,
                         )
 
-                    self.bot.ticket_repo.purge_tickets(ctx.guild.id)
-                    self.bot.config_repo.remove_tickets(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["tickets"]
+                    self.bot.ticket_repo.purge_tickets(source.guild.id)
+                    self.bot.config_repo.remove_tickets(source.guild.id)
+                    del self.bot.configs[source.guild.id]["tickets"]
 
-                await ctx.send(
-                    f"ℹ️ - The tickets are now `{BOOL2VAL[val] if option not in ('update', 'resolve') else ('UPDATED' if option == 'update' else 'RESOLVED')}` in this guild!"
-                    + (
-                        " Parameters: "
-                        + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
-                        + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
-                        if "tickets" in self.bot.configs[ctx.guild.id]
-                        and option != "resolve"
-                        else ""
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The tickets are now `{BOOL2VAL[val] if option not in ('update', 'resolve') else ('UPDATED' if option == 'update' else 'RESOLVED')}` in this guild!"
+                        + (
+                            " Parameters: "
+                            + f"\n'tickets_channel': {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[source.guild.id]['tickets'] else '`No channel specified.`'}"
+                            + f"\n'tickets_category': {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[source.guild.id]['tickets'] else '`No category specified.`'}"
+                            if "tickets" in self.bot.configs[source.guild.id]
+                            and option != "resolve"
+                            else ""
+                        )
                     )
-                )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The tickets are now `{BOOL2VAL[val] if option not in ('update', 'resolve') else ('UPDATED' if option == 'update' else 'RESOLVED')}` in this guild!"
+                        + (
+                            " Parameters: "
+                            + f"\n'tickets_channel': {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[source.guild.id]['tickets'] else '`No channel specified.`'}"
+                            + f"\n'tickets_category': {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[source.guild.id]['tickets'] else '`No category specified.`'}"
+                            if "tickets" in self.bot.configs[source.guild.id]
+                            and option != "resolve"
+                            else ""
+                        )
+                    )
             except MissingRequiredArgument as mre:
                 raise MissingRequiredArgument(param=mre.param)
             except BadArgument:
                 raise BadArgument
-            # except Exception as e:
-            #     await ctx.reply(
-            #         f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
-            #         delete_after=20,
-            #     )
-        else:
-            await ctx.send(
-                f"ℹ️ - {ctx.author.mention} - The tickets are currently `{BOOL2VAL['tickets' in self.bot.configs[ctx.guild.id]]}` in this guild!"
-                + (
-                    " Parameters: "
-                    + f"\n'tickets_channel': {self.bot.configs[ctx.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[ctx.guild.id]['tickets'] else '`No channel specified.`'}"
-                    + f"\n'tickets_category': {self.bot.configs[ctx.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[ctx.guild.id]['tickets'] else '`No category specified.`'}"
-                    if "tickets" in self.bot.configs[ctx.guild.id]
-                    else ""
+            except Exception as e:
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {f'setting the tickets `{BOOL2VAL[val]}`' if option != 'update' else 'updating the tickets'}! please try again in a few seconds! Error type: {type(e)}",
+                    delete_after=20,
                 )
-            )
+        else:
+            if isinstance(source, Context):
+                await source.send(
+                    f"ℹ️ - {source.author.mention} - The tickets are currently `{BOOL2VAL['tickets' in self.bot.configs[source.guild.id]]}` in this guild!"
+                    + (
+                        " Parameters: "
+                        + f"\n'tickets_channel': {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[source.guild.id]['tickets'] else '`No channel specified.`'}"
+                        + f"\n'tickets_category': {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[source.guild.id]['tickets'] else '`No category specified.`'}"
+                        if "tickets" in self.bot.configs[source.guild.id]
+                        else ""
+                    )
+                )
+            else:
+                await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - The tickets are currently `{BOOL2VAL['tickets' in self.bot.configs[source.guild.id]]}` in this guild!"
+                    + (
+                        " Parameters: "
+                        + f"\n'tickets_channel': {self.bot.configs[source.guild.id]['tickets']['tickets_channel'].mention if 'tickets_channel' in self.bot.configs[source.guild.id]['tickets'] else '`No channel specified.`'}"
+                        + f"\n'tickets_category': {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention if 'tickets_category' in self.bot.configs[source.guild.id]['tickets'] else '`No category specified.`'}"
+                        if "tickets" in self.bot.configs[source.guild.id]
+                        else ""
+                    )
+                )
+
+    """ SELECT TO ROLE """
 
     @config_group.command(
         pass_context=True,
@@ -923,6 +1275,93 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         *,
         description: str = "",
     ):
+        await self.handle_select_to_role(ctx, option, title, role, description)
+
+    @slash_command(
+        name="select_to_role",
+        description="This option manage the server's select_2_role feature!",
+    )
+    async def config_select_2_role_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_select_2_role_slash_group.sub_command(
+        name="list",
+        description="This option list all the select to roles!",
+    )
+    async def config_select_2_role_list_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_select_to_role(inter)
+
+    @config_select_2_role_slash_group.sub_command(
+        name="add",
+        description="This option add a new select to role!",
+    )
+    async def config_select_2_role_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        title: str,
+        role: Role,
+        description: str,
+    ):
+        await self.handle_select_to_role(inter, "add", title, role, description)
+
+    @config_select_2_role_slash_group.sub_command(
+        name="update",
+        description="This option update a select to role!",
+    )
+    async def config_select_2_role_update_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        title: str,
+        role: Role = None,
+        description: str = "",
+    ):
+        await self.handle_select_to_role(inter, "add", title, role, description)
+
+    @config_select_2_role_slash_group.sub_command(
+        name="resolve",
+        description="This option resolve the select to role feature!",
+    )
+    async def config_select_2_role_resolve_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_select_to_role(inter, "resolve")
+
+    @config_select_2_role_slash_group.sub_command(
+        name="remove",
+        description="This option remove a select to role!",
+    )
+    async def config_select_2_role_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        title: str,
+    ):
+        await self.handle_select_to_role(inter, "remove", title)
+
+    @config_select_2_role_slash_group.sub_command(
+        name="purge",
+        description="This option purge the select to role feature!",
+    )
+    async def config_select_2_role_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_select_to_role(inter, "purge")
+
+    async def handle_select_to_role(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        title: Union[str, None] = None,
+        role: Union[Role, None] = None,
+        description: Union[str, None] = None,
+    ):
         if option:
             try:
                 if option in ("add", "update", "remove"):
@@ -940,73 +1379,104 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             )
 
                         if (
-                            "select2role" in self.bot.configs[ctx.guild.id]
+                            "select2role" in self.bot.configs[source.guild.id]
                             and "selects"
-                            in self.bot.configs[ctx.guild.id]["select2role"]
+                            in self.bot.configs[source.guild.id]["select2role"]
                             and title
                             in set(
-                                self.bot.configs[ctx.guild.id]["select2role"]["selects"]
+                                self.bot.configs[source.guild.id]["select2role"][
+                                    "selects"
+                                ]
                             )
                             and option != "update"
                         ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The title `{title}` is already assigned to a role! Value: `@{self.bot.configs[ctx.guild.id]['select2role']['selects'][title]}`",
-                                delete_after=20,
-                            )
-                        elif self.check_role_duplicates(ctx, role):
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - The title `{title}` is already assigned to a role! Value: `@{self.bot.configs[source.guild.id]['select2role']['selects'][title]}`",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - The title `{title}` is already assigned to a role! Value: `@{self.bot.configs[source.guild.id]['select2role']['selects'][title]}`",
+                                    ephemeral=True,
+                                )
+                        elif await self.check_role_duplicates(source, role):
                             return
 
                         self.bot.config_repo.add_select2role(
-                            ctx.guild.id, title, f"{role}", role.id, description
+                            source.guild.id, title, f"{role}", role.id, description
                         )
 
-                        if "select2role" not in self.bot.configs[ctx.guild.id]:
-                            self.bot.configs[ctx.guild.id]["select2role"] = {
+                        if "select2role" not in self.bot.configs[source.guild.id]:
+                            self.bot.configs[source.guild.id]["select2role"] = {
                                 "selects": {}
                             }
                         elif (
                             "selects"
-                            not in self.bot.configs[ctx.guild.id]["select2role"]
+                            not in self.bot.configs[source.guild.id]["select2role"]
                         ):
-                            self.bot.configs[ctx.guild.id]["select2role"][
+                            self.bot.configs[source.guild.id]["select2role"][
                                 "selects"
                             ] = {}
 
-                        self.bot.configs[ctx.guild.id]["select2role"]["selects"][
+                        self.bot.configs[source.guild.id]["select2role"]["selects"][
                             title
                         ] = {"role": role, "description": description}
 
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the title `{title}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the select to role list."
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the title `{title}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the select to role list."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the title `{title}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the select to role list."
+                            )
                     elif option == "remove":
                         if (
-                            "select2role" not in self.bot.configs[ctx.guild.id]
+                            "select2role" not in self.bot.configs[source.guild.id]
                             or "selects"
-                            not in self.bot.configs[ctx.guild.id]["select2role"]
+                            not in self.bot.configs[source.guild.id]["select2role"]
                             or title
                             not in set(
-                                self.bot.configs[ctx.guild.id]["select2role"]["selects"]
+                                self.bot.configs[source.guild.id]["select2role"][
+                                    "selects"
+                                ]
                             )
                         ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The title `{title}` is already not in the select to role list!",
-                                delete_after=20,
-                            )
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - The title `{title}` is already not in the select to role list!",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - The title `{title}` is already not in the select to role list!",
+                                    ephemeral=True,
+                                )
 
-                        self.bot.config_repo.remove_select2role(ctx.guild.id, title)
-                        role = self.bot.configs[ctx.guild.id]["select2role"][
+                        self.bot.config_repo.remove_select2role(source.guild.id, title)
+                        role = self.bot.configs[source.guild.id]["select2role"][
                             "selects"
                         ].pop(title)
-                        await ctx.send(
-                            f"ℹ️ - Removed the title `{title}` which was corresponding to the role `@{role}` from the select to role list."
-                        )
 
-                        if not self.bot.configs[ctx.guild.id]["select2role"]["selects"]:
-                            del self.bot.configs[ctx.guild.id]["select2role"]["selects"]
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - Removed the title `{title}` which was corresponding to the role `@{role}` from the select to role list."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - Removed the title `{title}` which was corresponding to the role `@{role}` from the select to role list."
+                            )
 
-                        members = set(ctx.guild.members)
-                        if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
+                        if not self.bot.configs[source.guild.id]["select2role"][
+                            "selects"
+                        ]:
+                            del self.bot.configs[source.guild.id]["select2role"][
+                                "selects"
+                            ]
+
+                        members = set(source.guild.members)
+                        if source.channel.permissions_for(source.guild.me).manage_roles:
                             async with self.bot.limiter:
                                 for member in members:
                                     if member.bot:
@@ -1020,36 +1490,54 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         else:
                             await self.bot.utils_class.send_message_to_mods(
                                 f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old select to role role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                                ctx.guild.id,
+                                source.guild.id,
                             )
                 elif option == "resolve":
-                    await ctx.send(
-                        f"ℹ️ - Resolved the select2role message successfully."
-                    )
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Resolved the select2role message successfully."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Resolved the select2role message successfully."
+                        )
                 elif option == "purge":
                     if (
-                        "select2role" not in self.bot.configs[ctx.guild.id]
+                        "select2role" not in self.bot.configs[source.guild.id]
                         or "selects"
-                        not in self.bot.configs[ctx.guild.id]["select2role"]
+                        not in self.bot.configs[source.guild.id]["select2role"]
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The select to role list is already empty!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - The select to role list is already empty!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - The select to role list is already empty!",
+                                ephemeral=True,
+                            )
 
-                    self.bot.config_repo.purge_select2role(ctx.guild.id)
+                    self.bot.config_repo.purge_select2role(source.guild.id)
                     roles = set(
-                        self.bot.configs[ctx.guild.id]["select2role"][
+                        self.bot.configs[source.guild.id]["select2role"][
                             "selects"
                         ].values()
                     )
-                    del self.bot.configs[ctx.guild.id]["select2role"]["selects"]
-                    await ctx.send(
-                        f"ℹ️ - Removed all the titles from the select to role list."
-                    )
-                    members = set(ctx.guild.members)
+                    del self.bot.configs[source.guild.id]["select2role"]["selects"]
 
-                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the titles from the select to role list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the titles from the select to role list."
+                        )
+
+                    members = set(source.guild.members)
+
+                    if source.channel.permissions_for(source.guild.me).manage_roles:
                         async with self.bot.limiter:
                             for member in members:
                                 if member.bot:
@@ -1063,38 +1551,41 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                            ctx.guild.id,
+                            source.guild.id,
                         )
                 else:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
-                if "channel" in self.bot.configs[ctx.guild.id]["select2role"]:
+                if "channel" in self.bot.configs[source.guild.id]["select2role"]:
                     roles_msg = None
 
-                    if "roles_msg_id" in self.bot.configs[ctx.guild.id]["select2role"]:
+                    if (
+                        "roles_msg_id"
+                        in self.bot.configs[source.guild.id]["select2role"]
+                    ):
                         try:
-                            roles_msg = await self.bot.configs[ctx.guild.id][
+                            roles_msg = await self.bot.configs[source.guild.id][
                                 "select2role"
                             ]["channel"].fetch_message(
-                                self.bot.configs[ctx.guild.id]["select2role"][
+                                self.bot.configs[source.guild.id]["select2role"][
                                     "roles_msg_id"
                                 ]
                             )
                         except NotFound:
-                            perms = self.bot.configs[ctx.guild.id]["select2role"][
+                            perms = self.bot.configs[source.guild.id]["select2role"][
                                 "channel"
-                            ].permissions_for(ctx.guild.me)
+                            ].permissions_for(source.guild.me)
                             if perms.read_message_history and perms.manage_messages:
-                                await self.bot.configs[ctx.guild.id]["select2role"][
+                                await self.bot.configs[source.guild.id]["select2role"][
                                     "channel"
                                 ].purge(check=lambda m: m.author.id == self.bot.user.id)
                             else:
                                 await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to purge messages in the (select_to_role) channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
-                                    ctx.guild.id,
+                                    f"⚠️ - I don't have the right permissions to purge messages in the (select_to_role) channel {self.bot.configs[source.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
+                                    source.guild.id,
                                 )
                             pass
 
@@ -1104,8 +1595,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         description="Here are the server's select to role available, choose one or more roles you wish to be assigned.\n\n**If you want the role to be removed, deselect the corresponding role!**",
                     )
 
-                    if ctx.guild.icon:
-                        em.set_thumbnail(url=ctx.guild.icon.url)
+                    if source.guild.icon:
+                        em.set_thumbnail(url=source.guild.icon.url)
 
                     if self.bot.user.avatar:
                         em.set_footer(
@@ -1115,17 +1606,18 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         em.set_footer(text=self.bot.user.name)
 
                     em.set_author(
-                        name=ctx.guild.name,
-                        icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
+                        name=source.guild.name,
+                        icon_url=source.guild.icon.url if source.guild.icon else None,
                     )
 
                     options = []
                     if (
-                        "select2role" in self.bot.configs[ctx.guild.id]
-                        and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
+                        "select2role" in self.bot.configs[source.guild.id]
+                        and "selects"
+                        in self.bot.configs[source.guild.id]["select2role"]
                     ):
                         values = []
-                        for title, value in self.bot.configs[ctx.guild.id][
+                        for title, value in self.bot.configs[source.guild.id][
                             "select2role"
                         ]["selects"].items():
                             values.append(f"{title}: `@{value['role'].name}`")
@@ -1155,7 +1647,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         view.add_item(
                             Select(
                                 options=options,
-                                custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                custom_id=f"{self.bot.configs[source.guild.id]['select2role']['channel'].id}",
                                 placeholder="Choose one or more role!",
                                 min_values=0,
                                 max_values=len(options),
@@ -1169,40 +1661,46 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         )
                     else:
                         if (
-                            self.bot.configs[ctx.guild.id]["select2role"]["channel"]
-                            .permissions_for(ctx.guild.me)
+                            self.bot.configs[source.guild.id]["select2role"]["channel"]
+                            .permissions_for(source.guild.me)
                             .send_messages
                         ):
-                            self.bot.configs[ctx.guild.id]["select2role"][
+                            self.bot.configs[source.guild.id]["select2role"][
                                 "roles_msg_id"
                             ] = (
-                                await self.bot.configs[ctx.guild.id]["select2role"][
+                                await self.bot.configs[source.guild.id]["select2role"][
                                     "channel"
                                 ].send(embed=em, view=view)
                             ).id
                         else:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention} (i tried to send the message that allow users to select a role so please reactivate this feature after changing the permissions)! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
-                                ctx.guild.id,
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {self.bot.configs[source.guild.id]['select2role']['channel'].mention} (i tried to send the message that allow users to select a role so please reactivate this feature after changing the permissions)! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
+                                source.guild.id,
                             )
             except MissingRequiredArgument as mre:
                 raise MissingRequiredArgument(param=mre.param)
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
             if (
-                "select2role" not in self.bot.configs[ctx.guild.id]
-                or "selects" not in self.bot.configs[ctx.guild.id]["select2role"]
+                "select2role" not in self.bot.configs[source.guild.id]
+                or "selects" not in self.bot.configs[source.guild.id]["select2role"]
             ):
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No select to role have been added to the list yet!",
-                    delete_after=20,
-                )
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No select to role have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No select to role have been added to the list yet!",
+                        ephemeral=True,
+                    )
 
-            server_select_2_role = self.bot.configs[ctx.guild.id]["select2role"][
+            server_select_2_role = self.bot.configs[source.guild.id]["select2role"][
                 "selects"
             ]
             roles_mess = ""
@@ -1216,9 +1714,17 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     )
                     + "\n"
                 )
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's select to role:**\n\n{roles_mess}"
-            )
+
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's select to role:**\n\n{roles_mess}"
+                )
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's select to role:**\n\n{roles_mess}"
+                )
+
+    """ MUTED ROLE """
 
     @config_group.command(
         pass_context=True,
@@ -1234,6 +1740,52 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         muted: Role = None,
     ):
+        await self.handle_muted_role(ctx, option, muted)
+
+    @slash_command(
+        name="muted_role",
+        description="This option manage the server's muted role",
+    )
+    async def config_muted_role_slash_group(self, inter: GuildCommandInteraction):
+        pass
+
+    @config_muted_role_slash_group.sub_command(
+        name="display",
+        description="This option display the server's muted role",
+    )
+    async def config_muted_role_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_muted_role(inter)
+
+    @config_muted_role_slash_group.sub_command(
+        name="set",
+        description="This option set the server's muted role",
+    )
+    async def config_muted_role_set_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        role: Role,
+    ):
+        await self.handle_muted_role(inter, "set", role)
+
+    @config_muted_role_slash_group.sub_command(
+        name="remove",
+        description="This option remove the server's muted role",
+    )
+    async def config_muted_role_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_muted_role(inter, "remove")
+
+    async def handle_muted_role(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        muted: Union[Role, None] = None,
+    ):
         if option:
             try:
                 if option == "set":
@@ -1243,28 +1795,34 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 name="muted_role", kind=Parameter.KEYWORD_ONLY
                             )
                         )
-                    elif self.check_role_duplicates(ctx, muted):
+                    elif await self.check_role_duplicates(source, muted):
                         return
 
                     old_role = None
-                    if "muted_role" in self.bot.configs[ctx.guild.id]:
-                        old_role = self.bot.configs[ctx.guild.id]["muted_role"]
+                    if "muted_role" in self.bot.configs[source.guild.id]:
+                        old_role = self.bot.configs[source.guild.id]["muted_role"]
 
-                    self.bot.config_repo.set_muted_role(ctx.guild.id, muted.id)
-                    self.bot.configs[ctx.guild.id]["muted_role"] = muted
+                    self.bot.config_repo.set_muted_role(source.guild.id, muted.id)
+                    self.bot.configs[source.guild.id]["muted_role"] = muted
 
-                    await ctx.send(
-                        f"ℹ️ - The muted role is now `@{muted}` in this guild!"
-                    )
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - The muted role is now `@{muted}` in this guild!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - The muted role is now `@{muted}` in this guild!"
+                        )
 
-                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
-                        db_users = self.bot.user_repo.get_users(ctx.guild.id)
+                    if source.channel.permissions_for(source.guild.me).manage_roles:
+                        db_users = self.bot.user_repo.get_users(source.guild.id)
+
                         for db_user in db_users.values():
                             if db_user["muted"]:
                                 try:
-                                    member = ctx.guild.get_member(
+                                    member = source.guild.get_member(
                                         int(db_user["id"])
-                                    ) or await ctx.guild.fetch_member(
+                                    ) or await source.guild.fetch_member(
                                         int(db_user["id"])
                                     )
                                 except NotFound:
@@ -1285,31 +1843,37 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {f'`@{old_role.name}` ' if old_role else ''}`@{muted.name}` (i tried to replace the old muted role with the new one from muted members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                            ctx.guild.id,
+                            source.guild.id,
                         )
                 elif option == "remove":
-                    if "muted_role" not in self.bot.configs[ctx.guild.id]:
-                        return await ctx.reply(
+                    if "muted_role" not in self.bot.configs[source.guild.id]:
+                        return await source.reply(
                             f"ℹ️ - The server already doesn't have a muted role configured!",
                             delete_after=20,
                         )
 
-                    old_role = self.bot.configs[ctx.guild.id]["muted_role"]
-                    self.bot.config_repo.set_muted_role(ctx.guild.id, None)
-                    del self.bot.configs[ctx.guild.id]["muted_role"]
+                    old_role = self.bot.configs[source.guild.id]["muted_role"]
+                    self.bot.config_repo.set_muted_role(source.guild.id, None)
+                    del self.bot.configs[source.guild.id]["muted_role"]
 
-                    await ctx.send(
-                        f"ℹ️ - The muted role is now removed from this guild!"
-                    )
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - The muted role is now removed from this guild!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - The muted role is now removed from this guild!"
+                        )
 
-                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
-                        db_users = self.bot.user_repo.get_users(ctx.guild.id)
+                    if source.channel.permissions_for(source.guild.me).manage_roles:
+                        db_users = self.bot.user_repo.get_users(source.guild.id)
+
                         for db_user in db_users.values():
                             if db_user["muted"]:
                                 try:
-                                    member = ctx.guild.get_member(
+                                    member = source.guild.get_member(
                                         int(db_user["id"])
-                                    ) or await ctx.guild.fetch_member(
+                                    ) or await source.guild.fetch_member(
                                         int(db_user["id"])
                                     )
                                 except NotFound:
@@ -1323,11 +1887,11 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old muted role from muted members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                            ctx.guild.id,
+                            source.guild.id,
                         )
                 else:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1335,18 +1899,27 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
             except BadArgument:
                 raise BadArgument
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while configuring the muted_role! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while configuring the muted_role! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            await ctx.send(
-                f"ℹ️ - The current server's muted role is: `@{self.bot.configs[ctx.guild.id]['muted_role']}`"
-                if "muted_role" in self.bot.configs[ctx.guild.id]
-                else f"ℹ️ - The server doesn't have a muted role yet!"
-            )
+            if isinstance(source, Context):
+                await source.send(
+                    f"ℹ️ - The current server's muted role is: `@{self.bot.configs[source.guild.id]['muted_role']}`"
+                    if "muted_role" in self.bot.configs[source.guild.id]
+                    else f"ℹ️ - The server doesn't have a muted role yet!"
+                )
+            else:
+                await source.response.send_message(
+                    f"ℹ️ - The current server's muted role is: `@{self.bot.configs[source.guild.id]['muted_role']}`"
+                    if "muted_role" in self.bot.configs[source.guild.id]
+                    else f"ℹ️ - The server doesn't have a muted role yet!"
+                )
 
     """ MAIN GROUP'S SECURITY COMMAND(S) """
+
+    """ PREVENT INVITES """
 
     @config_security_group.command(
         pass_context=True,
@@ -1362,6 +1935,66 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         notify_channel: TextChannel = None,
     ):
+        await self.handle_prevent_invites(ctx, option, notify_channel)
+
+    @config_security_slash_group.sub_command_group(
+        name="prevent_invites",
+        description="This option manage if users are allowed to send other servers invites or not (specify a channel to be notified when someone tries to send an invitation link)!",
+    )
+    async def config_security_prevent_invites_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_security_prevent_invites_slash_group.sub_command(
+        name="display",
+        description="This option display the state of the prevent invites feature in the server!",
+    )
+    async def config_security_prevent_invites_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_prevent_invites(inter)
+
+    @config_security_prevent_invites_slash_group.sub_command(
+        name="on",
+        description="This option turn on prevent invites feature in the server!",
+    )
+    async def config_security_prevent_invites_on_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        notify_channel: TextChannel = None,
+    ):
+        await self.handle_prevent_invites(inter, "on", notify_channel)
+
+    @config_security_prevent_invites_slash_group.sub_command(
+        name="update",
+        description="This option updates the prevent invites feature in the server!",
+    )
+    async def config_security_prevent_invites_update_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        notify_channel: TextChannel,
+    ):
+        await self.handle_prevent_invites(inter, "update", notify_channel)
+
+    @config_security_prevent_invites_slash_group.sub_command(
+        name="off",
+        description="This option turn off the prevent invites feature in the server!",
+    )
+    async def config_security_prevent_invites_off_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_prevent_invites(inter, "off")
+
+    async def handle_prevent_invites(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        notify_channel: Union[TextChannel, None] = None,
+    ):
         if option:
             try:
                 val = False
@@ -1370,55 +2003,85 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 elif option == "off":
                     val = False
                 else:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
                 if (
-                    "prevent_invites" in self.bot.configs[ctx.guild.id]
+                    "prevent_invites" in self.bot.configs[source.guild.id]
                 ) == val and option != "update":
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - The invites prevention is already set to `{BOOL2VAL[val]}`!"
-                        + f" Parameters: 'notify_channel': {self.bot.configs[ctx.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['prevent_invites'] else '`No channel specified.`'}"
-                        if "prevent_invites" in self.bot.configs[ctx.guild.id]
-                        else ""
-                    )
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"ℹ️ - {source.author.mention} - The invites prevention is already set to `{BOOL2VAL[val]}`!"
+                            + f" Parameters: 'notify_channel': {self.bot.configs[source.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['prevent_invites'] else '`No channel specified.`'}"
+                            if "prevent_invites" in self.bot.configs[source.guild.id]
+                            else ""
+                        )
+                    else:
+                        return await source.response.send_message(
+                            f"ℹ️ - {source.author.mention} - The invites prevention is already set to `{BOOL2VAL[val]}`!"
+                            + f" Parameters: 'notify_channel': {self.bot.configs[source.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['prevent_invites'] else '`No channel specified.`'}"
+                            if "prevent_invites" in self.bot.configs[source.guild.id]
+                            else ""
+                        )
 
                 if val:
                     self.bot.config_repo.set_invite_prevention(
-                        ctx.guild.id, notify_channel.id if notify_channel else None
+                        source.guild.id, notify_channel.id if notify_channel else None
                     )
-                    self.bot.configs[ctx.guild.id]["prevent_invites"] = {"is_on": True}
+                    self.bot.configs[source.guild.id]["prevent_invites"] = {
+                        "is_on": True
+                    }
 
                     if notify_channel:
-                        self.bot.configs[ctx.guild.id]["prevent_invites"][
+                        self.bot.configs[source.guild.id]["prevent_invites"][
                             "notify_channel"
                         ] = notify_channel
                 else:
-                    self.bot.config_repo.remove_invite_prevention(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["prevent_invites"]
+                    self.bot.config_repo.remove_invite_prevention(source.guild.id)
+                    del self.bot.configs[source.guild.id]["prevent_invites"]
 
-                await ctx.send(
-                    f"ℹ️ - The invites prevention is now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
-                    + (
-                        f" Parameters: 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
-                        if val
-                        else ""
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The invites prevention is now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
+                        + (
+                            f" Parameters: 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
+                            if val
+                            else ""
+                        )
                     )
-                )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The invites prevention is now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
+                        + (
+                            f" Parameters: 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
+                            if val
+                            else ""
+                        )
+                    )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the invites prevention `{BOOL2VAL[val]}`' if option != 'update' else 'updating the invites prevention'}! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {f'setting the invites prevention `{BOOL2VAL[val]}`' if option != 'update' else 'updating the invites prevention'}! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            await ctx.send(
-                f"ℹ️ - {ctx.author.mention} - The invites prevention is currently `{BOOL2VAL['prevent_invites' in self.bot.configs[ctx.guild.id]]}` in this guild!"
-                + f" Parameters: 'notify_channel': {self.bot.configs[ctx.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['prevent_invites'] else '`No channel specified.`'}"
-                if "prevent_invites" in self.bot.configs[ctx.guild.id]
-                else ""
-            )
+            if isinstance(source, Context):
+                await source.send(
+                    f"ℹ️ - {source.author.mention} - The invites prevention is currently `{BOOL2VAL['prevent_invites' in self.bot.configs[source.guild.id]]}` in this guild!"
+                    + f" Parameters: 'notify_channel': {self.bot.configs[source.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['prevent_invites'] else '`No channel specified.`'}"
+                    if "prevent_invites" in self.bot.configs[source.guild.id]
+                    else ""
+                )
+            else:
+                await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - The invites prevention is currently `{BOOL2VAL['prevent_invites' in self.bot.configs[source.guild.id]]}` in this guild!"
+                    + f" Parameters: 'notify_channel': {self.bot.configs[source.guild.id]['prevent_invites']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['prevent_invites'] else '`No channel specified.`'}"
+                    if "prevent_invites" in self.bot.configs[source.guild.id]
+                    else ""
+                )
+
+    """ MUTED ON JOIN """
 
     @config_security_group.command(
         pass_context=True,
@@ -1432,15 +2095,93 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         self,
         ctx: Context,
         option: Utils.to_lower = None,
-        _duration: int = None,
+        duration: int = None,
         duration_type: str = None,
         notify_channel: TextChannel = None,
     ):
-        if "muted_role" not in self.bot.configs[ctx.guild.id]:
-            return await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}config muted_role` to set one!",
-                delete_after=20,
-            )
+        await self.handle_mute_on_join(
+            ctx, option, duration, duration_type, notify_channel
+        )
+
+    @config_security_slash_group.sub_command_group(
+        name="mute_on_join",
+        description="This option manage if users are muted during a certain amount of time when joining the server and then notify it at the end if a channel is specified! (default duration = 10 min)",
+    )
+    async def config_security_mute_on_join_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_security_mute_on_join_slash_group.sub_command(
+        name="display",
+        description="This option display the state of the mute on join feature!",
+    )
+    async def config_security_mute_on_join_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_mute_on_join(inter)
+
+    @config_security_mute_on_join_slash_group.sub_command(
+        name="on",
+        description="This option turn on the mute on join feature! (default duration = 10 min)",
+    )
+    async def config_security_mute_on_join_on_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        duration: int = None,
+        duration_type: DurationType = None,
+        notify_channel: TextChannel = None,
+    ):
+        await self.handle_mute_on_join(
+            inter, "on", duration, duration_type, notify_channel
+        )
+
+    @config_security_mute_on_join_slash_group.sub_command(
+        name="update",
+        description="This option updates the mute on join feature!",
+    )
+    async def config_security_mute_on_join_update_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        duration: int = None,
+        duration_type: DurationType = None,
+        notify_channel: TextChannel = None,
+    ):
+        await self.handle_mute_on_join(
+            inter, "update", duration, duration_type, notify_channel
+        )
+
+    @config_security_mute_on_join_slash_group.sub_command(
+        name="off",
+        description="This option turn off the mute on join feature! (default duration = 10 min)",
+    )
+    async def config_security_mute_on_join_off_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_mute_on_join(inter, "off")
+
+    async def handle_mute_on_join(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        _duration: Union[int, None] = None,
+        duration_type: Union[str, None] = None,
+        notify_channel: Union[TextChannel, None] = None,
+    ):
+        if "muted_role" not in self.bot.configs[source.guild.id]:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(source.author)[0]}config muted_role` to set one!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⚠️ - {source.author.mention} - The server doesn't have a muted role yet! Please configure one with the command `{self.bot.utils_class.get_guild_pre(source.author)[0]}config muted_role` to set one!",
+                    ephemeral=True,
+                )
 
         if option:
             try:
@@ -1450,23 +2191,34 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 elif option == "off":
                     val = False
                 else:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
                 if (
-                    "mute_on_join" in self.bot.configs[ctx.guild.id]
+                    "mute_on_join" in self.bot.configs[source.guild.id]
                 ) == val and option != "update":
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - The mute on join is already `{BOOL2VAL[val]}`!"
-                        + (
-                            f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
-                            if "mute_on_join" in self.bot.configs[ctx.guild.id]
-                            else ""
-                        ),
-                        delete_after=20,
-                    )
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"ℹ️ - {source.author.mention} - The mute on join is already `{BOOL2VAL[val]}`!"
+                            + (
+                                f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[source.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[source.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                                if "mute_on_join" in self.bot.configs[source.guild.id]
+                                else ""
+                            ),
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.response.send_message(
+                            f"ℹ️ - {source.author.mention} - The mute on join is already `{BOOL2VAL[val]}`!"
+                            + (
+                                f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[source.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[source.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                                if "mute_on_join" in self.bot.configs[source.guild.id]
+                                else ""
+                            ),
+                            ephemeral=True,
+                        )
 
                 if val:
                     if not _duration:
@@ -1484,66 +2236,104 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
 
                     old_duration = f"{_duration} {duration_type}"
                     _duration = await self.bot.utils_class.parse_duration(
-                        _duration, duration_type, ctx
+                        _duration, duration_type, source
                     )
                     if not _duration:
                         return
 
                     self.bot.config_repo.set_mute_on_join(
-                        ctx.guild.id,
+                        source.guild.id,
                         _duration,
                         notify_channel.id if notify_channel else None,
                     )
-                    self.bot.configs[ctx.guild.id]["mute_on_join"] = {
+                    self.bot.configs[source.guild.id]["mute_on_join"] = {
                         "duration": _duration,
                     }
 
                     if notify_channel:
-                        self.bot.configs[ctx.guild.id]["mute_on_join"][
+                        self.bot.configs[source.guild.id]["mute_on_join"][
                             "notify_channel"
                         ] = notify_channel
                 else:
-                    self.bot.config_repo.remove_mute_on_join(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["mute_on_join"]
+                    self.bot.config_repo.remove_mute_on_join(source.guild.id)
+                    del self.bot.configs[source.guild.id]["mute_on_join"]
 
-                await ctx.send(
-                    f"ℹ️ - The mute on join is now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
-                    + (
-                        f" Parameters: 'duration': `{old_duration}`, 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
-                        if val
-                        else ""
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The mute on join is now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
+                        + (
+                            f" Parameters: 'duration': `{old_duration}`, 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
+                            if val
+                            else ""
+                        )
                     )
-                )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The mute on join is now `{BOOL2VAL[val] if option != 'update' else 'UPDATED'}` in this guild!"
+                        + (
+                            f" Parameters: 'duration': `{old_duration}`, 'notify_channel': {f'{notify_channel.mention}' if notify_channel else '`No channel specified.`'}"
+                            if val
+                            else ""
+                        )
+                    )
             except MissingRequiredArgument as mre:
                 raise MissingRequiredArgument(param=mre.param)
             except BadArgument:
                 raise BadArgument
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {f'setting the mute on join `{BOOL2VAL[val]}`' if option != 'update' else 'updating the mute on join'}! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            await ctx.send(
-                f"ℹ️ - {ctx.author.mention} - The mute on join is currently `{BOOL2VAL['mute_on_join' in self.bot.configs[ctx.guild.id]]}` in this guild!"
-                + (
-                    f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[ctx.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[ctx.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[ctx.guild.id]['mute_on_join'] else '`No channel specified.`'}"
-                    if "mute_on_join" in self.bot.configs[ctx.guild.id]
-                    else ""
+            if isinstance(source, Context):
+                await source.send(
+                    f"ℹ️ - {source.author.mention} - The mute on join is currently `{BOOL2VAL['mute_on_join' in self.bot.configs[source.guild.id]]}` in this guild!"
+                    + (
+                        f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[source.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[source.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                        if "mute_on_join" in self.bot.configs[source.guild.id]
+                        else ""
+                    )
                 )
-            )
+            else:
+                await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - The mute on join is currently `{BOOL2VAL['mute_on_join' in self.bot.configs[source.guild.id]]}` in this guild!"
+                    + (
+                        f" Parameters: 'duration': `{self.bot.utils_class.duration(self.bot.configs[source.guild.id]['mute_on_join']['duration'])}`, 'notify_channel': {self.bot.configs[source.guild.id]['mute_on_join']['notify_channel'].mention if 'notify_channel' in self.bot.configs[source.guild.id]['mute_on_join'] else '`No channel specified.`'}"
+                        if "mute_on_join" in self.bot.configs[source.guild.id]
+                        else ""
+                    )
+                )
 
     """ MAIN GROUP'S XP COMMAND(S) """
 
+    """ SWITCH """
+
     @config_xp_group.command(
         pass_context=True,
-        name="switch",
+        name="state",
         brief="➕",
         description="This option turn the server's experience feature on or off",
         usage="(on|off)",
     )
     async def config_xp_switch_command(
         self, ctx: Context, option: Utils.to_lower = None
+    ):
+        await self.handle_switch(ctx, option)
+
+    @config_xp_slash_group.sub_command(
+        name="state",
+        description="This option turn the server's experience feature on or off",
+    )
+    async def config_xp_state_slash_command(
+        self, inter: GuildCommandInteraction, option: Literal["on", "off"] = None
+    ):
+        await self.handle_switch(inter, option)
+
+    async def handle_switch(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
     ):
         if option:
             try:
@@ -1553,29 +2343,50 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                 elif option == "off":
                     val = False
                 else:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
 
-                if self.bot.configs[ctx.guild.id]["xp"]["is_on"] == val:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - The xp is already `{BOOL2VAL[val]}`!",
-                        delete_after=20,
-                    )
+                if self.bot.configs[source.guild.id]["xp"]["is_on"] == val:
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"ℹ️ - {source.author.mention} - The xp is already `{BOOL2VAL[val]}`!",
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.response.send_message(
+                            f"ℹ️ - {source.author.mention} - The xp is already `{BOOL2VAL[val]}`!",
+                            ephemeral=True,
+                        )
 
-                self.bot.config_repo.set_xp(ctx.guild.id, val)
-                self.bot.configs[ctx.guild.id]["xp"]["is_on"] = val
-                await ctx.send(f"ℹ️ - The xp is now `{BOOL2VAL[val]}` in this guild!")
+                self.bot.config_repo.set_xp(source.guild.id, val)
+                self.bot.configs[source.guild.id]["xp"]["is_on"] = val
+
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The xp is now `{BOOL2VAL[val]}` in this guild!"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The xp is now `{BOOL2VAL[val]}` in this guild!"
+                    )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while setting the xp `{BOOL2VAL[val]}`! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while setting the xp `{BOOL2VAL[val]}`! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            await ctx.send(
-                f"ℹ️ - {ctx.author.mention} - The xp is currently `{BOOL2VAL[self.bot.configs[ctx.guild.id]['xp']['is_on']]}` in this guild!"
-            )
+            if isinstance(source, Context):
+                await source.send(
+                    f"ℹ️ - {source.author.mention} - The xp is currently `{BOOL2VAL[self.bot.configs[source.guild.id]['xp']['is_on']]}` in this guild!"
+                )
+            else:
+                await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - The xp is currently `{BOOL2VAL[self.bot.configs[source.guild.id]['xp']['is_on']]}` in this guild!"
+                )
+
+    """ BOOST """
 
     @config_xp_group.command(
         pass_context=True,
@@ -1589,8 +2400,82 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         self,
         ctx: Context,
         option: Utils.to_lower = None,
-        boosted: Union[Role, Member] = None,
+        boosted: Snowflake = None,
         bonus: int = 20,
+    ):
+        await self.handle_boost(ctx, option, boosted, bonus)
+
+    @config_xp_slash_group.sub_command_group(
+        name="boost",
+        description="This option manage the server's boosted roles | members, you can precise what xp bonus they'll get (default = 20%)",
+    )
+    async def config_xp_boost_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_xp_boost_slash_group.sub_command(
+        name="display",
+        description="This option display the state of the server's boosted roles | members feature!",
+    )
+    async def config_xp_boost_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_boost(inter)
+
+    @config_xp_boost_slash_group.sub_command(
+        name="add",
+        description="This option add a boosted role/member to server's boosted roles|members list! (default bonus = 20%)",
+    )
+    async def config_xp_boost_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        boosted: Snowflake,
+        bonus: int = 20,
+    ):
+        await self.handle_boost(inter, "add", boosted, bonus)
+
+    @config_xp_boost_slash_group.sub_command(
+        name="update",
+        description="This option updates a boosted role/member from the server's boosted roles|members list!",
+    )
+    async def config_xp_boost_update_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        boosted: Snowflake,
+        bonus: int,
+    ):
+        await self.handle_boost(inter, "update", boosted, bonus)
+
+    @config_xp_boost_slash_group.sub_command(
+        name="remove",
+        description="This option removes a boosted role/member from the server's boosted roles|members list!",
+    )
+    async def config_xp_boost_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        boosted: Snowflake,
+    ):
+        await self.handle_boost(inter, "remove", boosted)
+
+    @config_xp_boost_slash_group.sub_command(
+        name="purge",
+        description="This option purge the server's boosted roles|members list!",
+    )
+    async def config_xp_boost_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_boost(inter, "purge")
+
+    async def handle_boost(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        boosted: Union[Snowflake, None] = None,
+        bonus: Union[int, None] = None,
     ):
         if option:
             try:
@@ -1600,89 +2485,144 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             param=Parameter(name="boosted", kind=Parameter.KEYWORD_ONLY)
                         )
                     elif isinstance(boosted, Member) and boosted.bot:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - You can't add a bot user to the boosted xp list!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - You can't add a bot user to the boosted xp list!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - You can't add a bot user to the boosted xp list!",
+                                ephemeral=True,
+                            )
 
                     if option == "add" or option == "update":
                         if (
-                            "boosteds" in self.bot.configs[ctx.guild.id]["xp"]
+                            "boosteds" in self.bot.configs[source.guild.id]["xp"]
                             and str(boosted.id)
-                            in set(self.bot.configs[ctx.guild.id]["xp"]["boosteds"])
+                            in set(self.bot.configs[source.guild.id]["xp"]["boosteds"])
                             and option != "update"
                         ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} is already in the boosted xp list!",
-                                delete_after=20,
-                            )
-                        elif self.check_role_duplicates(ctx, boosted):
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} is already in the boosted xp list!",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} is already in the boosted xp list!",
+                                    ephemeral=True,
+                                )
+                        elif await self.check_role_duplicates(source, boosted):
                             return
 
                         if bonus <= 0:
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The bonus value must be greater than 0!",
-                                delete_after=20,
-                            )
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - The bonus value must be greater than 0!",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - The bonus value must be greater than 0!",
+                                    ephemeral=True,
+                                )
 
                         self.bot.config_repo.add_xp_boosted(
-                            ctx.guild.id,
+                            source.guild.id,
                             boosted.id,
                             f"{boosted}",
                             bonus,
                             type(boosted).__name__,
                         )
 
-                        if "boosteds" not in self.bot.configs[ctx.guild.id]["xp"]:
-                            self.bot.configs[ctx.guild.id]["xp"]["boosteds"] = {}
+                        if "boosteds" not in self.bot.configs[source.guild.id]["xp"]:
+                            self.bot.configs[source.guild.id]["xp"]["boosteds"] = {}
 
-                        self.bot.configs[ctx.guild.id]["xp"]["boosteds"][
+                        self.bot.configs[source.guild.id]["xp"]["boosteds"][
                             str(boosted.id)
                         ] = bonus
 
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Updated'} `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} {'to' if option == 'add' else 'from'} the boosted xp list. Bonus: `{bonus}%`"
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Updated'} `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} {'to' if option == 'add' else 'from'} the boosted xp list. Bonus: `{bonus}%`"
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Updated'} `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} {'to' if option == 'add' else 'from'} the boosted xp list. Bonus: `{bonus}%`"
+                            )
                     elif option == "remove":
-                        if "boosteds" not in self.bot.configs[ctx.guild.id][
+                        if "boosteds" not in self.bot.configs[source.guild.id][
                             "xp"
                         ] or str(boosted.id) not in set(
-                            self.bot.configs[ctx.guild.id]["xp"]["boosteds"]
+                            self.bot.configs[source.guild.id]["xp"]["boosteds"]
                         ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} is already not in the boosted xp list!",
-                                delete_after=20,
-                            )
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} is already not in the boosted xp list!",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} is already not in the boosted xp list!",
+                                    ephemeral=True,
+                                )
 
-                        self.bot.config_repo.remove_xp_boosted(ctx.guild.id, boosted.id)
-                        del self.bot.configs[ctx.guild.id]["xp"]["boosteds"][
+                        self.bot.config_repo.remove_xp_boosted(
+                            source.guild.id, boosted.id
+                        )
+                        del self.bot.configs[source.guild.id]["xp"]["boosteds"][
                             str(boosted.id)
                         ]
 
                         try:
-                            await ctx.send(
-                                f"ℹ️ - Removed `@{ctx.guild.get_member(int(boosted.id)) or await ctx.guild.fetch_member(int(boosted.id)) if isinstance(boosted, Member) else ctx.guild.get_role(int(boosted.id))}` {'role' if isinstance(boosted, Role) else 'member'} from the boosted xp list."
-                            )
+                            if isinstance(source, Context):
+                                await source.send(
+                                    f"ℹ️ - Removed `@{source.guild.get_member(int(boosted.id)) or await source.guild.fetch_member(int(boosted.id)) if isinstance(boosted, Member) else source.guild.get_role(int(boosted.id))}` {'role' if isinstance(boosted, Role) else 'member'} from the boosted xp list."
+                                )
+                            else:
+                                await source.response.send_message(
+                                    f"ℹ️ - Removed `@{source.guild.get_member(int(boosted.id)) or await source.guild.fetch_member(int(boosted.id)) if isinstance(boosted, Member) else source.guild.get_role(int(boosted.id))}` {'role' if isinstance(boosted, Role) else 'member'} from the boosted xp list."
+                                )
                         except NotFound:
-                            pass
+                            if isinstance(source, Context):
+                                await source.send(
+                                    f"ℹ️ - Removed the boost from the boosted xp list."
+                                )
+                            else:
+                                await source.response.send_message(
+                                    f"ℹ️ - Removed the boost from the boosted xp list."
+                                )
 
-                        if not self.bot.configs[ctx.guild.id]["xp"]["boosteds"]:
-                            del self.bot.configs[ctx.guild.id]["xp"]["boosteds"]
+                        if not self.bot.configs[source.guild.id]["xp"]["boosteds"]:
+                            del self.bot.configs[source.guild.id]["xp"]["boosteds"]
                 elif option == "purge":
-                    if "boosteds" not in self.bot.configs[ctx.guild.id]["xp"]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The boosteds list is already empty!",
-                            delete_after=20,
-                        )
+                    if "boosteds" not in self.bot.configs[source.guild.id]["xp"]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - The boosteds list is already empty!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - The boosteds list is already empty!",
+                                ephemeral=True,
+                            )
 
-                    self.bot.config_repo.purge_xp_boosted(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["xp"]["boosteds"]
-                    await ctx.send(
-                        f"ℹ️ - Removed all the Roles & Members from the boosteds list."
-                    )
+                    self.bot.config_repo.purge_xp_boosted(source.guild.id)
+                    del self.bot.configs[source.guild.id]["xp"]["boosteds"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the Roles & Members from the boosteds list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the Roles & Members from the boosteds list."
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1694,37 +2634,66 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} {'to' if option != 'update' else 'from'} the boosters list! please try again in a few seconds! Error type: {type(e)}",
+                await source.response.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} `@{boosted}` {'role' if isinstance(boosted, Role) else 'member'} {'to' if option != 'update' else 'from'} the boosters list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            server_boosteds = self.bot.config_repo.get_xp_boosted(ctx.guild.id).values()
+            server_boosteds = self.bot.config_repo.get_xp_boosted(
+                source.guild.id
+            ).values()
+
             if not server_boosteds:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No boosted (members & roles) have been added to the list yet!",
-                    delete_after=20,
-                )
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No boosted (members & roles) have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No boosted (members & roles) have been added to the list yet!",
+                        ephemeral=True,
+                    )
+
             server_boosteds_roles = []
             server_boosteds_members = []
+
             for m in server_boosteds:
                 if m["type"] == "Role":
                     server_boosteds_roles.append([m["name"], m["bonus"]])
                 else:
                     server_boosteds_members.append([m["name"], m["bonus"]])
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's boosteds:**\n\n"
-                + (
-                    f"Members: {', '.join(f'`{m[0]} (boost: {m[1]}%)`' for m in server_boosteds_members)}\n"
-                    if server_boosteds_members
-                    else ""
+
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's boosteds:**\n\n"
+                    + (
+                        f"Members: {', '.join(f'`{m[0]} (boost: {m[1]}%)`' for m in server_boosteds_members)}\n"
+                        if server_boosteds_members
+                        else ""
+                    )
+                    + (
+                        f"Roles: {', '.join(f'`{r[0]} (boost: {r[1]}%)`' for r in server_boosteds_roles)}\n"
+                        if server_boosteds_roles
+                        else ""
+                    )
                 )
-                + (
-                    f"Roles: {', '.join(f'`{r[0]} (boost: {r[1]}%)`' for r in server_boosteds_roles)}\n"
-                    if server_boosteds_roles
-                    else ""
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's boosteds:**\n\n"
+                    + (
+                        f"Members: {', '.join(f'`{m[0]} (boost: {m[1]}%)`' for m in server_boosteds_members)}\n"
+                        if server_boosteds_members
+                        else ""
+                    )
+                    + (
+                        f"Roles: {', '.join(f'`{r[0]} (boost: {r[1]}%)`' for r in server_boosteds_roles)}\n"
+                        if server_boosteds_roles
+                        else ""
+                    )
                 )
-            )
+
+    """ MAX LVL """
 
     @config_xp_group.command(
         pass_context=True,
@@ -1735,37 +2704,82 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         usage="(<number of levels>)",
     )
     async def config_xp_max_lvl_command(self, ctx: Context, max_lvl: int = None):
+        await self.handle_max_lvl(ctx, max_lvl)
+
+    @config_xp_slash_group.sub_command(
+        name="max_lvl",
+        description="This option manage the server's max level",
+    )
+    async def config_xp_max_lvl_slash_command(
+        self, inter: GuildCommandInteraction, max_lvl: int = None
+    ):
+        await self.handle_max_lvl(inter, max_lvl)
+
+    async def handle_max_lvl(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        max_lvl: Union[int, None] = None,
+    ):
         try:
             if max_lvl:
                 if max_lvl <= 0:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - The max level value must be greater than 0!",
-                        delete_after=20,
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"ℹ️ - {source.author.mention} - The max level value must be greater than 0!",
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.response.send_message(
+                            f"ℹ️ - {source.author.mention} - The max level value must be greater than 0!",
+                            ephemeral=True,
+                        )
+                elif max_lvl == self.bot.configs[source.guild.id]["xp"]["max_lvl"]:
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"ℹ️ - {source.author.mention} - The max level value is already the one configured for this server! Value: `{max_lvl}`",
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.response.send_message(
+                            f"ℹ️ - {source.author.mention} - The max level value is already the one configured for this server! Value: `{max_lvl}`",
+                            ephemeral=True,
+                        )
+
+                self.bot.config_repo.set_xp_max_lvl(source.guild.id, max_lvl)
+                self.bot.configs[source.guild.id]["xp"]["max_lvl"] = max_lvl
+
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The max level is now `{max_lvl}` in this guild!"
                     )
-                elif max_lvl == self.bot.configs[ctx.guild.id]["xp"]["max_lvl"]:
-                    return await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - The max level value is already the one configured for this server! Value: `{max_lvl}`",
-                        delete_after=20,
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The max level is now `{max_lvl}` in this guild!"
                     )
 
-                self.bot.config_repo.set_xp_max_lvl(ctx.guild.id, max_lvl)
-                self.bot.configs[ctx.guild.id]["xp"]["max_lvl"] = max_lvl
-                await ctx.send(f"ℹ️ - The max level is now `{max_lvl}` in this guild!")
-
-                members = set(ctx.guild.members)
+                members = set(source.guild.members)
                 for member in members:
-                    db_user = self.bot.user_repo.get_user(ctx.guild.id, member.id)
+                    db_user = self.bot.user_repo.get_user(source.guild.id, member.id)
                     if int(db_user["level"]) > max_lvl:
-                        self.bot.user_repo.set_levels(ctx.guild.id, member.id, max_lvl)
+                        self.bot.user_repo.set_levels(
+                            source.guild.id, member.id, max_lvl
+                        )
             else:
-                await ctx.send(
-                    f"ℹ️ - The current server's max level is: `{self.bot.configs[ctx.guild.id]['xp']['max_lvl']}`"
-                )
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The current server's max level is: `{self.bot.configs[source.guild.id]['xp']['max_lvl']}`"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The current server's max level is: `{self.bot.configs[source.guild.id]['xp']['max_lvl']}`"
+                    )
         except Exception as e:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occurred while setting the server's max level! please try again in a few seconds! Error type: {type(e)}",
+            await source.channel.send(
+                f"⚠️ - {source.author.mention} - An error occurred while setting the server's max level! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
+
+    """ LEVEL TO ROLE """
 
     @config_xp_group.command(
         pass_context=True,
@@ -1782,6 +2796,80 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         lvl: int = None,
         role: Role = None,
     ):
+        await self.handle_select_to_role(ctx, option, lvl, role)
+
+    @config_xp_slash_group.sub_command_group(
+        name="level_to_role",
+        description="This option manage the server's level to role feature",
+    )
+    async def config_xp_lvl2role_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_xp_lvl2role_slash_group.sub_command(
+        name="display",
+        description="This option display the state of the server's level to role feature",
+    )
+    async def config_xp_lvl2role_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_level_to_role(inter)
+
+    @config_xp_lvl2role_slash_group.sub_command(
+        name="add",
+        description="This option add a level to role to the server's level to role list",
+    )
+    async def config_xp_lvl2role_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        lvl: int,
+        role: Role,
+    ):
+        await self.handle_level_to_role(inter, "add", lvl, role)
+
+    @config_xp_lvl2role_slash_group.sub_command(
+        name="update",
+        description="This option update a level to role from the server's level to role list",
+    )
+    async def config_xp_lvl2role_update_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        lvl: int,
+        role: Role,
+    ):
+        await self.handle_level_to_role(inter, "update", lvl, role)
+
+    @config_xp_lvl2role_slash_group.sub_command(
+        name="remove",
+        description="This option remove a level to role from the server's level to role list",
+    )
+    async def config_xp_lvl2role_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        lvl: int,
+    ):
+        await self.handle_level_to_role(inter, "remove", lvl)
+
+    @config_xp_lvl2role_slash_group.sub_command(
+        name="purge",
+        description="This option remove a level to role from the server's level to role list",
+    )
+    async def config_xp_lvl2role_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_level_to_role(inter, "purge")
+
+    async def handle_level_to_role(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        lvl: Union[int, None] = None,
+        role: Union[Role, None] = None,
+    ):
         if option:
             try:
                 if option in ("add", "update", "remove"):
@@ -1790,10 +2878,16 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             param=Parameter(name="level", kind=Parameter.KEYWORD_ONLY)
                         )
                     elif lvl <= 0:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The level value must be greater than 0!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - The level value must be greater than 0!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - The level value must be greater than 0!",
+                                ephemeral=True,
+                            )
 
                     if option == "add" or option == "update":
                         if not role:
@@ -1804,33 +2898,44 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             )
 
                         if (
-                            "lvl2role" in self.bot.configs[ctx.guild.id]["xp"]
+                            "lvl2role" in self.bot.configs[source.guild.id]["xp"]
                             and lvl
-                            in set(self.bot.configs[ctx.guild.id]["xp"]["lvl2role"])
+                            in set(self.bot.configs[source.guild.id]["xp"]["lvl2role"])
                             and option != "update"
                         ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The level `{lvl}` is already assigned to a role! Value: `@{self.bot.configs[ctx.guild.id]['xp']['lvl2role'][lvl]}`",
-                                delete_after=20,
-                            )
-                        elif self.check_role_duplicates(ctx, role):
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - The level `{lvl}` is already assigned to a role! Value: `@{self.bot.configs[source.guild.id]['xp']['lvl2role'][lvl]}`",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - The level `{lvl}` is already assigned to a role! Value: `@{self.bot.configs[source.guild.id]['xp']['lvl2role'][lvl]}`",
+                                    ephemeral=True,
+                                )
+                        elif await self.check_role_duplicates(source, role):
                             return
 
                         self.bot.config_repo.add_xp_lvl2role(
-                            ctx.guild.id, lvl, f"{role}", role.id
+                            source.guild.id, lvl, f"{role}", role.id
                         )
 
-                        if "lvl2role" not in self.bot.configs[ctx.guild.id]["xp"]:
-                            self.bot.configs[ctx.guild.id]["xp"]["lvl2role"] = {}
+                        if "lvl2role" not in self.bot.configs[source.guild.id]["xp"]:
+                            self.bot.configs[source.guild.id]["xp"]["lvl2role"] = {}
 
-                        self.bot.configs[ctx.guild.id]["xp"]["lvl2role"][lvl] = role
+                        self.bot.configs[source.guild.id]["xp"]["lvl2role"][lvl] = role
 
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the level `{lvl}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the level to role list."
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the level `{lvl}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the level to role list."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Updated'} the level `{lvl}` corresponding to the `@{role}` role {'to' if option == 'add' else 'from'} the level to role list."
+                            )
 
-                        db_users = self.bot.user_repo.get_users(ctx.guild.id)
-                        members = set(ctx.guild.members)
+                        db_users = self.bot.user_repo.get_users(source.guild.id)
+                        members = set(source.guild.members)
                         async with self.bot.limiter:
                             for member in members:
                                 if member.bot:
@@ -1842,27 +2947,41 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                     "new_r_2_l",
                                 )
                     elif option == "remove":
-                        if "lvl2role" not in self.bot.configs[ctx.guild.id][
+                        if "lvl2role" not in self.bot.configs[source.guild.id][
                             "xp"
                         ] or lvl not in set(
-                            self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]
+                            self.bot.configs[source.guild.id]["xp"]["lvl2role"]
                         ):
-                            return await ctx.reply(
-                                f"ℹ️ - {ctx.author.mention} - The level `{lvl}` is already not in the level to role list!",
-                                delete_after=20,
-                            )
+                            if isinstance(source, Context):
+                                return await source.reply(
+                                    f"ℹ️ - {source.author.mention} - The level `{lvl}` is already not in the level to role list!",
+                                    delete_after=20,
+                                )
+                            else:
+                                return await source.response.send_message(
+                                    f"ℹ️ - {source.author.mention} - The level `{lvl}` is already not in the level to role list!",
+                                    ephemeral=True,
+                                )
 
-                        self.bot.config_repo.remove_xp_lvl2role(ctx.guild.id, lvl)
-                        role = self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].pop(lvl)
-                        await ctx.send(
-                            f"ℹ️ - Removed the level `{lvl}` which was corresponding to the role `@{role}` from the level to role list."
+                        self.bot.config_repo.remove_xp_lvl2role(source.guild.id, lvl)
+                        role = self.bot.configs[source.guild.id]["xp"]["lvl2role"].pop(
+                            lvl
                         )
 
-                        if not self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]:
-                            del self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - Removed the level `{lvl}` which was corresponding to the role `@{role}` from the level to role list."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - Removed the level `{lvl}` which was corresponding to the role `@{role}` from the level to role list."
+                            )
 
-                        if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
-                            members = set(ctx.guild.members)
+                        if not self.bot.configs[source.guild.id]["xp"]["lvl2role"]:
+                            del self.bot.configs[source.guild.id]["xp"]["lvl2role"]
+
+                        if source.channel.permissions_for(source.guild.me).manage_roles:
+                            members = set(source.guild.members)
                             async with self.bot.limiter:
                                 for member in members:
                                     if member.bot:
@@ -1876,26 +2995,38 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         else:
                             await self.bot.utils_class.send_message_to_mods(
                                 f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                                ctx.guild.id,
+                                source.guild.id,
                             )
                 elif option == "purge":
-                    if "lvl2role" not in self.bot.configs[ctx.guild.id]["xp"]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The level to role list is already empty!",
-                            delete_after=20,
+                    if "lvl2role" not in self.bot.configs[source.guild.id]["xp"]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - The level to role list is already empty!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - The level to role list is already empty!",
+                                ephemeral=True,
+                            )
+
+                    self.bot.config_repo.purge_xp_lvl2role(source.guild.id)
+                    roles = set(
+                        self.bot.configs[source.guild.id]["xp"]["lvl2role"].values()
+                    )
+                    del self.bot.configs[source.guild.id]["xp"]["lvl2role"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the levels from the level to role list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the levels from the level to role list."
                         )
 
-                    self.bot.config_repo.purge_xp_lvl2role(ctx.guild.id)
-                    roles = set(
-                        self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
-                    )
-                    del self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]
-                    await ctx.send(
-                        f"ℹ️ - Removed all the levels from the level to role list."
-                    )
-
-                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
-                        members = set(ctx.guild.members)
+                    if source.channel.permissions_for(source.guild.me).manage_roles:
+                        members = set(source.guild.members)
                         async with self.bot.limiter:
                             for member in members:
                                 if member.bot:
@@ -1909,11 +3040,11 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                            ctx.guild.id,
+                            source.guild.id,
                         )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -1925,24 +3056,39 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the level `{lvl}` {'to' if option != 'update' else 'from'} the level to role list! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the level `{lvl}` {'to' if option != 'update' else 'from'} the level to role list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            if "lvl2role" not in self.bot.configs[ctx.guild.id]["xp"]:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No levels to role have been added to the list yet!",
-                    delete_after=20,
-                )
+            if "lvl2role" not in self.bot.configs[source.guild.id]["xp"]:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No levels to role have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No levels to role have been added to the list yet!",
+                        ephemeral=True,
+                    )
 
-            server_lvls_2_role = self.bot.configs[ctx.guild.id]["xp"]["lvl2role"]
+            server_lvls_2_role = self.bot.configs[source.guild.id]["xp"]["lvl2role"]
             roles_mess = ""
+
             for key in sorted(server_lvls_2_role):
                 roles_mess += f"level `{key}` = `@{server_lvls_2_role[key]}`\n"
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's levels to role:**\n\n{roles_mess}"
-            )
+
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's levels to role:**\n\n{roles_mess}"
+                )
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's levels to role:**\n\n{roles_mess}"
+                )
+
+    """ PRESTIGES """
 
     @config_xp_group.command(
         pass_context=True,
@@ -1959,6 +3105,79 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         role: Role = None,
         prestige: int = None,
     ):
+        await self.handle_prestiges(ctx, option, role, prestige)
+
+    @config_xp_slash_group.sub_command_group(
+        name="prestiges",
+        description="This option manage the server's prestiges",
+    )
+    async def config_xp_prestiges_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_xp_slash_group.sub_command_group(
+        name="display",
+        description="This option display the server's prestiges",
+    )
+    async def config_xp_prestiges_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_prestiges(inter)
+
+    @config_xp_slash_group.sub_command_group(
+        name="add",
+        description="This option add a new prestige to the server's prestiges list",
+    )
+    async def config_xp_prestiges_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        role: Role,
+        prestige: int,
+    ):
+        await self.handle_prestiges(inter, "add", role, prestige)
+
+    @config_xp_slash_group.sub_command_group(
+        name="update",
+        description="This option update a prestige from the server's prestiges list",
+    )
+    async def config_xp_prestiges_update_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        role: Role,
+        prestige: int,
+    ):
+        await self.handle_prestiges(inter, "update", role, prestige)
+
+    @config_xp_slash_group.sub_command_group(
+        name="remove",
+        description="This option remove the last prestige from the server's prestiges list",
+    )
+    async def config_xp_prestiges_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_prestiges(inter, "remove")
+
+    @config_xp_slash_group.sub_command_group(
+        name="purge",
+        description="This option purge the server's prestiges list",
+    )
+    async def config_xp_prestiges_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_prestiges(inter, "purge")
+
+    async def handle_prestiges(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        role: Union[Role, None] = None,
+        prestige: Union[int, None] = None,
+    ):
         if option:
             try:
                 if option == "add":
@@ -1966,25 +3185,32 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         raise MissingRequiredArgument(
                             param=Parameter(name="role", kind=Parameter.KEYWORD_ONLY)
                         )
-                    elif self.check_role_duplicates(ctx, role):
+                    elif await self.check_role_duplicates(source, role):
                         return
 
-                    if "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
-                        self.bot.configs[ctx.guild.id]["xp"]["prestiges"] = {}
+                    if "prestiges" not in self.bot.configs[source.guild.id]["xp"]:
+                        self.bot.configs[source.guild.id]["xp"]["prestiges"] = {}
 
                     prestige = (
-                        len(self.bot.configs[ctx.guild.id]["xp"]["prestiges"]) + 1
+                        len(self.bot.configs[source.guild.id]["xp"]["prestiges"]) + 1
                     )
 
                     self.bot.config_repo.add_xp_prestiges(
-                        ctx.guild.id, f"p_{prestige}", f"{role}", role.id
+                        source.guild.id, f"p_{prestige}", f"{role}", role.id
                     )
 
-                    self.bot.configs[ctx.guild.id]["xp"]["prestiges"][prestige] = role
+                    self.bot.configs[source.guild.id]["xp"]["prestiges"][
+                        prestige
+                    ] = role
 
-                    await ctx.send(
-                        f"ℹ️ - Added the prestige `{prestige}` corresponding to the `@{role}` role to the prestiges list."
-                    )
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Added the prestige `{prestige}` corresponding to the `@{role}` role to the prestiges list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Added the prestige `{prestige}` corresponding to the `@{role}` role to the prestiges list."
+                        )
                 elif option == "update":
                     if not role:
                         raise MissingRequiredArgument(
@@ -1996,49 +3222,70 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 name="prestige", kind=Parameter.KEYWORD_ONLY
                             )
                         )
-                    elif "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - No prestiges have been added to the list yet!",
-                            delete_after=20,
-                        )
+                    elif "prestiges" not in self.bot.configs[source.guild.id]["xp"]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - No prestiges have been added to the list yet!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - No prestiges have been added to the list yet!",
+                                ephemeral=True,
+                            )
                     elif (
                         role
                         in set(
-                            self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
+                            self.bot.configs[source.guild.id]["xp"][
+                                "prestiges"
+                            ].values()
                         )
                         and prestige
                         == list(
-                            self.bot.configs[ctx.guild.id]["xp"]["prestiges"].keys()
+                            self.bot.configs[source.guild.id]["xp"]["prestiges"].keys()
                         )[
                             list(
-                                self.bot.configs[ctx.guild.id]["xp"][
+                                self.bot.configs[source.guild.id]["xp"][
                                     "prestiges"
                                 ].values()
                             ).index(role)
                         ]
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The prestige `{prestige}` already have the role `@{role}` assigned!",
-                            delete_after=20,
-                        )
-                    elif self.check_role_duplicates(ctx, role):
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - The prestige `{prestige}` already have the role `@{role}` assigned!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - The prestige `{prestige}` already have the role `@{role}` assigned!",
+                                ephemeral=True,
+                            )
+                    elif await self.check_role_duplicates(source, role):
                         return
 
-                    old_role = self.bot.configs[ctx.guild.id]["xp"]["prestiges"][
+                    old_role = self.bot.configs[source.guild.id]["xp"]["prestiges"][
                         prestige
                     ]
 
                     self.bot.config_repo.add_xp_prestiges(
-                        ctx.guild.id, f"p_{prestige}", f"{role}", role.id
+                        source.guild.id, f"p_{prestige}", f"{role}", role.id
                     )
-                    self.bot.configs[ctx.guild.id]["xp"]["prestiges"][prestige] = role
+                    self.bot.configs[source.guild.id]["xp"]["prestiges"][
+                        prestige
+                    ] = role
 
-                    await ctx.send(
-                        f"ℹ️ - Updated the prestige `{prestige}` corresponding to the `@{role}` role from the prestiges list."
-                    )
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Updated the prestige `{prestige}` corresponding to the `@{role}` role from the prestiges list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Updated the prestige `{prestige}` corresponding to the `@{role}` role from the prestiges list."
+                        )
 
-                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
-                        members = set(ctx.guild.members)
+                    if source.channel.permissions_for(source.guild.me).manage_roles:
+                        members = set(source.guild.members)
                         async with self.bot.limiter:
                             for member in members:
                                 if member.bot or old_role not in member.roles:
@@ -2058,28 +3305,39 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                            ctx.guild.id,
+                            source.guild.id,
                         )
                 elif option == "remove":
-                    if "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - No prestiges have been added to the list yet!"
-                        )
+                    if "prestiges" not in self.bot.configs[source.guild.id]["xp"]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - No prestiges have been added to the list yet!"
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - No prestiges have been added to the list yet!"
+                            )
 
-                    prestige = len(self.bot.configs[ctx.guild.id]["xp"]["prestiges"])
-                    old_role = self.bot.configs[ctx.guild.id]["xp"]["prestiges"][
+                    prestige = len(self.bot.configs[source.guild.id]["xp"]["prestiges"])
+                    old_role = self.bot.configs[source.guild.id]["xp"]["prestiges"][
                         prestige
                     ]
-                    self.bot.config_repo.remove_xp_prestiges(ctx.guild.id)
-                    await ctx.send(
-                        f"ℹ️ - Removed the prestige `{prestige}` which was corresponding to the `@{self.bot.configs[ctx.guild.id]['xp']['prestiges'].pop(len(self.bot.configs[ctx.guild.id]['xp']['prestiges']))}` role from the prestiges list."
-                    )
+                    self.bot.config_repo.remove_xp_prestiges(source.guild.id)
 
-                    if not self.bot.configs[ctx.guild.id]["xp"]["prestiges"]:
-                        del self.bot.configs[ctx.guild.id]["xp"]["prestiges"]
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed the prestige `{prestige}` which was corresponding to the `@{self.bot.configs[source.guild.id]['xp']['prestiges'].pop(len(self.bot.configs[source.guild.id]['xp']['prestiges']))}` role from the prestiges list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed the prestige `{prestige}` which was corresponding to the `@{self.bot.configs[source.guild.id]['xp']['prestiges'].pop(len(self.bot.configs[source.guild.id]['xp']['prestiges']))}` role from the prestiges list."
+                        )
 
-                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
-                        members = set(ctx.guild.members)
+                    if not self.bot.configs[source.guild.id]["xp"]["prestiges"]:
+                        del self.bot.configs[source.guild.id]["xp"]["prestiges"]
+
+                    if source.channel.permissions_for(source.guild.me).manage_roles:
+                        members = set(source.guild.members)
                         async with self.bot.limiter:
                             for member in members:
                                 if member.bot or old_role not in member.roles:
@@ -2090,7 +3348,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 except Forbidden:
                                     await self.bot.utils_class.send_message_to_mods(
                                         f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)",
-                                        ctx.guild.id,
+                                        source.guild.id,
                                     )
 
                                 await self.xp_class.manage_prestige(
@@ -2099,26 +3357,38 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                            ctx.guild.id,
+                            source.guild.id,
                         )
                 elif option == "purge":
-                    if "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - The prestiges list is already empty!",
-                            delete_after=20,
-                        )
+                    if "prestiges" not in self.bot.configs[source.guild.id]["xp"]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - The prestiges list is already empty!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - The prestiges list is already empty!",
+                                ephemeral=True,
+                            )
 
-                    old_roles = self.bot.configs[ctx.guild.id]["xp"][
+                    old_roles = self.bot.configs[source.guild.id]["xp"][
                         "prestiges"
                     ].values()
-                    self.bot.config_repo.purge_xp_prestiges(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["xp"]["prestiges"]
-                    await ctx.send(
-                        f"ℹ️ - Removed all the prestiges from the prestiges list."
-                    )
+                    self.bot.config_repo.purge_xp_prestiges(source.guild.id)
+                    del self.bot.configs[source.guild.id]["xp"]["prestiges"]
 
-                    if ctx.channel.permissions_for(ctx.guild.me).manage_roles:
-                        members = set(ctx.guild.members)
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the prestiges from the prestiges list."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the prestiges from the prestiges list."
+                        )
+
+                    if source.channel.permissions_for(source.guild.me).manage_roles:
+                        members = set(source.guild.members)
                         async with self.bot.limiter:
                             for member in members:
                                 if member.bot or not set(member.roles) & set(old_roles):
@@ -2129,7 +3399,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 except Forbidden:
                                     await self.bot.utils_class.send_message_to_mods(
                                         f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in old_roles])} from {member} (maybe one of these roles is above mine)",
-                                        ctx.guild.id,
+                                        source.guild.id,
                                     )
 
                                 await self.xp_class.manage_prestige(
@@ -2138,11 +3408,11 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
-                            ctx.guild.id,
+                            source.guild.id,
                         )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.send(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -2154,24 +3424,37 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the prestige `{prestige}` {'to' if option != 'update' else 'from'} the prestiges list! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the prestige `{prestige}` {'to' if option != 'update' else 'from'} the prestiges list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
-            if "prestiges" not in self.bot.configs[ctx.guild.id]["xp"]:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No prestiges have been added to the list yet!",
-                    delete_after=20,
-                )
+            if "prestiges" not in self.bot.configs[source.guild.id]["xp"]:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No prestiges have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No prestiges have been added to the list yet!",
+                        ephemeral=True,
+                    )
 
-            server_prestiges = self.bot.configs[ctx.guild.id]["xp"]["prestiges"]
+            server_prestiges = self.bot.configs[source.guild.id]["xp"]["prestiges"]
             roles_mess = ""
+
             for key in sorted(server_prestiges):
                 roles_mess += f"prestige `{key}` = `@{server_prestiges[key]}`\n"
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's prestiges:**\n\n{roles_mess}"
-            )
+
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's prestiges:**\n\n{roles_mess}"
+                )
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's prestiges:**\n\n{roles_mess}"
+                )
 
     """ MAIN GROUP'S CHANNELS COMMANDS """
 
@@ -2187,6 +3470,75 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         self,
         ctx: Context,
         option: Utils.to_lower = None,
+        *channels: TextChannel,
+    ):
+        if channels:
+            await self.handle_commands_channels(ctx, option, *channels)
+        else:
+            await self.handle_commands_channels(ctx, option)
+
+    @config_channels_slash_group.sub_command_group(
+        name="commands_channels",
+        description="This option manage the server's commands channels  (if there is no commands channel then commands can be used everywhere)",
+    )
+    async def config_channels_commands_channels_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_channels_commands_channels_slash_group.sub_command(
+        name="display",
+        description="This option display the server's commands channels",
+    )
+    async def config_channels_commands_channels_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_commands_channels(inter)
+
+    @config_channels_commands_channels_slash_group.sub_command(
+        name="add",
+        description="This option add channels to the server's commands channels (can add multiple at a time)",
+    )
+    async def config_channels_commands_channels_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channels: List[TextChannel] = Param(converter=Utils.channel_converter),
+    ):
+        if channels:
+            await self.handle_commands_channels(inter, "add", *channels)
+        else:
+            await self.handle_commands_channels(inter, "add")
+
+    @config_channels_commands_channels_slash_group.sub_command(
+        name="remove",
+        description="This option remove channels from the server's commands channels (can remove multiple at a time)",
+    )
+    async def config_channels_commands_channels_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channels: List[TextChannel] = Param(converter=Utils.channel_converter),
+    ):
+        if channels:
+            await self.handle_commands_channels(inter, "remove", *channels)
+        else:
+            await self.handle_commands_channels(inter, "remove")
+
+    @config_channels_commands_channels_slash_group.sub_command(
+        name="purge",
+        description="This option purge the server's commands channels",
+    )
+    async def config_channels_commands_channels_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_commands_channels(inter, "purge")
+
+    async def handle_commands_channels(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
         *channels: TextChannel,
     ):
         if option:
@@ -2205,74 +3557,104 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     for channel in _channels:
                         if option == "add":
                             if "commands_channels" in self.bot.configs[
-                                ctx.guild.id
+                                source.guild.id
                             ] and channel.id in set(
-                                self.bot.configs[ctx.guild.id]["commands_channels"]
+                                self.bot.configs[source.guild.id]["commands_channels"]
                             ):
                                 del channels[channels.index(channel)]
                                 dropped_channels.append(channel)
                                 continue
 
                             self.bot.config_repo.add_commands_channel(
-                                ctx.guild.id, channel.id, f"{channel}"
+                                source.guild.id, channel.id, f"{channel}"
                             )
 
                             if (
                                 "commands_channels"
-                                not in self.bot.configs[ctx.guild.id]
+                                not in self.bot.configs[source.guild.id]
                             ):
-                                self.bot.configs[ctx.guild.id]["commands_channels"] = []
+                                self.bot.configs[source.guild.id][
+                                    "commands_channels"
+                                ] = []
 
-                            self.bot.configs[ctx.guild.id]["commands_channels"].append(
-                                channel.id
-                            )
+                            self.bot.configs[source.guild.id][
+                                "commands_channels"
+                            ].append(channel.id)
                         elif option == "remove":
                             if "commands_channels" in self.bot.configs[
-                                ctx.guild.id
+                                source.guild.id
                             ] and channel.id not in set(
-                                self.bot.configs[ctx.guild.id]["commands_channels"]
+                                self.bot.configs[source.guild.id]["commands_channels"]
                             ):
                                 del channels[channels.index(channel)]
                                 dropped_channels.append(channel)
                                 continue
 
                             self.bot.config_repo.remove_commands_channel(
-                                ctx.guild.id, channel.id
+                                source.guild.id, channel.id
                             )
-                            del self.bot.configs[ctx.guild.id]["commands_channels"][
-                                self.bot.configs[ctx.guild.id][
+                            del self.bot.configs[source.guild.id]["commands_channels"][
+                                self.bot.configs[source.guild.id][
                                     "commands_channels"
                                 ].index(channel.id)
                             ]
 
                     if dropped_channels:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the commands channels list!",
-                            delete_after=20,
-                        )
-
-                        if not self.bot.configs[ctx.guild.id]["commands_channels"]:
-                            del self.bot.configs[ctx.guild.id]["commands_channels"]
+                        if isinstance(source, Context):
+                            await source.reply(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the commands channels list!",
+                                delete_after=20,
+                            )
+                        elif not channels:
+                            await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the commands channels list!",
+                                ephemeral=True,
+                            )
+                        else:
+                            await source.channel.send(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the commands channels list!",
+                                delete_after=20,
+                            )
 
                     if channels:
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the commands channels list!."
-                        )
-                elif option == "purge":
-                    if "commands_channels" not in self.bot.configs[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - No commands channels have been added to the list yet!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the commands channels list!."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the commands channels list!."
+                            )
 
-                    self.bot.config_repo.purge_commands_channels(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["commands_channels"]
-                    await ctx.send(
-                        f"ℹ️ - Removed all the commands channels from the list!."
-                    )
+                    if not self.bot.configs[source.guild.id]["commands_channels"]:
+                        del self.bot.configs[source.guild.id]["commands_channels"]
+                elif option == "purge":
+                    if "commands_channels" not in self.bot.configs[source.guild.id]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - No commands channels have been added to the list yet!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - No commands channels have been added to the list yet!",
+                                ephemeral=True,
+                            )
+
+                    self.bot.config_repo.purge_commands_channels(source.guild.id)
+                    del self.bot.configs[source.guild.id]["commands_channels"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the commands channels from the list!."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the commands channels from the list!."
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -2282,33 +3664,117 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} {channel.mention} to the commands channels list! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} channels to the commands channels list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
             server_commands_channels = self.bot.config_repo.get_commands_channels(
-                ctx.guild.id
+                source.guild.id
             ).keys()
+
             if not server_commands_channels:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No commands channels have been added to the list yet!",
-                    delete_after=20,
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No commands channels have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No commands channels have been added to the list yet!",
+                        ephemeral=True,
+                    )
+
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's commands channels:** {', '.join([source.guild.get_channel(int(c)).mention for c in server_commands_channels])}"
                 )
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's commands channels:** {', '.join([ctx.guild.get_channel(int(c)).mention for c in server_commands_channels])}"
-            )
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's commands channels:** {', '.join([source.guild.get_channel(int(c)).mention for c in server_commands_channels])}"
+                )
+
+    """ MUSIC CHANNELS """
 
     @config_channels_group.command(
         pass_context=True,
         name="music_channels",
         aliases=["music_channel", "music_chans"],
         brief="🎶",
-        description="This option manage the server's music channels  (if there is no music channel then music can be listened everywhere) (can add/remove multiple at a time)",
+        description="This option manage the server's music channels (if there is no music channel then music can be listened everywhere) (can add/remove multiple at a time)",
         usage="(add|remove|purge (#voice_channels))",
     )
     async def config_channels_music_channels_command(
         self, ctx: Context, option: Utils.to_lower = None, *channels: VoiceChannel
+    ):
+        if channels:
+            await self.handle_music_channels(ctx, option, *channels)
+        else:
+            await self.handle_music_channels(ctx, option)
+
+    @config_channels_slash_group.sub_command_group(
+        name="music_channels",
+        description="This option manage the server's music channels (if there is no music channel then music can be listened everywhere)",
+    )
+    async def config_channels_music_channels_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_channels_music_channels_slash_group.sub_command(
+        name="display",
+        description="This option display the server's music channels",
+    )
+    async def config_channels_music_channels_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_music_channels(inter)
+
+    @config_channels_music_channels_slash_group.sub_command(
+        name="add",
+        description="This option add channels to the server's music channels (can add multiple at a time)",
+    )
+    async def config_channels_music_channels_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channels: List[VoiceChannel] = Param(converter=Utils.channel_converter),
+    ):
+        if channels:
+            await self.handle_music_channels(inter, "add", *channels)
+        else:
+            await self.handle_music_channels(inter, "add")
+
+    @config_channels_music_channels_slash_group.sub_command(
+        name="remove",
+        description="This option remove channels from the server's music channels (can remove multiple at a time)",
+    )
+    async def config_channels_music_channels_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channels: List[VoiceChannel] = Param(converter=Utils.channel_converter),
+    ):
+        if channels:
+            await self.handle_music_channels(inter, "remove", *channels)
+        else:
+            await self.handle_music_channels(inter, "remove")
+
+    @config_channels_music_channels_slash_group.sub_command(
+        name="purge",
+        description="This option purge the server's music channels",
+    )
+    async def config_channels_music_channels_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_music_channels(inter, "purge")
+
+    async def handle_music_channels(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        *channels: VoiceChannel,
     ):
         if option:
             try:
@@ -2327,81 +3793,123 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     for channel in _channels:
                         if option == "add":
                             if "music_channels" in self.bot.configs[
-                                ctx.guild.id
+                                source.guild.id
                             ] and channel.id in set(
-                                self.bot.configs[ctx.guild.id]["music_channels"]
+                                self.bot.configs[source.guild.id]["music_channels"]
                             ):
                                 del channels[channels.index(channel)]
                                 dropped_channels.append(channel)
                                 continue
-                            elif channel == ctx.guild.afk_channel:
+                            elif channel == source.guild.afk_channel:
                                 del channels[channels.index(channel)]
                                 afk_channel = channel
                                 continue
 
                             self.bot.config_repo.add_music_channel(
-                                ctx.guild.id, channel.id, f"{channel}"
+                                source.guild.id, channel.id, f"{channel}"
                             )
 
-                            if "music_channels" not in self.bot.configs[ctx.guild.id]:
-                                self.bot.configs[ctx.guild.id]["music_channels"] = []
+                            if (
+                                "music_channels"
+                                not in self.bot.configs[source.guild.id]
+                            ):
+                                self.bot.configs[source.guild.id]["music_channels"] = []
 
-                            self.bot.configs[ctx.guild.id]["music_channels"].append(
+                            self.bot.configs[source.guild.id]["music_channels"].append(
                                 channel.id
                             )
                         elif option == "remove":
                             if "music_channels" in self.bot.configs[
-                                ctx.guild.id
+                                source.guild.id
                             ] and channel.id not in set(
-                                self.bot.configs[ctx.guild.id]["music_channels"]
+                                self.bot.configs[source.guild.id]["music_channels"]
                             ):
                                 del channels[channels.index(channel)]
                                 dropped_channels.append(channel)
                                 continue
 
                             self.bot.config_repo.remove_music_channel(
-                                ctx.guild.id, channel.id
+                                source.guild.id, channel.id
                             )
-                            del self.bot.configs[ctx.guild.id]["music_channels"][
-                                self.bot.configs[ctx.guild.id]["music_channels"].index(
-                                    channel.id
-                                )
+                            del self.bot.configs[source.guild.id]["music_channels"][
+                                self.bot.configs[source.guild.id][
+                                    "music_channels"
+                                ].index(channel.id)
                             ]
 
                     if afk_channel:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the music channels list!",
-                            delete_after=20,
-                        )
-
-                        if not self.bot.configs[ctx.guild.id]["music_channels"]:
-                            del self.bot.configs[ctx.guild.id]["music_channels"]
+                        if isinstance(source, Context):
+                            await source.reply(
+                                f"ℹ️ - {source.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the music channels list!",
+                                delete_after=20,
+                            )
+                        elif not dropped_channels and not channels:
+                            await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the music channels list!",
+                                ephemeral=True,
+                            )
+                        else:
+                            await source.channel.send(
+                                f"ℹ️ - {source.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the music channels list!",
+                                delete_after=20,
+                            )
 
                     if dropped_channels:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the music channels list!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            await source.reply(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the music channels list!",
+                                delete_after=20,
+                            )
+                        elif not afk_channel and not channels:
+                            await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the music channels list!",
+                                ephemeral=True,
+                            )
+                        else:
+                            await source.channel.send(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the music channels list!",
+                                delete_after=20,
+                            )
 
                     if channels:
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the music channels list!."
-                        )
-                elif option == "purge":
-                    if "music_channels" not in self.bot.configs[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - No music channels have been added to the list yet!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the music channels list!."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the music channels list!."
+                            )
 
-                    self.bot.config_repo.purge_music_channels(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["music_channels"]
-                    await ctx.send(
-                        f"ℹ️ - Removed all the music channels from the list!."
-                    )
+                    if not self.bot.configs[source.guild.id]["music_channels"]:
+                        del self.bot.configs[source.guild.id]["music_channels"]
+                elif option == "purge":
+                    if "music_channels" not in self.bot.configs[source.guild.id]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - No music channels have been added to the list yet!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - No music channels have been added to the list yet!",
+                                ephemeral=True,
+                            )
+
+                    self.bot.config_repo.purge_music_channels(source.guild.id)
+                    del self.bot.configs[source.guild.id]["music_channels"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the music channels from the list!."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the music channels from the list!."
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -2411,22 +3919,37 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} {channel.mention} to the music channels list! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} {channel.mention} to the music channels list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
             server_music_channels = self.bot.config_repo.get_music_channels(
-                ctx.guild.id
+                source.guild.id
             ).keys()
+
             if not server_music_channels:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No music channels have been added to the list yet!",
-                    delete_after=20,
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No music channels have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No music channels have been added to the list yet!",
+                        ephemeral=True,
+                    )
+
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's music channels:** {', '.join([source.guild.get_channel(int(c)).mention for c in server_music_channels])}"
                 )
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's music channels:** {', '.join([ctx.guild.get_channel(int(c)).mention for c in server_music_channels])}"
-            )
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's music channels:** {', '.join([source.guild.get_channel(int(c)).mention for c in server_music_channels])}"
+                )
+
+    """ XP GAIN CHANNELS """
 
     @config_channels_group.command(
         pass_context=True,
@@ -2441,6 +3964,79 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         ctx: Context,
         option: Utils.to_lower = None,
         *channels: Union[VoiceChannel, TextChannel],
+    ):
+        if channels:
+            await self.handle_xp_gain_channels(ctx, option, *channels)
+        else:
+            await self.handle_xp_gain_channels(ctx, option)
+
+    @config_channels_slash_group.sub_command_group(
+        name="xp_gain_channels",
+        description="This option manage the server's xp gain channels (voice & text) (if there is no xp gain channels then xp can be gained everywhere)",
+    )
+    async def config_channels_xp_gain_channels_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_channels_xp_gain_channels_slash_group.sub_command(
+        name="display",
+        description="This option display the server's xp gain channels",
+    )
+    async def config_channels_xp_gain_channels_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_xp_gain_channels(inter)
+
+    @config_channels_xp_gain_channels_slash_group.sub_command(
+        name="add",
+        description="This option add channels to the server's xp gain channels (can add multiple at a time)",
+    )
+    async def config_channels_xp_gain_channels_add_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channels: List[Union[TextChannel, VoiceChannel]] = Param(
+            converter=Utils.channel_converter
+        ),
+    ):
+        if channels:
+            await self.handle_xp_gain_channels(inter, "add", *channels)
+        else:
+            await self.handle_xp_gain_channels(inter, "add")
+
+    @config_channels_xp_gain_channels_slash_group.sub_command(
+        name="remove",
+        description="This option remove channels from the server's xp gain channels (can remove multiple at a time)",
+    )
+    async def config_channels_xp_gain_channels_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channels: List[Union[TextChannel, VoiceChannel]] = Param(
+            converter=Utils.channel_converter
+        ),
+    ):
+        if channels:
+            await self.handle_xp_gain_channels(inter, "remove", *channels)
+        else:
+            await self.handle_xp_gain_channels(inter, "remove")
+
+    @config_channels_xp_gain_channels_slash_group.sub_command(
+        name="purge",
+        description="This option purge the server's xp gain channels",
+    )
+    async def config_channels_xp_gain_channels_purge_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_xp_gain_channels(inter, "purge")
+
+    async def handle_xp_gain_channels(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        *channels: Union[TextChannel, VoiceChannel],
     ):
         if option:
             try:
@@ -2459,48 +4055,53 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     for channel in _channels:
                         if option == "add":
                             if "xp_gain_channels" in self.bot.configs[
-                                ctx.guild.id
+                                source.guild.id
                             ] and channel.id in set(
-                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                self.bot.configs[source.guild.id]["xp_gain_channels"][
                                     type(channel).__name__
                                 ]
                             ):
                                 del channels[channels.index(channel)]
                                 dropped_channels.append(channel)
                                 continue
-                            elif channel == ctx.guild.afk_channel:
+                            elif channel == source.guild.afk_channel:
                                 del channels[channels.index(channel)]
                                 afk_channel = channel
                                 continue
 
                             self.bot.config_repo.add_xp_gain_channel(
-                                ctx.guild.id,
+                                source.guild.id,
                                 channel.id,
                                 f"{channel}",
                                 type(channel).__name__,
                             )
 
-                            if "xp_gain_channels" not in self.bot.configs[ctx.guild.id]:
-                                self.bot.configs[ctx.guild.id]["xp_gain_channels"] = {}
+                            if (
+                                "xp_gain_channels"
+                                not in self.bot.configs[source.guild.id]
+                            ):
+                                self.bot.configs[source.guild.id][
+                                    "xp_gain_channels"
+                                ] = {}
 
                             if (
                                 type(channel).__name__
-                                not in self.bot.configs[ctx.guild.id][
+                                not in self.bot.configs[source.guild.id][
                                     "xp_gain_channels"
                                 ]
                             ):
-                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                self.bot.configs[source.guild.id]["xp_gain_channels"][
                                     type(channel).__name__
                                 ] = []
 
-                            self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                            self.bot.configs[source.guild.id]["xp_gain_channels"][
                                 type(channel).__name__
                             ].append(channel.id)
                         elif option == "remove":
                             if "xp_gain_channels" in self.bot.configs[
-                                ctx.guild.id
+                                source.guild.id
                             ] and channel.id not in set(
-                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                self.bot.configs[source.guild.id]["xp_gain_channels"][
                                     type(channel).__name__
                                 ]
                             ):
@@ -2509,57 +4110,103 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 continue
 
                             self.bot.config_repo.remove_xp_gain_channel(
-                                ctx.guild.id, channel.id
+                                source.guild.id, channel.id
                             )
-                            del self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                            del self.bot.configs[source.guild.id]["xp_gain_channels"][
                                 type(channel).__name__
                             ][
-                                self.bot.configs[ctx.guild.id]["xp_gain_channels"][
+                                self.bot.configs[source.guild.id]["xp_gain_channels"][
                                     type(channel).__name__
                                 ].index(channel.id)
                             ]
 
                     if afk_channel:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the xp gain channels list!",
-                            delete_after=20,
-                        )
-
-                        if not self.bot.configs[ctx.guild.id]["xp_gain_channels"][
-                            type(channel).__name__
-                        ]:
-                            del self.bot.configs[ctx.guild.id]["xp_gain_channels"][
-                                type(channel).__name__
-                            ]
-
-                        if not self.bot.configs[ctx.guild.id]["xp_gain_channels"]:
-                            del self.bot.configs[ctx.guild.id]["xp_gain_channels"]
+                        if isinstance(source, Context):
+                            await source.reply(
+                                f"ℹ️ - {source.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the xp gain channels list!",
+                                delete_after=20,
+                            )
+                        elif not dropped_channels and not channels:
+                            await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the xp gain channels list!",
+                                ephemeral=True,
+                            )
+                        else:
+                            await source.channel.send(
+                                f"ℹ️ - {source.author.mention} - {afk_channel.mention} is an AFK channel so you can't add it to the xp gain channels list!",
+                                delete_after=20,
+                            )
 
                     if dropped_channels:
-                        await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the xp gain channels list!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            await source.reply(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the xp gain channels list!",
+                                delete_after=20,
+                            )
+                        elif not dropped_channels and not channels:
+                            await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the xp gain channels list!",
+                                ephemeral=True,
+                            )
+                        else:
+                            await source.channel.send(
+                                f"ℹ️ - {source.author.mention} - {', '.join([channel.mention for channel in dropped_channels])} {'is' if len(dropped_channels) == 1 else 'are'} already {'not' if option == 'remove' else ''} in the xp gain channels list!",
+                                delete_after=20,
+                            )
 
                     if channels:
-                        await ctx.send(
-                            f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the xp gain channels list!."
-                        )
-                elif option == "purge":
-                    if "xp_gain_channels" not in self.bot.configs[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - {ctx.author.mention} - No xp gain channels have been added to the list yet!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            await source.send(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the xp gain channels list!."
+                            )
+                        else:
+                            await source.response.send_message(
+                                f"ℹ️ - {'Added' if option == 'add' else 'Removed'} {', '.join([channel.mention for channel in channels])} {'to' if option == 'add' else 'from'} the xp gain channels list!."
+                            )
 
-                    self.bot.config_repo.purge_xp_gain_channels(ctx.guild.id)
-                    del self.bot.configs[ctx.guild.id]["xp_gain_channels"]
-                    await ctx.send(
-                        f"ℹ️ - Removed all the xp gain channels from the list!."
-                    )
+                    if not self.bot.configs[source.guild.id]["xp_gain_channels"][
+                        "TextChannel"
+                    ]:
+                        del self.bot.configs[source.guild.id]["xp_gain_channels"][
+                            "TextChannel"
+                        ]
+
+                    if not self.bot.configs[source.guild.id]["xp_gain_channels"][
+                        "VoiceChannel"
+                    ]:
+                        del self.bot.configs[source.guild.id]["xp_gain_channels"][
+                            "VoiceChannel"
+                        ]
+
+                    if not self.bot.configs[source.guild.id]["xp_gain_channels"]:
+                        del self.bot.configs[source.guild.id]["xp_gain_channels"]
+                elif option == "purge":
+                    if "xp_gain_channels" not in self.bot.configs[source.guild.id]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - {source.author.mention} - No xp gain channels have been added to the list yet!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - {source.author.mention} - No xp gain channels have been added to the list yet!",
+                                ephemeral=True,
+                            )
+
+                    self.bot.config_repo.purge_xp_gain_channels(source.guild.id)
+                    del self.bot.configs[source.guild.id]["xp_gain_channels"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - Removed all the xp gain channels from the list!."
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - Removed all the xp gain channels from the list!."
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             except MissingRequiredArgument as mre:
@@ -2569,43 +4216,70 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
             except Exception as e:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} {channel.mention} to the xp gain channels list! please try again in a few seconds! Error type: {type(e)}",
+                await source.channel.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else 'removing'} channels to the xp gain channels list! please try again in a few seconds! Error type: {type(e)}",
                     delete_after=20,
                 )
         else:
             server_xp_gain_channels = self.bot.config_repo.get_xp_gain_channels(
-                ctx.guild.id
+                source.guild.id
             )
 
             if not server_xp_gain_channels:
-                return await ctx.reply(
-                    f"ℹ️ - {ctx.author.mention} - No xp gain channels have been added to the list yet!",
-                    delete_after=20,
-                )
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"ℹ️ - {source.author.mention} - No xp gain channels have been added to the list yet!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ️ - {source.author.mention} - No xp gain channels have been added to the list yet!",
+                        ephemeral=True,
+                    )
 
             server_xp_gain_channels_text = []
             server_xp_gain_channels_voice = []
 
             for m in server_xp_gain_channels:
                 if server_xp_gain_channels[m]["type"] == "TextChannel":
-                    server_xp_gain_channels_text.append(ctx.guild.get_channel(int(m)))
+                    server_xp_gain_channels_text.append(
+                        source.guild.get_channel(int(m))
+                    )
                 else:
-                    server_xp_gain_channels_voice.append(ctx.guild.get_channel(int(m)))
+                    server_xp_gain_channels_voice.append(
+                        source.guild.get_channel(int(m))
+                    )
 
-            await ctx.send(
-                f"**ℹ️ - Here's the list of the server's xp gain channels:**\n\n"
-                + (
-                    f"TextChannels: {', '.join(c.mention for c in server_xp_gain_channels_text)}\n"
-                    if server_xp_gain_channels_text
-                    else ""
+            if isinstance(source, Context):
+                await source.send(
+                    f"**ℹ️ - Here's the list of the server's xp gain channels:**\n\n"
+                    + (
+                        f"TextChannels: {', '.join(c.mention for c in server_xp_gain_channels_text)}\n"
+                        if server_xp_gain_channels_text
+                        else ""
+                    )
+                    + (
+                        f"VoiceChannels: {', '.join(c.mention for c in server_xp_gain_channels_voice)}\n"
+                        if server_xp_gain_channels_voice
+                        else ""
+                    )
                 )
-                + (
-                    f"VoiceChannels: {', '.join(c.mention for c in server_xp_gain_channels_voice)}\n"
-                    if server_xp_gain_channels_voice
-                    else ""
+            else:
+                await source.response.send_message(
+                    f"**ℹ️ - Here's the list of the server's xp gain channels:**\n\n"
+                    + (
+                        f"TextChannels: {', '.join(c.mention for c in server_xp_gain_channels_text)}\n"
+                        if server_xp_gain_channels_text
+                        else ""
+                    )
+                    + (
+                        f"VoiceChannels: {', '.join(c.mention for c in server_xp_gain_channels_voice)}\n"
+                        if server_xp_gain_channels_voice
+                        else ""
+                    )
                 )
-            )
+
+    """ XP CHANNEL """
 
     @config_channels_group.command(
         pass_context=True,
@@ -2615,11 +4289,60 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         description="This option manage the server's xp channels where every xp event is sent",
         usage="(set|remove #channel)",
     )
-    async def config_channels_xp_max_lvl_command(
+    async def config_channels_xp_channel_command(
         self,
         ctx: Context,
         option: Utils.to_lower = None,
         xp_channel: TextChannel = None,
+    ):
+        await self.handle_xp_channel(ctx, option, xp_channel)
+
+    @config_channels_slash_group.sub_command_group(
+        name="xp_channel",
+        description="This option manage the server's xp channel where every xp event is sent",
+    )
+    async def config_channels_xp_channel_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_channels_xp_channel_slash_group.sub_command(
+        name="display",
+        description="This option display the server's xp channel!",
+    )
+    async def config_channels_xp_channel_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_xp_channel(inter)
+
+    @config_channels_xp_channel_slash_group.sub_command(
+        name="set",
+        description="This option set the server's xp channel!",
+    )
+    async def config_channels_xp_channel_set_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channel: TextChannel,
+    ):
+        await self.handle_xp_channel(inter, "set", channel)
+
+    @config_channels_xp_channel_slash_group.sub_command(
+        name="remove",
+        description="This option remove the server's xp channel!",
+    )
+    async def config_channels_xp_channel_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_xp_channel(inter, "remove")
+
+    async def handle_xp_channel(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        xp_channel: Union[TextChannel, None] = None,
     ):
         try:
             if option:
@@ -2631,52 +4354,98 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             )
                         )
                     elif (
-                        "notify_channel" in self.bot.configs[ctx.guild.id]["xp"]
-                        and self.bot.configs[ctx.guild.id]["xp"]["notify_channel"]
+                        "notify_channel" in self.bot.configs[source.guild.id]["xp"]
+                        and self.bot.configs[source.guild.id]["xp"]["notify_channel"]
                         == xp_channel
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - The server's xp channel is already {xp_channel.mention}!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - The server's xp channel is already {xp_channel.mention}!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - The server's xp channel is already {xp_channel.mention}!",
+                                ephemeral=True,
+                            )
+                    elif not xp_channel.permissions_for(source.guild.me).send_messages:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {xp_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {xp_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
+                                delete_after=20,
+                            )
 
                     self.bot.config_repo.set_xp_notify_channel(
-                        ctx.guild.id, xp_channel.id
+                        source.guild.id, xp_channel.id
                     )
-                    self.bot.configs[ctx.guild.id]["xp"]["notify_channel"] = xp_channel
-                    await ctx.send(
-                        f"ℹ️ - The xp channel is now {xp_channel.mention} in this guild!"
-                    )
-                elif option == "remove":
-                    if "notify_channel" not in self.bot.configs[ctx.guild.id]["xp"]:
-                        return await ctx.reply(
-                            f"ℹ️ - The server already doesn't have an xp channel configured!",
-                            delete_after=20,
-                        )
+                    self.bot.configs[source.guild.id]["xp"][
+                        "notify_channel"
+                    ] = xp_channel
 
-                    self.bot.config_repo.set_xp_notify_channel(ctx.guild.id, None)
-                    del self.bot.configs[ctx.guild.id]["xp"]["notify_channel"]
-                    await ctx.send(
-                        f"ℹ️ - This guild doesn't have an xp channel anymore!"
-                    )
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - The xp channel is now {xp_channel.mention} in this guild!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - The xp channel is now {xp_channel.mention} in this guild!"
+                        )
+                elif option == "remove":
+                    if "notify_channel" not in self.bot.configs[source.guild.id]["xp"]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - The server already doesn't have an xp channel configured!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - The server already doesn't have an xp channel configured!",
+                                ephemeral=True,
+                            )
+
+                    self.bot.config_repo.set_xp_notify_channel(source.guild.id, None)
+                    del self.bot.configs[source.guild.id]["xp"]["notify_channel"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - This guild doesn't have an xp channel anymore!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - This guild doesn't have an xp channel anymore!"
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             else:
-                await ctx.send(
-                    f"ℹ️ - The current server's xp channel is: {self.bot.configs[ctx.guild.id]['xp']['notify_channel'].mention}"
-                    if "notify_channel" in self.bot.configs[ctx.guild.id]["xp"]
-                    else f"ℹ️ - The server doesn't have an xp channel yet!"
-                )
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The current server's xp channel is: {self.bot.configs[source.guild.id]['xp']['notify_channel'].mention}"
+                        if "notify_channel" in self.bot.configs[source.guild.id]["xp"]
+                        else f"ℹ️ - The server doesn't have an xp channel yet!"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The current server's xp channel is: {self.bot.configs[source.guild.id]['xp']['notify_channel'].mention}"
+                        if "notify_channel" in self.bot.configs[source.guild.id]["xp"]
+                        else f"ℹ️ - The server doesn't have an xp channel yet!"
+                    )
         except MissingRequiredArgument as mre:
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occurred while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
+            await source.channel.send(
+                f"⚠️ - {source.author.mention} - An error occurred while setting the xp channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
+
+    """ POLLS CHANNEL """
 
     @config_channels_group.command(
         pass_context=True,
@@ -2692,6 +4461,55 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         polls_channel: TextChannel = None,
     ):
+        await self.handle_polls_channel(ctx, option, polls_channel)
+
+    @config_channels_slash_group.sub_command_group(
+        name="polls_channel",
+        description="This option manage the server's polls channel where every polls created will be sent",
+    )
+    async def config_channels_polls_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_channels_polls_slash_group.sub_command(
+        name="display",
+        description="This option display the server's poll channel!",
+    )
+    async def config_channels_polls_channel_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_polls_channel(inter)
+
+    @config_channels_polls_slash_group.sub_command(
+        name="set",
+        description="This option set the server's poll channel!",
+    )
+    async def config_channels_polls_channel_set_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channel: TextChannel,
+    ):
+        await self.handle_polls_channel(inter, "set", channel)
+
+    @config_channels_polls_slash_group.sub_command(
+        name="remove",
+        description="This option remove the server's poll channel!",
+    )
+    async def config_channels_polls_channel_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_polls_channel(inter, "remove")
+
+    async def handle_polls_channel(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        polls_channel: Union[TextChannel, None] = None,
+    ):
         try:
             if option:
                 if option == "set":
@@ -2702,45 +4520,65 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             )
                         )
                     elif (
-                        "polls_channel" in self.bot.configs[ctx.guild.id]
-                        and self.bot.configs[ctx.guild.id]["polls_channel"]
+                        "polls_channel" in self.bot.configs[source.guild.id]
+                        and self.bot.configs[source.guild.id]["polls_channel"]
                         == polls_channel
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - This channel is already the one configured to have polls sent in it!",
-                            delete_after=20,
-                        )
-                    elif not polls_channel.permissions_for(ctx.guild.me).send_messages:
-                        return await ctx.reply(
-                            f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - This channel is already the one configured to have polls sent in it!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - This channel is already the one configured to have polls sent in it!",
+                                ephemeral=True,
+                            )
+                    elif not polls_channel.permissions_for(
+                        source.guild.me
+                    ).send_messages:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {polls_channel.mention}, make sure i have the right permissions in the new polls channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
+                                ephemeral=True,
+                            )
 
                     self.bot.config_repo.set_polls_channel(
-                        ctx.guild.id, polls_channel.id
+                        source.guild.id, polls_channel.id
                     )
                     old_polls_channel = (
-                        self.bot.configs[ctx.guild.id]["polls_channel"]
-                        if "polls_channel" in self.bot.configs[ctx.guild.id]
+                        self.bot.configs[source.guild.id]["polls_channel"]
+                        if "polls_channel" in self.bot.configs[source.guild.id]
                         else None
                     )
-                    self.bot.configs[ctx.guild.id]["polls_channel"] = polls_channel
-                    await ctx.send(
-                        f"ℹ️ - The polls channel is now {polls_channel.mention} in this guild!"
-                    )
+                    self.bot.configs[source.guild.id]["polls_channel"] = polls_channel
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - The polls channel is now {polls_channel.mention} in this guild!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - The polls channel is now {polls_channel.mention} in this guild!"
+                        )
 
                     if old_polls_channel:
-                        polls = self.bot.poll_repo.get_polls(ctx.guild.id)
+                        polls = self.bot.poll_repo.get_polls(source.guild.id)
 
                         if len(polls) > 1 or polls and "old" not in polls:
-                            perms = old_polls_channel.permissions_for(ctx.guild.me)
+                            perms = old_polls_channel.permissions_for(source.guild.me)
                             if (
                                 not perms.read_message_history
                                 or not perms.manage_messages
                             ):
                                 await self.bot.utils_class.send_message_to_mods(
                                     f"⚠️ - I don't have the right permissions to delete messages in the channel {old_polls_channel.mention}! (I tried to delete the old polls) Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
-                                    ctx.guild.id,
+                                    source.guild.id,
                                 )
 
                             for poll in polls:
@@ -2754,11 +4592,13 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 except NotFound:
                                     continue
 
-                                self.bot.poll_repo.erase_poll(ctx.guild.id, poll)
-                                self.bot.configs[ctx.guild.id]["polls"][
+                                self.bot.poll_repo.erase_poll(source.guild.id, poll)
+                                self.bot.configs[source.guild.id]["polls"][
                                     poll_msg.id
                                 ].cancel()
-                                del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
+                                del self.bot.configs[source.guild.id]["polls"][
+                                    poll_msg.id
+                                ]
 
                                 if perms.read_message_history and perms.manage_messages:
                                     await poll_msg.delete()
@@ -2776,14 +4616,14 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 ]
 
                                 poll_msg: Message = await self.bot.configs[
-                                    ctx.guild.id
+                                    source.guild.id
                                 ]["polls_channel"].send(
                                     embed=poll_msg.embeds[0],
                                     view=view,
                                 )
 
                                 self.bot.poll_repo.create_poll(
-                                    ctx.guild.id,
+                                    source.guild.id,
                                     poll_msg.id,
                                     poll["duration_s"]
                                     - (time() - poll["created_at_s"]),
@@ -2792,31 +4632,37 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                     poll["responses"] if "responses" in poll else None,
                                 )
                                 poll = self.bot.poll_repo.get_poll(
-                                    ctx.guild.id, poll_msg.id
+                                    source.guild.id, poll_msg.id
                                 )
-                                self.bot.configs[ctx.guild.id]["polls"][
+                                self.bot.configs[source.guild.id]["polls"][
                                     poll_msg.id
                                 ] = self.bot.utils_class.task_launcher(
                                     self.bot.utils_class.poll_completion,
-                                    (ctx.guild, poll),
+                                    (source.guild, poll),
                                     count=1,
                                 )
                 elif option == "remove":
-                    if "polls_channel" not in self.bot.configs[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - The server already doesn't have a polls channel configured!",
-                            delete_after=20,
-                        )
+                    if "polls_channel" not in self.bot.configs[source.guild.id]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - The server already doesn't have a polls channel configured!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - The server already doesn't have a polls channel configured!",
+                                ephemeral=True,
+                            )
 
-                    polls = self.bot.poll_repo.get_polls(ctx.guild.id)
+                    polls = self.bot.poll_repo.get_polls(source.guild.id)
                     if len(polls) > 1 or polls and "old" not in polls:
-                        perms = self.bot.configs[ctx.guild.id][
+                        perms = self.bot.configs[source.guild.id][
                             "polls_channel"
-                        ].permissions_for(ctx.guild.me)
+                        ].permissions_for(source.guild.me)
                         if not perms.read_message_history or not perms.manage_messages:
                             await self.bot.utils_class.send_message_to_mods(
-                                f"⚠️ - I don't have the right permissions to delete messages in the channel {self.bot.configs[ctx.guild.id]['polls_channel'].mention}! (I tried to delete the old polls) Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
-                                ctx.guild.id,
+                                f"⚠️ - I don't have the right permissions to delete messages in the channel {self.bot.configs[source.guild.id]['polls_channel'].mention}! (I tried to delete the old polls) Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
+                                source.guild.id,
                             )
 
                         for poll in polls:
@@ -2824,44 +4670,59 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                                 continue
 
                             try:
-                                poll_msg = await self.bot.configs[ctx.guild.id][
+                                poll_msg = await self.bot.configs[source.guild.id][
                                     "polls_channel"
                                 ].fetch_message(int(poll))
                             except NotFound:
                                 continue
 
-                            self.bot.poll_repo.erase_poll(ctx.guild.id, poll)
-                            self.bot.configs[ctx.guild.id]["polls"][
+                            self.bot.poll_repo.erase_poll(source.guild.id, poll)
+                            self.bot.configs[source.guild.id]["polls"][
                                 poll_msg.id
                             ].cancel()
-                            del self.bot.configs[ctx.guild.id]["polls"][poll_msg.id]
+                            del self.bot.configs[source.guild.id]["polls"][poll_msg.id]
 
                             if perms.read_message_history and perms.manage_messages:
                                 await poll_msg.delete()
 
-                    self.bot.config_repo.set_polls_channel(ctx.guild.id, None)
-                    del self.bot.configs[ctx.guild.id]["polls_channel"]
-                    await ctx.send(
-                        f"ℹ️ - This guild doesn't have a polls channel anymore!"
-                    )
+                    self.bot.config_repo.set_polls_channel(source.guild.id, None)
+                    del self.bot.configs[source.guild.id]["polls_channel"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - This guild doesn't have a polls channel anymore!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - This guild doesn't have a polls channel anymore!"
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             else:
-                await ctx.send(
-                    f"ℹ️ - The current server's polls channel is: {self.bot.configs[ctx.guild.id]['polls_channel'].mention}"
-                    if "polls_channel" in self.bot.configs[ctx.guild.id]
-                    else f"ℹ️ - The server doesn't have a polls channel yet!"
-                )
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The current server's polls channel is: {self.bot.configs[source.guild.id]['polls_channel'].mention}"
+                        if "polls_channel" in self.bot.configs[source.guild.id]
+                        else f"ℹ️ - The server doesn't have a polls channel yet!"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The current server's polls channel is: {self.bot.configs[source.guild.id]['polls_channel'].mention}"
+                        if "polls_channel" in self.bot.configs[source.guild.id]
+                        else f"ℹ️ - The server doesn't have a polls channel yet!"
+                    )
         except MissingRequiredArgument as mre:
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occurred while setting the polls channel! please try again in a few seconds! Error type: {type(e)}",
+            await source.channel.send(
+                f"⚠️ - {source.author.mention} - An error occurred while setting the polls channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
+
+    """ SELECT TO ROLE CHANNEL """
 
     @config_channels_group.command(
         pass_context=True,
@@ -2877,6 +4738,55 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         select2role_channel: TextChannel = None,
     ):
+        await self.handle_select_to_role_channel(ctx, option, select2role_channel)
+
+    @config_channels_slash_group.sub_command_group(
+        name="select_to_role_channel",
+        description="This option manage the server's select 2 role channel where the select to role message is sent",
+    )
+    async def config_channels_select2role_channel_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_channels_select2role_channel_slash_group.sub_command(
+        name="display",
+        description="This option display the server's select 2 role channel!",
+    )
+    async def config_channels_select2role_channel_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_select_to_role_channel(inter)
+
+    @config_channels_select2role_channel_slash_group.sub_command(
+        name="set",
+        description="This option set the server's select 2 role channel!",
+    )
+    async def config_channels_select2role_channel_set_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channel: TextChannel,
+    ):
+        await self.handle_select_to_role_channel(inter, "set", channel)
+
+    @config_channels_select2role_channel_slash_group.sub_command(
+        name="remove",
+        description="This option remove the server's select 2 role channel!",
+    )
+    async def config_channels_select2role_channel_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_select_to_role_channel(inter, "remove")
+
+    async def handle_select_to_role_channel(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        select2role_channel: Union[TextChannel, None] = None,
+    ):
         try:
             if option:
                 if option == "set":
@@ -2885,40 +4795,59 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             param=Parameter(name="channel", kind=Parameter.KEYWORD_ONLY)
                         )
                     elif (
-                        "select2role" in self.bot.configs[ctx.guild.id]
-                        and "channel" in self.bot.configs[ctx.guild.id]["select2role"]
-                        and self.bot.configs[ctx.guild.id]["select2role"]["channel"]
+                        "select2role" in self.bot.configs[source.guild.id]
+                        and "channel"
+                        in self.bot.configs[source.guild.id]["select2role"]
+                        and self.bot.configs[source.guild.id]["select2role"]["channel"]
                         == select2role_channel
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - The server's select to role channel is already {select2role_channel.mention}!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - The server's select to role channel is already {select2role_channel.mention}!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - The server's select to role channel is already {select2role_channel.mention}!",
+                                ephemeral=True,
+                            )
                     elif not select2role_channel.permissions_for(
-                        ctx.guild.me
+                        source.guild.me
                     ).send_messages:
-                        return await ctx.reply(
-                            f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"⚠️ - I don't have the right permissions to send messages in the channel {select2role_channel.mention}, make sure i have the right permissions in the new select to role channel before setting it! Required perms: `{', '.join(['SEND_MESSAGES'])}`",
+                                ephemeral=True,
+                            )
 
                     old_channel = None
-                    if "select2role" not in self.bot.configs[ctx.guild.id]:
-                        self.bot.configs[ctx.guild.id]["select2role"] = {}
-                    elif "channel" in self.bot.configs[ctx.guild.id]["select2role"]:
-                        old_channel: TextChannel = self.bot.configs[ctx.guild.id][
+                    if "select2role" not in self.bot.configs[source.guild.id]:
+                        self.bot.configs[source.guild.id]["select2role"] = {}
+                    elif "channel" in self.bot.configs[source.guild.id]["select2role"]:
+                        old_channel: TextChannel = self.bot.configs[source.guild.id][
                             "select2role"
                         ]["channel"]
 
-                    self.bot.configs[ctx.guild.id]["select2role"][
+                    self.bot.configs[source.guild.id]["select2role"][
                         "channel"
                     ] = select2role_channel
-                    await ctx.send(
-                        f"ℹ️ - The select to role channel is now {select2role_channel.mention} in this guild!"
-                    )
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - The select to role channel is now {select2role_channel.mention} in this guild!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - The select to role channel is now {select2role_channel.mention} in this guild!"
+                        )
 
                     if old_channel:
-                        perms = old_channel.permissions_for(ctx.guild.me)
+                        perms = old_channel.permissions_for(source.guild.me)
                         if perms.read_message_history and perms.manage_messages:
                             await old_channel.purge(
                                 check=lambda m: m.author.id == self.bot.user.id
@@ -2926,7 +4855,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         else:
                             await self.bot.utils_class.send_message_to_mods(
                                 f"⚠️ - I don't have the right permissions to purge messages in the channel {old_channel.mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
-                                ctx.guild.id,
+                                source.guild.id,
                             )
 
                     em = Embed(
@@ -2935,7 +4864,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         description="Here are the server's select to role available, choose one or more roles you wish to be assigned.\n\n**If you want the role to be removed, deselect the corresponding role!**",
                     )
 
-                    em.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+                    if source.guild.icon:
+                        em.set_thumbnail(url=source.guild.icon.url)
 
                     if self.bot.user.avatar:
                         em.set_footer(
@@ -2945,17 +4875,18 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         em.set_footer(text=self.bot.user.name)
 
                     em.set_author(
-                        name=ctx.guild.name,
+                        name=source.guild.name,
                         icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
                     )
 
                     options = []
                     if (
-                        "select2role" in self.bot.configs[ctx.guild.id]
-                        and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
+                        "select2role" in self.bot.configs[source.guild.id]
+                        and "selects"
+                        in self.bot.configs[source.guild.id]["select2role"]
                     ):
                         values = []
-                        for title, value in self.bot.configs[ctx.guild.id][
+                        for title, value in self.bot.configs[source.guild.id][
                             "select2role"
                         ]["selects"].items():
                             values.append(f"{title}: `@{value['role'].name}`")
@@ -3019,42 +4950,61 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
 
                     perms = self.bot.configs[ctx.guild.id]["select2role"][
                         "channel"
-                    ].permissions_for(ctx.guild.me)
+                    ].permissions_for(source.guild.me)
+
                     if perms.read_message_history and perms.manage_messages:
-                        await self.bot.configs[ctx.guild.id]["select2role"][
+                        await self.bot.configs[source.guild.id]["select2role"][
                             "channel"
                         ].purge(check=lambda m: m.author.id == self.bot.user.id)
                     else:
                         await self.bot.utils_class.send_message_to_mods(
-                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
-                            ctx.guild.id,
+                            f"⚠️ - I don't have the right permissions to purge messages in the channel {self.bot.configs[source.guild.id]['select2role']['channel'].mention}! Required perms: `{', '.join(['READ_MESSAGE_HISTORY', 'MANAGE_MESSAGES'])}`",
+                            source.guild.id,
                         )
 
-                    self.bot.config_repo.set_select2role_channel(ctx.guild.id, None)
-                    del self.bot.configs[ctx.guild.id]["select2role"]["channel"]
-                    del self.bot.configs[ctx.guild.id]["select2role"]["roles_msg_id"]
-                    await ctx.send(
-                        f"ℹ️ - This guild doesn't have a select to role channel anymore!"
-                    )
+                    self.bot.config_repo.set_select2role_channel(source.guild.id, None)
+                    del self.bot.configs[source.guild.id]["select2role"]["channel"]
+                    del self.bot.configs[source.guild.id]["select2role"]["roles_msg_id"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - This guild doesn't have a select to role channel anymore!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - This guild doesn't have a select to role channel anymore!"
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             else:
-                await ctx.send(
-                    f"ℹ️ - The current server's select to role channel is: {self.bot.configs[ctx.guild.id]['select2role']['channel'].mention}"
-                    if "select2role" in self.bot.configs[ctx.guild.id]
-                    and "channel" in self.bot.configs[ctx.guild.id]["select2role"]
-                    else f"ℹ️ - The server doesn't have a select to role channel yet!"
-                )
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The current server's select to role channel is: {self.bot.configs[source.guild.id]['select2role']['channel'].mention}"
+                        if "select2role" in self.bot.configs[source.guild.id]
+                        and "channel"
+                        in self.bot.configs[source.guild.id]["select2role"]
+                        else f"ℹ️ - The server doesn't have a select to role channel yet!"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The current server's select to role channel is: {self.bot.configs[source.guild.id]['select2role']['channel'].mention}"
+                        if "select2role" in self.bot.configs[source.guild.id]
+                        and "channel"
+                        in self.bot.configs[source.guild.id]["select2role"]
+                        else f"ℹ️ - The server doesn't have a select to role channel yet!"
+                    )
         except MissingRequiredArgument as mre:
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occurred while setting the select to role channel! please try again in a few seconds! Error type: {type(e)}",
+            await source.channel.send(
+                f"⚠️ - {source.author.mention} - An error occurred while setting the select to role channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
+
+    """ MODS CHANNEL """
 
     @config_channels_group.command(
         pass_context=True,
@@ -3070,6 +5020,55 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
         option: Utils.to_lower = None,
         mods_channel: TextChannel = None,
     ):
+        await self.handle_mods_channel(ctx, option, mods_channel)
+
+    @config_channels_slash_group.sub_command_group(
+        name="mods_channel",
+        description="This option manage the server's mods channel where all the error messages and other information are sent",
+    )
+    async def config_channels_mods_channel_slash_group(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        pass
+
+    @config_channels_mods_channel_slash_group.sub_command(
+        name="display",
+        description="This option display the server's mods channel!",
+    )
+    async def config_channels_mods_channel_display_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_mods_channel(inter)
+
+    @config_channels_mods_channel_slash_group.sub_command(
+        name="set",
+        description="This option set the server's mods channel!",
+    )
+    async def config_channels_mods_channel_set_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+        channel: TextChannel,
+    ):
+        await self.handle_mods_channel(inter, "set", channel)
+
+    @config_channels_mods_channel_slash_group.sub_command(
+        name="remove",
+        description="This option remove the server's mods channel!",
+    )
+    async def config_channels_mods_channel_remove_slash_command(
+        self,
+        inter: GuildCommandInteraction,
+    ):
+        await self.handle_mods_channel(inter, "remove")
+
+    async def handle_mods_channel(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        option: Union[str, None] = None,
+        mods_channel: Union[TextChannel, None] = None,
+    ):
         try:
             if option:
                 if option == "set":
@@ -3078,107 +5077,126 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                             param=Parameter(name="channel", kind=Parameter.KEYWORD_ONLY)
                         )
                     elif (
-                        "mods_channel" in self.bot.configs[ctx.guild.id]
-                        and self.bot.configs[ctx.guild.id]["mods_channel"]
+                        "mods_channel" in self.bot.configs[source.guild.id]
+                        and self.bot.configs[source.guild.id]["mods_channel"]
                         == mods_channel
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - The server's mods channel is already {mods_channel.mention}!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - The server's mods channel is already {mods_channel.mention}!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - The server's mods channel is already {mods_channel.mention}!",
+                                ephemeral=True,
+                            )
 
                     self.bot.config_repo.set_mods_channel(
-                        ctx.guild.id,
+                        source.guild.id,
                         mods_channel.id,
                     )
-                    self.bot.configs[ctx.guild.id]["mods_channel"] = mods_channel
-                    await ctx.send(
-                        f"ℹ️ - The mods channel is now {mods_channel.mention} in this guild!"
-                    )
+                    self.bot.configs[source.guild.id]["mods_channel"] = mods_channel
 
-                elif option == "remove":
-                    if "mods_channel" not in self.bot.configs[ctx.guild.id]:
-                        return await ctx.reply(
-                            f"ℹ️ - The server already doesn't have a mods channel configured!",
-                            delete_after=20,
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - The mods channel is now {mods_channel.mention} in this guild!"
                         )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - The mods channel is now {mods_channel.mention} in this guild!"
+                        )
+                elif option == "remove":
+                    if "mods_channel" not in self.bot.configs[source.guild.id]:
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - The server already doesn't have a mods channel configured!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - The server already doesn't have a mods channel configured!",
+                                ephemeral=True,
+                            )
 
-                    self.bot.config_repo.set_mods_channel(ctx.guild.id, None)
-                    del self.bot.configs[ctx.guild.id]["mods_channel"]
-                    await ctx.send(
-                        f"ℹ️ - This guild doesn't have a mods channel anymore!"
-                    )
+                    self.bot.config_repo.set_mods_channel(source.guild.id, None)
+                    del self.bot.configs[source.guild.id]["mods_channel"]
+
+                    if isinstance(source, Context):
+                        await source.send(
+                            f"ℹ️ - This guild doesn't have a mods channel anymore!"
+                        )
+                    else:
+                        await source.response.send_message(
+                            f"ℹ️ - This guild doesn't have a mods channel anymore!"
+                        )
                 else:
-                    await ctx.reply(
-                        f"ℹ️ - {ctx.author.mention} - This option isn't available for the command `{ctx.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{ctx.command.parents[0]}` to get more help!",
+                    await source.reply(
+                        f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` to get more help!",
                         delete_after=20,
                     )
             else:
-                await ctx.send(
-                    f"ℹ️ - The current server's mods channel is: {self.bot.configs[ctx.guild.id]['mods_channel'].mention}"
-                    if "mods_channel" in self.bot.configs[ctx.guild.id]
-                    else f"ℹ️ - The server doesn't have a mods channel yet!"
-                )
+                if isinstance(source, Context):
+                    await source.send(
+                        f"ℹ️ - The current server's mods channel is: {self.bot.configs[source.guild.id]['mods_channel'].mention}"
+                        if "mods_channel" in self.bot.configs[source.guild.id]
+                        else f"ℹ️ - The server doesn't have a mods channel yet!"
+                    )
+                else:
+                    await source.response.send_message(
+                        f"ℹ️ - The current server's mods channel is: {self.bot.configs[source.guild.id]['mods_channel'].mention}"
+                        if "mods_channel" in self.bot.configs[source.guild.id]
+                        else f"ℹ️ - The server doesn't have a mods channel yet!"
+                    )
         except MissingRequiredArgument as mre:
             raise MissingRequiredArgument(param=mre.param)
         except Exception as e:
-            await ctx.reply(
-                f"⚠️ - {ctx.author.mention} - An error occurred while setting the mods channel! please try again in a few seconds! Error type: {type(e)}",
+            await source.channel.send(
+                f"⚠️ - {source.author.mention} - An error occurred while setting the mods channel! please try again in a few seconds! Error type: {type(e)}",
                 delete_after=20,
             )
 
     """ METHOD(S) """
 
-    async def check_role_duplicates(self, ctx: Context, role: Role) -> bool:
+    async def check_role_duplicates(
+        self, source: Union[Context, GuildCommandInteraction], role: Role
+    ) -> bool:
         if (
-            "muted_role" in self.bot.configs[ctx.guild.id]
-            and self.bot.configs[ctx.guild.id]["muted_role"] == role
+            "muted_role" in self.bot.configs[source.guild.id]
+            and self.bot.configs[source.guild.id]["muted_role"] == role
         ):
-            await ctx.reply(
-                f"ℹ️ - This role is already the one configured has the muted role!",
-                delete_after=20,
-            )
-        elif role.id in set(self.bot.moderators[ctx.guild.id]):
-            await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a moderator!",
-                delete_after=20,
-            )
-        elif role.id in set(self.bot.djs[ctx.guild.id]):
-            await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a dj!",
-                delete_after=20,
-            )
-        elif "prestiges" in self.bot.configs[ctx.guild.id]["xp"] and role in set(
-            self.bot.configs[ctx.guild.id]["xp"]["prestiges"].values()
+            resp = f"ℹ️ - This role is already the one configured has the muted role!"
+        elif role.id in set(self.bot.moderators[source.guild.id]):
+            resp = f"ℹ️ - {source.author.mention} - The role `@{role}` is already assigned to a moderator!"
+        elif role.id in set(self.bot.djs[source.guild.id]):
+            resp = f"ℹ️ - {source.author.mention} - The role `@{role}` is already assigned to a dj!"
+        elif "prestiges" in self.bot.configs[source.guild.id]["xp"] and role in set(
+            self.bot.configs[source.guild.id]["xp"]["prestiges"].values()
         ):
-            await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['prestiges'].values()).index(role)]}`",
-                delete_after=20,
-            )
-        elif "lvl2role" in self.bot.configs[ctx.guild.id]["xp"] and role in set(
-            self.bot.configs[ctx.guild.id]["xp"]["lvl2role"].values()
+            resp = f"ℹ️ - {source.author.mention} - The role `@{role}` is already assigned to a prestige! Prestige: `{list(self.bot.configs[source.guild.id]['xp']['prestiges'].keys())[list(self.bot.configs[source.guild.id]['xp']['prestiges'].values()).index(role)]}`"
+        elif "lvl2role" in self.bot.configs[source.guild.id]["xp"] and role in set(
+            self.bot.configs[source.guild.id]["xp"]["lvl2role"].values()
         ):
-            await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[ctx.guild.id]['xp']['lvl2role'].values()).index(role)]}`",
-                delete_after=20,
-            )
+            resp = f"ℹ️ - {source.author.mention} - The role `@{role}` is already assigned to a level! Level: `{list(self.bot.configs[source.guild.id]['xp']['lvl2role'].keys())[list(self.bot.configs[source.guild.id]['xp']['lvl2role'].values()).index(role)]}`"
         elif (
-            "select2role" in self.bot.configs[ctx.guild.id]
-            and "selects" in self.bot.configs[ctx.guild.id]["select2role"]
+            "select2role" in self.bot.configs[source.guild.id]
+            and "selects" in self.bot.configs[source.guild.id]["select2role"]
             and role
             in {
                 v["role"]
-                for v in self.bot.configs[ctx.guild.id]["select2role"][
+                for v in self.bot.configs[source.guild.id]["select2role"][
                     "selects"
                 ].values()
             }
         ):
-            await ctx.reply(
-                f"ℹ️ - {ctx.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[ctx.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[ctx.guild.id]['select2role']['selects'].values()).index(role)]}`",
-                delete_after=20,
-            )
+            resp = f"ℹ️ - {source.author.mention} - The role `@{role}` is already assigned to a title! Title: `{list(self.bot.configs[source.guild.id]['select2role']['selects'].keys())[list(self.bot.configs[source.guild.id]['select2role']['selects'].values()).index(role)]}`"
         else:
             return False
+
+        if isinstance(source, Context):
+            await source.reply(resp, delete_after=20)
+        else:
+            await source.channel.send(resp, delete_after=20)
 
         return True
 

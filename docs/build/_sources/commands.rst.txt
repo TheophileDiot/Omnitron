@@ -37,11 +37,11 @@ Commands
 +------------------+----------------+---------------+------------------------------------------------------+
 | ping             | latency        | None          | Check the bot latency                                |
 +------------------+----------------+---------------+------------------------------------------------------+
-| serverinfos      | si, serverinfo | None          | Get information about the current server             |
+| serverinfo       | si, serverinfos| None          | Get information about the current server             |
 +------------------+----------------+---------------+------------------------------------------------------+
 | uptime           | up, time       | None          | Shows how long the bot has been connected            |
 +------------------+----------------+---------------+------------------------------------------------------+
-| userinfos        | ui, userinfo   | (@member)     | Get the information from a member or from yourself   |
+| userinfo         | ui, userinfos  | (@member)     | Get the information from a member or from yourself   |
 +------------------+----------------+---------------+------------------------------------------------------+
 | (Group) activity | activities     | (sub-command) | This command manage the server's activities          |
 +------------------+----------------+---------------+------------------------------------------------------+
@@ -54,19 +54,27 @@ Group(s)
 
 * **activity**
     **activity commands**
-        +------------------+------------------+---------------------------------+-------------------------------------------------------------------------------------------+
-        |   Command name   |     Aliases      |             Usages              |                                        Description                                        |
-        +==================+==================+=================================+===========================================================================================+
-        | betrayal_io      | b_io             | #voice_channel                  | Create an instant invite link into the activity Betrayal.io in the specified channel      |
-        +------------------+------------------+---------------------------------+-------------------------------------------------------------------------------------------+
-        | custom           | cstm             | #voice_channel <application_id> | Create an instant invite link into a custom activity in the specified channel             |
-        +------------------+------------------+---------------------------------+-------------------------------------------------------------------------------------------+
-        | fishington_io    | f_io             | #voice_channel                  | Create an instant invite link into the activity Fishington.io in the specified channel    |
-        +------------------+------------------+---------------------------------+-------------------------------------------------------------------------------------------+
-        | poker_night      | p_n              | #voice_channel                  | Create an instant invite link into the activity Poker Night in the specified channel      |
-        +------------------+------------------+---------------------------------+-------------------------------------------------------------------------------------------+
-        | youtube_together | yt_together, ytt | #voice_channel                  | Create an instant invite link into the activity YouTube Together in the specified channel |
-        +------------------+------------------+---------------------------------+-------------------------------------------------------------------------------------------+
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        |   Command name   |      Aliases      |             Usages              |                                        Description                                         |
+        +==================+===================+=================================+============================================================================================+
+        | betrayal_io      | b_io              | #voice_channel                  | Create an instant invite link into the activity Betrayal.io in the specified channel       |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | chess            | chess_in_the_park | #voice_channel                  | Create an instant invite link into the activity Chess In The Park in the specified channel |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | custom           | cstm              | #voice_channel <application_id> | Create an instant invite link into a custom activity in the specified channel              |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | doodle_crew      | d_crew            | #voice_channel                  | Create an instant invite link into the activity Doodle Crew in the specified channel       |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | fishington_io    | f_io              | #voice_channel                  | Create an instant invite link into the activity Fishington.io in the specified channel     |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | letter_tile      | l_tile            | #voice_channel                  | Create an instant invite link into the activity Letter Tile in the specified channel       |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | poker_night      | p_n               | #voice_channel                  | Create an instant invite link into the activity Poker Night in the specified channel       |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | word_snack       | w_snack           | #voice_channel                  | Create an instant invite link into the activity Word Snack in the specified channel        |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
+        | youtube_together | yt_together, ytt  | #voice_channel                  | Create an instant invite link into the activity YouTube Together in the specified channel  |
+        +------------------+-------------------+---------------------------------+--------------------------------------------------------------------------------------------+
 
 * **xp**
     **xp commands**
@@ -175,7 +183,7 @@ Group(s)
             +---------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
             | prestiges     | prestg, prestige                             | (add|update|remove|purge @role <prestige_value>)  | This option manage the server's prestiges                                                                          |
             +---------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
-            | switch        | None                                         | (on|off)                                          | This option turn the server's experience feature on or off                                                         |
+            | state         | None                                         | (on|off)                                          | This option turn the server's experience feature on or off                                                         |
             +---------------+----------------------------------------------+---------------------------------------------------+--------------------------------------------------------------------------------------------------------------------+
 
 * **poll**

@@ -46,8 +46,8 @@ class Events(Cog, name="events.on_button_click"):
             new_embed.to_dict()["fields"][0][
                 "value"
             ] = f"`{str(int(new_embed.to_dict()['fields'][0]['value'][1:-1]) + 1)}`"
-            await interaction.message.edit(embed=new_embed)
-            await interaction.response.send_message(
+            await interaction.edit_original_message(embed=new_embed)
+            await interaction.followup.send(
                 content=f"Your answer has been taken into account! Answer: `{interaction.component.label}`",
                 ephemeral=True,
             )

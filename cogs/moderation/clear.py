@@ -70,7 +70,7 @@ class Moderation(Cog, name="moderation.clear"):
                     ephemeral=True,
                 )
 
-        if isinstance(source, GuildCommandInteraction):
+        if not isinstance(source, Context):
             await source.response.defer(ephemeral=True)
 
         if member:

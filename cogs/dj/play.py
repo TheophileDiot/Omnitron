@@ -297,15 +297,13 @@ class Dj(Cog, name="dj.play"):
             await player.set_pause(False)
             return await source.send(f"▶️ - Resume Playing!")
         elif not query and (
-            isinstance(source, GuildCommandInteraction)
-            or not source.message.attachments
+            not isinstance(source, Context) or not source.message.attachments
         ):
             raise MissingRequiredArgument(
                 param=Parameter(name="query", kind=Parameter.KEYWORD_ONLY)
             )
         elif query and (
-            isinstance(source, GuildCommandInteraction)
-            or not source.message.attachments
+            not isinstance(source, Context) or not source.message.attachments
         ):
             # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
             query = query.strip("<>")

@@ -22,7 +22,7 @@ from disnake.ext.commands import (
 from disnake.ui import Button, View
 
 from bot import Omnitron
-from data import Utils
+from data import DurationType, Utils
 
 
 class Moderation(Cog, name="moderation.poll"):
@@ -82,38 +82,7 @@ class Moderation(Cog, name="moderation.poll"):
 
     @poll_slash_group.sub_command(
         name="create",
-        description="Create a poll of a specific duration! (10 m minimum) (25 choices max)",
-        options=[
-            Option(
-                name="title",
-                description="The title of the poll",
-                type=OptionType.string,
-                required=True,
-            ),
-            Option(
-                name="choices",
-                description='Enter your different choices separated with ";"',
-                type=OptionType.string,
-                required=True,
-            ),
-            Option(
-                name="duration",
-                description='The value of the duration of the poll (default "10")',
-                type=OptionType.integer,
-                required=False,
-            ),
-            Option(
-                name="type_duration",
-                description='The type of the duration of the poll (default "m")',
-                choices=[
-                    OptionChoice(name="seconds", value="s"),
-                    OptionChoice(name="minutes", value="m"),
-                    OptionChoice(name="hours", value="h"),
-                    OptionChoice(name="days", value="d"),
-                ],
-                required=False,
-            ),
-        ],
+        description="Create a poll of a specific duration! (10 m minimum/default) (25 choices max)",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_create_slash_command(
@@ -122,7 +91,7 @@ class Moderation(Cog, name="moderation.poll"):
         title: str,
         choices: str,
         duration: int = 10,
-        type_duration: Utils.to_lower = "m",
+        type_duration: DurationType = "m",
     ):
         await self.handle_create(
             inter,
@@ -328,7 +297,7 @@ class Moderation(Cog, name="moderation.poll"):
                             ephemeral=True,
                         )
 
-        if isinstance(source, GuildCommandInteraction):
+        if not isinstance(source, Context):
             await source.response.defer()
 
         em = Embed(
@@ -455,13 +424,8 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_end_slash_command(
-        self, inter: GuildCommandInteraction, id_message: int = None
+        self, inter: GuildCommandInteraction, id_message: str
     ):
-        if id_message and not isinstance(id_message, int):
-            return await inter.response.send_message(
-                f"ℹ️ - {inter.author.mention} - Please enter a valid message ID!"
-            )
-
         await self.handle_end(inter, id_message)
 
     async def handle_end(
@@ -533,19 +497,14 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_slash_command(
-        self, inter: GuildCommandInteraction, id_message: int = None
+        self, inter: GuildCommandInteraction, id_message: str
     ):
-        if id_message and not isinstance(id_message, int):
-            return await inter.response.send_message(
-                f"ℹ️ - {inter.author.mention} - Please enter a valid message ID!"
-            )
-
         await self.handle_delete(inter, id_message)
 
     async def handle_delete(
         self,
         source: Union[Context, GuildCommandInteraction],
-        poll_id: Union[int, None] = None,
+        poll_id: Union[int, str, None] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
             if isinstance(source, Context):
