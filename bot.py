@@ -58,6 +58,7 @@ class Omnitron(Bot):
             case_insensitive=True,
             strip_after_prefix=True,
             self_bot=False,
+            sync_commands_debug=True,
             **kwargs,
         )
 
