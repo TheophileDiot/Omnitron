@@ -23,7 +23,7 @@ from disnake.ext.commands import (
 from time import time
 
 from bot import Omnitron
-from data import Utils
+from data import DurationType, Utils
 
 
 class Moderation(Cog, name="moderation.sanction"):
@@ -243,37 +243,6 @@ class Moderation(Cog, name="moderation.sanction"):
     @sanction_slash_group.sub_command(
         name="ban",
         description="Ban a member for a certain duration with a reason attached if specified!",
-        options=[
-            Option(
-                name="member",
-                description="The member to ban",
-                type=OptionType.user,
-                required=True,
-            ),
-            Option(
-                name="reason",
-                description="The reason why the member should be banned",
-                type=OptionType.string,
-                required=False,
-            ),
-            Option(
-                name="duration",
-                description='The value of the duration of the ban (default "1")',
-                type=OptionType.integer,
-                required=False,
-            ),
-            Option(
-                name="type_duration",
-                description='The type of the duration of the ban (default "d")',
-                choices=[
-                    OptionChoice(name="seconds", value="s"),
-                    OptionChoice(name="minutes", value="m"),
-                    OptionChoice(name="hours", value="h"),
-                    OptionChoice(name="days", value="d"),
-                ],
-                required=False,
-            ),
-        ],
     )
     @has_guild_permissions(ban_members=True)
     @bot_has_guild_permissions(ban_members=True)
@@ -284,7 +253,7 @@ class Moderation(Cog, name="moderation.sanction"):
         member: Member,
         reason: str = None,
         duration: int = 1,
-        type_duration: str = "d",
+        type_duration: DurationType = "d",
     ):
         await self.handle_ban(inter, member, reason, duration, type_duration)
 
@@ -664,37 +633,6 @@ class Moderation(Cog, name="moderation.sanction"):
     @sanction_mute_slash_group.sub_command(
         name="add",
         description="Mute a member for a certain duration with a reason attached if specified!",
-        options=[
-            Option(
-                name="member",
-                description="The member to ban",
-                type=OptionType.user,
-                required=True,
-            ),
-            Option(
-                name="reason",
-                description="The reason why the member should be banned",
-                type=OptionType.string,
-                required=False,
-            ),
-            Option(
-                name="duration",
-                description='The value of the duration of the ban (default "10")',
-                type=OptionType.integer,
-                required=False,
-            ),
-            Option(
-                name="type_duration",
-                description='The type of the duration of the ban (default "m")',
-                choices=[
-                    OptionChoice(name="seconds", value="s"),
-                    OptionChoice(name="minutes", value="m"),
-                    OptionChoice(name="hours", value="h"),
-                    OptionChoice(name="days", value="d"),
-                ],
-                required=False,
-            ),
-        ],
     )
     @bot_has_permissions(manage_roles=True)
     @max_concurrency(1, per=BucketType.member)
@@ -704,7 +642,7 @@ class Moderation(Cog, name="moderation.sanction"):
         member: Member,
         reason: str = None,
         duration: int = 10,
-        type_duration: str = "m",
+        type_duration: DurationType = "m",
     ):
         await self.handle_mute_add(inter, member, reason, duration, type_duration)
 

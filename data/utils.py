@@ -8,6 +8,7 @@ from typing import Union, List
 
 from disnake import (
     ApplicationCommandInteraction,
+    Enum,
     Embed,
     Forbidden,
     Guild,
@@ -16,12 +17,21 @@ from disnake import (
     Member,
     NotFound,
     Role,
+    TextChannel,
+    VoiceChannel,
 )
 from disnake.ext.commands import Context, check
 from disnake.ext.commands.errors import BadArgument
 from disnake.ext.tasks import loop
 
 from bot import Omnitron
+
+
+class DurationType(Enum):
+    seconds = "s"
+    minutes = "m"
+    hours = "h"
+    days = "d"
 
 
 class Utils:
@@ -250,13 +260,13 @@ class Utils:
                 if mod:
                     for m in set(mod.members):
                         try:
-                            m.send(message)
+                            await m.send(message)
                         except Forbidden:
                             pass
                 else:
                     try:
-                        mod = guild.get_member(int(mod)) or await guild.fetch_member(
-                            int(mod)
+                        mod = guild.get_member(int(mod.id)) or await guild.fetch_member(
+                            int(mod.id)
                         )
                         await mod.send(message)
                     except Forbidden or NotFound:
@@ -918,6 +928,30 @@ class Utils:
         if not result or not all(result):
             await inter.channel.send(
                 f"⚠️ - {inter.author.mention} - None of the mods you gave are valid ones!",
+                delete_after=20,
+            )
+            return None
+
+        return result
+
+    @staticmethod
+    async def channel_converter(
+        inter: Union[ApplicationCommandInteraction, GuildCommandInteraction],
+        argument: str,
+    ) -> List[Union[TextChannel, VoiceChannel]] or None:
+        ids = findall(r"([0-9]{15,20})", argument)
+        result = []
+        for id in ids:
+            try:
+                result.append(
+                    inter.guild.get_channel(id) or await inter.guild.fetch_channel(id)
+                )
+            except NotFound:
+                continue
+
+        if not result or not all(result):
+            await inter.channel.send(
+                f"⚠️ - {inter.author.mention} - None of the channels you gave are valid ones!",
                 delete_after=20,
             )
             return None
