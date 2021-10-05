@@ -5,7 +5,7 @@ black==21.9b0
 cffi==1.14.6
 chardet==3.0.4
 click==8.0.1
-disnake @ git+https://github.com/EQUENOS/disnake@4958c9a664f1a07f85f740b3a101ab1bd29a4f51
+disnake @ git+https://github.com/EQUENOS/disnake@b59b7b388628880e093a9896b27bc9874f0edbe3
 gcloud==0.17.0
 googleapis-common-protos==1.53.0
 httplib2==0.19.1
