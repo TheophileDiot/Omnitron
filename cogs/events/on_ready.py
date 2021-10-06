@@ -32,7 +32,7 @@ class Events(Cog, name="events.on_ready"):
             elif not db_guild["present"]:
                 continue
 
-            self.bot.utils_class.init_guild(guild)
+            await self.bot.utils_class.init_guild(guild)
 
         print("Omnitron is ready.")
         info("Omnitron successfully started")

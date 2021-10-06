@@ -1,4 +1,4 @@
-from disnake import Member, VoiceState, channel
+from disnake import Member, VoiceState
 from disnake.ext.commands import Cog
 
 from bot import Omnitron
@@ -9,6 +9,7 @@ class Events(Cog, name="events.on_voice_state_update"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.voice_intervals = {}
+        self.count_intervals = {}
         self.xp_class = Xp_class(bot)
 
     """ EVENT """
@@ -23,23 +24,43 @@ class Events(Cog, name="events.on_voice_state_update"):
 
         _id = f"{member.guild.id}.{member.id}"
 
+        if _id in self.count_intervals:
+            self.count_intervals[_id]["task"].cancel()
+
+            self.bot.user_repo.add_voice_time(
+                member.guild.id,
+                member.id,
+                self.count_intervals[_id]["voice_channel"].id,
+                self.count_intervals[_id]["count"],
+            )
+
+            del self.count_intervals[_id]
+
         if after.channel:
+            if member.voice.channel != member.guild.afk_channel:
+                self.count_intervals[_id] = {
+                    "task": self.bot.utils_class.task_launcher(
+                        self.count_time, (member,), seconds=1
+                    ),
+                    "count": 0,
+                    "voice_channel": after.channel,
+                }
+
             if _id not in self.voice_intervals:
                 if self.bot.configs[member.guild.id]["xp"]["is_on"]:
                     if (
                         "xp_gain_channels" in self.bot.configs[member.guild.id]
                         and "VoiceChannel"
                         in self.bot.configs[member.guild.id]["xp_gain_channels"]
-                        and after.channel.id
-                        in self.bot.configs[member.guild.id]["xp_gain_channels"][
-                            "VoiceChannel"
-                        ]
-                        or "xp_gain_channels" in self.bot.configs[member.guild.id]
-                        and "VoiceChannel"
-                        in self.bot.configs[member.guild.id]["xp_gain_channels"]
-                        and not self.bot.configs[member.guild.id]["xp_gain_channels"][
-                            "VoiceChannel"
-                        ]
+                        and (
+                            not self.bot.configs[member.guild.id]["xp_gain_channels"][
+                                "VoiceChannel"
+                            ]
+                            or after.channel.id
+                            in self.bot.configs[member.guild.id]["xp_gain_channels"][
+                                "VoiceChannel"
+                            ]
+                        )
                     ):
                         self.voice_intervals[_id] = self.bot.utils_class.task_launcher(
                             self.vocal_interval, (member,), minutes=7
@@ -74,6 +95,9 @@ class Events(Cog, name="events.on_voice_state_update"):
     async def vocal_interval(self, member: Member):
         """This method manage the vocal xp cooldown"""
         await self.xp_class.manage_xp(member, "vocal")
+
+    async def count_time(self, member: Member):
+        self.count_intervals[f"{member.guild.id}.{member.id}"]["count"] += 1
 
 
 def setup(bot: Omnitron):

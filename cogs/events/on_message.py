@@ -23,6 +23,9 @@ class Events(Cog, name="events.on_message"):
             return
 
         ctx = await self.bot.get_context(message=message)
+        self.bot.user_repo.add_messages_count(
+            message.guild.id, message.author.id, message.channel.id
+        )
 
         if (
             ctx.message.mentions

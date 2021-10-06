@@ -8,6 +8,7 @@ from disnake.ext.commands import (
     Context,
     guild_only,
     slash_command,
+    user_command,
 )
 
 from bot import Omnitron
@@ -32,16 +33,25 @@ class Miscellaneous(Cog, name="misc.userinfo"):
         description="Get the information from a member or from yourself!",
     )
     @guild_only()
-    @bot_has_permissions(send_messages=True)
     async def userinfo_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member = None
     ):
         await self.handle_userinfo(inter, member)
 
+    @user_command(
+        name="userinfo",
+        description="Get the information from a member or from yourself!",
+    )
+    @guild_only()
+    async def userinfo_user_command(self, inter: ApplicationCommandInteraction):
+        await self.handle_userinfo(inter, inter.target)
+
     """ METHOD(S) """
 
     async def handle_userinfo(
-        self, source: Union[Context, ApplicationCommandInteraction], member: Member
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member = None,
     ):
         if not member:
             member = source.author

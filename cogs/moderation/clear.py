@@ -56,7 +56,7 @@ class Moderation(Cog, name="moderation.clear"):
         self,
         source: Union[Context, ApplicationCommandInteraction],
         nbr_msgs: int,
-        member: Union[Member, None],
+        member: Member = None,
     ):
         if nbr_msgs <= 0:
             if isinstance(source, Context):

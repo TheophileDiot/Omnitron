@@ -24,7 +24,7 @@ class Events(Cog, name="events.on_guild_join"):
                 {"name": guild.name, "owner": f"{guild.owner}", "present": True},
             )
 
-        self.bot.utils_class.init_guild(guild)
+        await self.bot.utils_class.init_guild(guild)
         info(f"Joined the guild {guild.name} ({guild.id}), created by {guild.owner}")
 
 

@@ -622,7 +622,7 @@ class Utils:
 
         return response
 
-    def init_guild(self, guild: Guild):
+    async def init_guild(self, guild: Guild):
         """DB USERS"""
         bot = self.bot
 
@@ -812,6 +812,14 @@ class Utils:
                     int(tickets["tickets_category_id"])
                 ),
             }
+
+        tickets = bot.ticket_repo.get_tickets(guild.id)
+        if tickets:
+            for ticket in tickets:
+                try:
+                    _ = guild.get_channel(ticket) or await guild.fetch_channel(ticket)
+                except NotFound:
+                    bot.ticket_repo.delete_ticket(guild.id, ticket)
 
         """ SELECT TO ROLE """
 

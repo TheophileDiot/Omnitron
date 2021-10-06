@@ -52,7 +52,7 @@ class Dj(Cog, name="dj.playlist"):
     async def handle_playlist(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        position: Union[int, None],
+        position: int = None,
     ):
         player = self.bot.lavalink.player_manager.get(source.guild.id)
 

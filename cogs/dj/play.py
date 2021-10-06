@@ -289,7 +289,7 @@ class Dj(Cog, name="dj.play"):
     async def handle_play(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        query: Union[str, None],
+        query: str = None,
     ):
         """Searches and plays a song from a given query."""
         # Get the player for this guild from cache.

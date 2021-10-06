@@ -141,7 +141,7 @@
 <colgroup>
 <col style="width: 17%" />
 <col style="width: 16%" />
-<col style="width: 15%" />
+<col style="width: 14%" />
 <col style="width: 52%" />
 </colgroup>
 <thead>
@@ -182,8 +182,13 @@
 <td><p>(sub-command)</p></td>
 <td><p>This command manage the server’s activities</p></td>
 </tr>
-<tr class="row-even"><td><p>(Group) xp</p></td>
-<td><p>experience</p></td>
+<tr class="row-even"><td><p>(Group) stats</p></td>
+<td><p>activities</p></td>
+<td><p>(sub-command)</p></td>
+<td><p>This command manage the server’s stats</p></td>
+</tr>
+<tr class="row-odd"><td><p>(Group) xp</p></td>
+<td><p>stat</p></td>
 <td><p>(sub-command)</p></td>
 <td><p>This command contains every xp related commands</p></td>
 </tr>
@@ -254,6 +259,50 @@
 <td><p>yt_together, ytt</p></td>
 <td><p>#voice_channel</p></td>
 <td><p>Create an instant invite link into the activity YouTube Together in the specified channel</p></td>
+</tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><strong>stats</strong></dt><dd><dl>
+<dt><strong>stats commands</strong></dt><dd><table class="docutils align-default">
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 14%" />
+<col style="width: 13%" />
+<col style="width: 64%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command name</p></th>
+<th class="head"><p>Aliases</p></th>
+<th class="head"><p>Usages</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>commands_count</p></td>
+<td><p>commands_counts, commands</p></td>
+<td><p>(&#64;member) (details)</p></td>
+<td><p>This option count the number of commands a member (our yourself) has executed in the server (add details at the end to get the full list)</p></td>
+</tr>
+<tr class="row-odd"><td><p>members_count</p></td>
+<td><p>members_counts, members</p></td>
+<td><p>(bots)</p></td>
+<td><p>This option count the members (including bots or not, default is False) in the server!</p></td>
+</tr>
+<tr class="row-even"><td><p>messages_count</p></td>
+<td><p>messages_counts, messages</p></td>
+<td><p>(&#64;member) (#text_channel)</p></td>
+<td><p>This option count every messages (or a member’s) sent in this server or in a specific channel</p></td>
+</tr>
+<tr class="row-odd"><td><p>voice_time_count</p></td>
+<td><p>voice_time_counts, voice_time</p></td>
+<td><p>(&#64;member) (#voice_channel)</p></td>
+<td><p>This option count every seconds everyone (or a specific member) has passed inside every voice channels or a specific one</p></td>
 </tr>
 </tbody>
 </table>
@@ -711,7 +760,12 @@
 <td><p>&#64;member (“reason”) (&lt;duration_value&gt; &lt;duration_type&gt;)</p></td>
 <td><p>Warn a member with a reason attached if specified</p></td>
 </tr>
-<tr class="row-odd"><td><p>list</p></td>
+<tr class="row-odd"><td><p>clear</p></td>
+<td><p>None</p></td>
+<td><p>(&#64;member)</p></td>
+<td><p>Clear the warns of a member!</p></td>
+</tr>
+<tr class="row-even"><td><p>list</p></td>
 <td><p>None</p></td>
 <td><p>(&#64;member)</p></td>
 <td><p>Show the list of a member’s warns or yours</p></td>

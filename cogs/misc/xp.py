@@ -139,7 +139,7 @@ class Miscellaneous(Cog, name="misc.xp"):
         source: Union[Context, ApplicationCommandInteraction],
         option: Utils.to_lower,
         member: Member,
-        value: Union[int, None] = None,
+        value: int = None,
     ):
         """Command that manages member's levels
 
@@ -387,7 +387,7 @@ class Miscellaneous(Cog, name="misc.xp"):
     async def handle_info(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        member: Union[Member, None],
+        member: Member = None,
     ):
         """Command that displays the current level and the number of xp remaining before the next level for the member that invoked the command or a specified member
 

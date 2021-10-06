@@ -26,6 +26,7 @@ from disnake import (
     Intents,
     Member,
     Message,
+    OptionType,
 )
 from disnake.ext.commands import Bot, Context
 from disnake.ext.commands.errors import (
@@ -118,6 +119,30 @@ class Omnitron(Bot):
         self.color = Colour(BOT_COLOR) or self.user.color
 
     """ EVENTS """
+
+    async def on_slash_command_complete(self, inter: ApplicationCommandInteraction):
+        name = inter.data.name
+        options = bool(inter.data.options)
+        data = inter.data
+
+        while options:
+            data = data.options[0]
+
+            if data.type not in (OptionType.sub_command_group, OptionType.sub_command):
+                options = False
+                continue
+
+            name += f" {data.name}"
+
+            if not data.options:
+                options = False
+
+        self.user_repo.add_command_count(inter.guild.id, inter.author.id, name)
+
+    async def on_command_completion(self, ctx: Context):
+        self.user_repo.add_command_count(
+            ctx.guild.id, ctx.author.id, ctx.command.qualified_name
+        )
 
     async def on_slash_command_error(
         self, inter: ApplicationCommandInteraction, _error
@@ -287,9 +312,9 @@ class Omnitron(Bot):
         """Configure the intents for the bot"""
         intents = Intents(
             guilds=True,
-            members=True,
             guild_messages=True,
             guild_reactions=True,
+            members=True,
             voice_states=True,
         )
         return intents
