@@ -39,7 +39,7 @@ from data import DurationType, Utils, Xp_class
 BOOL2VAL = {True: "ON", False: "OFF"}
 
 
-class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
+class Moderation(Cog, name="moderation.config"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.xp_class = Xp_class(bot)
@@ -234,7 +234,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_moderators(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
+        option: str = None,
         *mods: Union[Member, Role],
     ):
         if option:
@@ -534,7 +534,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_djs(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
+        option: str = None,
         *djs: Union[Member, Role],
     ):
         if option:
@@ -813,8 +813,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_prefix(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        prefix: Union[str, None] = None,
+        option: str = None,
+        prefix: str = None,
     ):
         if option:
             try:
@@ -965,9 +965,9 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_tickets(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        tickets_channel: Union[TextChannel, CategoryChannel, None] = None,
-        tickets_category: Union[CategoryChannel, None] = None,
+        option: str = None,
+        tickets_channel: Union[TextChannel, CategoryChannel] = None,
+        tickets_category: CategoryChannel = None,
     ):
         if option:
             try:
@@ -1382,10 +1382,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_select_to_role(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        title: Union[str, None] = None,
-        role: Union[Role, None] = None,
-        description: Union[str, None] = None,
+        option: str = None,
+        title: str = None,
+        role: Role = None,
+        description: str = None,
     ):
         if option:
             try:
@@ -1811,8 +1811,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_muted_role(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        muted: Union[Role, None] = None,
+        option: str = None,
+        muted: Role = None,
     ):
         if option:
             try:
@@ -2020,8 +2020,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_prevent_invites(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        notify_channel: Union[TextChannel, None] = None,
+        option: str = None,
+        notify_channel: TextChannel = None,
     ):
         if option:
             try:
@@ -2194,10 +2194,10 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_mute_on_join(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        _duration: Union[int, None] = None,
-        duration_type: Union[str, None] = None,
-        notify_channel: Union[TextChannel, None] = None,
+        option: str = None,
+        _duration: int = None,
+        duration_type: str = None,
+        notify_channel: TextChannel = None,
     ):
         if "muted_role" not in self.bot.configs[source.guild.id]:
             if isinstance(source, Context):
@@ -2361,7 +2361,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_switch(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
+        option: str = None,
     ):
         if option:
             try:
@@ -2501,9 +2501,9 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_boost(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        boosted: Union[Snowflake, None] = None,
-        bonus: Union[int, None] = None,
+        option: str = None,
+        boosted: Snowflake = None,
+        bonus: int = None,
     ):
         if option:
             try:
@@ -2746,7 +2746,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_max_lvl(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        max_lvl: Union[int, None] = None,
+        max_lvl: int = None,
     ):
         try:
             if max_lvl:
@@ -2894,9 +2894,9 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_level_to_role(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        lvl: Union[int, None] = None,
-        role: Union[Role, None] = None,
+        option: str = None,
+        lvl: int = None,
+        role: Role = None,
     ):
         if option:
             try:
@@ -3202,9 +3202,9 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_prestiges(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        role: Union[Role, None] = None,
-        prestige: Union[int, None] = None,
+        option: str = None,
+        role: Role = None,
+        prestige: int = None,
     ):
         if option:
             try:
@@ -3566,7 +3566,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_commands_channels(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
+        option: str = None,
         *channels: TextChannel,
     ):
         if option:
@@ -3801,7 +3801,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_music_channels(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
+        option: str = None,
         *channels: VoiceChannel,
     ):
         if option:
@@ -4063,7 +4063,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_xp_gain_channels(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
+        option: str = None,
         *channels: Union[TextChannel, VoiceChannel],
     ):
         if option:
@@ -4369,8 +4369,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_xp_channel(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        xp_channel: Union[TextChannel, None] = None,
+        option: str = None,
+        xp_channel: TextChannel = None,
     ):
         try:
             if option:
@@ -4535,8 +4535,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_polls_channel(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        polls_channel: Union[TextChannel, None] = None,
+        option: str = None,
+        polls_channel: TextChannel = None,
     ):
         try:
             if option:
@@ -4812,8 +4812,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_select_to_role_channel(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        select2role_channel: Union[TextChannel, None] = None,
+        option: str = None,
+        select2role_channel: TextChannel = None,
     ):
         try:
             if option:
@@ -4904,7 +4904,7 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
 
                     em.set_author(
                         name=source.guild.name,
-                        icon_url=ctx.guild.icon.url if ctx.guild.icon else None,
+                        icon_url=source.guild.icon.url if source.guild.icon else None,
                     )
 
                     options = []
@@ -4944,15 +4944,15 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                         view.add_item(
                             Select(
                                 options=options,
-                                custom_id=f"{self.bot.configs[ctx.guild.id]['select2role']['channel'].id}",
+                                custom_id=f"{self.bot.configs[source.guild.id]['select2role']['channel'].id}",
                                 placeholder="Choose one or more role!",
                                 min_values=0,
                                 max_values=len(options),
                             )
                         )
 
-                    self.bot.configs[ctx.guild.id]["select2role"]["roles_msg_id"] = (
-                        await self.bot.configs[ctx.guild.id]["select2role"][
+                    self.bot.configs[source.guild.id]["select2role"]["roles_msg_id"] = (
+                        await self.bot.configs[source.guild.id]["select2role"][
                             "channel"
                         ].send(
                             embed=em,
@@ -4961,22 +4961,30 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
                     ).id
 
                     self.bot.config_repo.set_select2role_channel(
-                        ctx.guild.id,
+                        source.guild.id,
                         select2role_channel.id,
-                        self.bot.configs[ctx.guild.id]["select2role"]["roles_msg_id"],
+                        self.bot.configs[source.guild.id]["select2role"][
+                            "roles_msg_id"
+                        ],
                     )
                 elif option == "remove":
                     if (
-                        "select2role" not in self.bot.configs[ctx.guild.id]
+                        "select2role" not in self.bot.configs[source.guild.id]
                         or "channel"
-                        not in self.bot.configs[ctx.guild.id]["select2role"]
+                        not in self.bot.configs[source.guild.id]["select2role"]
                     ):
-                        return await ctx.reply(
-                            f"ℹ️ - The server already doesn't have a select to role channel configured!",
-                            delete_after=20,
-                        )
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"ℹ️ - The server already doesn't have a select to role channel configured!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.response.send_message(
+                                f"ℹ️ - The server already doesn't have a select to role channel configured!",
+                                ephemeral=True,
+                            )
 
-                    perms = self.bot.configs[ctx.guild.id]["select2role"][
+                    perms = self.bot.configs[source.guild.id]["select2role"][
                         "channel"
                     ].permissions_for(source.guild.me)
 
@@ -5094,8 +5102,8 @@ class Moderation(Cog, name="moderation.config"):  # TODO add slash commands
     async def handle_mods_channel(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        option: Union[str, None] = None,
-        mods_channel: Union[TextChannel, None] = None,
+        option: str = None,
+        mods_channel: TextChannel = None,
     ):
         try:
             if option:

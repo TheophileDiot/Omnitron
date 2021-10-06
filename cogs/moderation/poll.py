@@ -225,7 +225,7 @@ class Moderation(Cog, name="moderation.poll"):
     async def handle_info(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        poll_id: Union[int, None] = None,
+        poll_id: int = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
             if isinstance(source, Context):
@@ -430,7 +430,7 @@ class Moderation(Cog, name="moderation.poll"):
     async def handle_end(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        poll_id: Union[int, None] = None,
+        poll_id: Union[int, str] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
             if isinstance(source, Context):
@@ -503,7 +503,7 @@ class Moderation(Cog, name="moderation.poll"):
     async def handle_delete(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        poll_id: Union[int, str, None] = None,
+        poll_id: Union[int, str] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
             if isinstance(source, Context):

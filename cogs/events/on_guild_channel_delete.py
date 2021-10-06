@@ -97,23 +97,27 @@ class Events(Cog, name="events.on_guild_channel_delete"):
             del self.bot.configs[channel.guild.id]["select2role"]["channel"]
             del self.bot.configs[channel.guild.id]["select2role"]["roles_msg"]
 
-        if "tickets" in self.bot.configs[channel.guild.id] and (
-            (
+        if "tickets" in self.bot.configs[channel.guild.id]:
+            tickets = self.bot.ticket_repo.get_tickets(channel.guild.id)
+
+            if tickets:
+                if str(channel.id) in tickets:
+                    self.bot.ticket_repo.delete_ticket(channel.guild.id, channel.id)
+
+            if (
                 "tickets_channel" in self.bot.configs[channel.guild.id]["tickets"]
                 and self.bot.configs[channel.guild.id]["tickets"]["tickets_channel"]
                 == channel
-            )
-            or (
+            ) or (
                 "tickets_category" in self.bot.configs[channel.guild.id]["tickets"]
                 and self.bot.configs[channel.guild.id]["tickets"]["tickets_category"]
                 == channel
-            )
-        ):
-            self.bot.config_repo.remove_tickets(channel.guild.id)
-            del self.bot.configs[channel.guild.id]["tickets"]
+            ):
+                self.bot.config_repo.remove_tickets(channel.guild.id)
+                del self.bot.configs[channel.guild.id]["tickets"]
 
-            if isinstance(channel, CategoryChannel):
-                self.bot.ticket_repo.purge_tickets(channel.guild.id)
+                if isinstance(channel, CategoryChannel):
+                    self.bot.ticket_repo.purge_tickets(channel.guild.id)
 
         if (
             "prevent_invites" in self.bot.configs[channel.guild.id]

@@ -144,7 +144,7 @@ class Moderation(Cog, name="moderation.sanction"):
         self,
         source: Union[Context, ApplicationCommandInteraction],
         member: Member,
-        reason: Union[str, None] = None,
+        reason: str = None,
     ):
         em = Embed(
             colour=self.bot.color,
@@ -260,9 +260,9 @@ class Moderation(Cog, name="moderation.sanction"):
         self,
         source: Union[Context, ApplicationCommandInteraction],
         member: Member,
-        reason: Union[str, None] = None,
-        duration: Union[int, None] = None,
-        type_duration: Union[str, None] = None,
+        reason: str = None,
+        duration: int = None,
+        type_duration: str = None,
     ):
         duration_s = await self.bot.utils_class.parse_duration(
             int(duration), type_duration, source
@@ -373,7 +373,7 @@ class Moderation(Cog, name="moderation.sanction"):
         self,
         source: Union[Context, ApplicationCommandInteraction],
         member: Member,
-        reason: Union[str, None] = None,
+        reason: str = None,
     ):
         if "muted_role" not in self.bot.configs[source.guild.id]:
             if isinstance(source, Context):
@@ -520,7 +520,9 @@ class Moderation(Cog, name="moderation.sanction"):
         await self.handle_warn_list(inter, member)
 
     async def handle_warn_list(
-        self, source: Union[Context, ApplicationCommandInteraction], member: Member
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member = None,
     ):
         if not member:
             member = source.author
@@ -582,6 +584,54 @@ class Moderation(Cog, name="moderation.sanction"):
             await source.send(embed=em)
         else:
             await source.response.send_message(embed=em)
+
+    """ WARN CLEAR """
+
+    @sanction_warn_group.command(
+        name="clear",
+        brief="🧹",
+        usage="(@member)",
+        description="Clear the warns of a member!",
+    )
+    async def sanction_warn_clear_command(self, ctx: Context, member: Member):
+        await self.handle_warn_clear(ctx, member)
+
+    @sanction_warn_slash_group.sub_command(
+        name="clear",
+        description="Clear the warns of a member!",
+    )
+    async def sanction_warn_clear_slash_command(
+        self, inter: ApplicationCommandInteraction, member: Member
+    ):
+        await self.handle_warn_clear(inter, member)
+
+    async def handle_warn_clear(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member,
+    ):
+        warns = self.bot.user_repo.get_warns(source.guild.id, member.id)
+
+        if not warns:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"ℹ️ - {source.author.mention} - {f'The member {member}' if member != source.author else 'You'} has never been warned.",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ️ - {source.author.mention} - {f'The member {member}' if member != source.author else 'You'} has never been warned.",
+                    ephemeral=True,
+                )
+
+        self.bot.user_repo.clear_warns(source.guild.id, member.id)
+
+        if isinstance(source, Context):
+            await source.send(f"ℹ️ - `{member}`'s warns have been cleared!")
+        else:
+            await source.response.send_message(
+                f"ℹ️ - `{member}`'s warns have been cleared!"
+            )
 
     """ MAIN GROUP'S MUTE COMMAND(S) """
 
@@ -781,7 +831,7 @@ class Moderation(Cog, name="moderation.sanction"):
     async def handle_mute_list(
         self,
         source: Union[Context, ApplicationCommandInteraction],
-        member: Union[Member, None] = None,
+        member: Member = None,
     ):
         if not member:
             member = source.author
@@ -881,7 +931,7 @@ class Moderation(Cog, name="moderation.sanction"):
         self,
         source: Union[Context, ApplicationCommandInteraction],
         member: Member,
-        reason: str,
+        reason: str = None,
     ):
         db_user = self.bot.user_repo.get_user(source.guild.id, member.id)
 

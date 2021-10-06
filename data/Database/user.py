@@ -120,13 +120,6 @@ class User:
             },
         )
 
-    @Utils.resolve_guild_path
-    def delete_user(self, guild_id: int, _id: int) -> None:
-        # self.model.delete(f"logs/xp/{_id}")
-        # self.model.delete(f"logs/level/{_id}")
-        # self.model.delete(f"logs/prestige/{_id}")
-        self.model.delete(f"{self.path}/{_id}")
-
     """ SANCTIONS """
 
     @Utils.resolve_guild_path
@@ -191,11 +184,6 @@ class User:
 
     @Utils.resolve_guild_path
     @__check_user_exists
-    def clear_mutes(self, guild_id: int, _id: int) -> None:
-        self.model.delete(f"{self.path}/{_id}/mutes")
-
-    @Utils.resolve_guild_path
-    @__check_user_exists
     def clear_join_mutes(self, guild_id: int, _id: int) -> None:
         db_user = self.get_user(guild_id, _id)
 
@@ -249,21 +237,6 @@ class User:
             },
         )
         self.model.delete(f"{self.path}/{_id}/ban")
-
-    @Utils.resolve_guild_path
-    @__check_user_exists
-    def kick_user(
-        self, guild_id: int, _id: int, at: float, by: str, reason: str = None
-    ) -> None:
-        self.model.create(
-            f"logs/kick/{_id}",
-            args={
-                "at": datetime.fromtimestamp(at).strftime("%d/%m/%Y, %H:%M:%S"),
-                "at_s": at,
-                "by": by,
-                "reason": reason,
-            },
-        )
 
     """ XP """
 
@@ -357,11 +330,6 @@ class User:
 
     @Utils.resolve_guild_path
     @__check_user_exists
-    def set_identification(self, guild_id: int, _id: int, value: bool = False) -> None:
-        self.model.update(f"{self.path}/{_id}", args={"identified": value})
-
-    @Utils.resolve_guild_path
-    @__check_user_exists
     def get_user(self, guild_id: int, _id: int) -> OrderedDict:
         return self.model.get(f"{self.path}/{_id}")
 
@@ -393,12 +361,82 @@ class User:
 
     @Utils.resolve_guild_path
     @__check_user_exists
-    def set_game_score(
-        self, guild_id: int, _id: int, game: Utils.to_lower, score: int
-    ) -> None:
-        self.model.create(f"{self.path}/{_id}/games", args={game: score})
+    def get_commands_count(
+        self, guild_id: int, _id: int, details: bool = False
+    ) -> int or OrderedDict:
+        if details:
+            return self.model.get(f"{self.path}/{_id}/commands_count")
+
+        count = 0
+        commands = self.model.get(f"{self.path}/{_id}/commands_count")
+
+        for command in commands.values():
+            count += command
+
+        return count
 
     @Utils.resolve_guild_path
     @__check_user_exists
-    def get_game_score(self, guild_id: int, _id: int, game: Utils.to_lower) -> int:
-        return self.model.get(f"{self.path}/{_id}/games/{game}") or 0
+    def add_messages_count(self, guild_id: int, _id: int, channel_id: int) -> None:
+        counts = self.model.get(f"{self.path}/{_id}/messages_count")
+
+        if counts:
+            self.model.update(
+                f"{self.path}/{_id}/messages_count",
+                args={
+                    **{
+                        channel_id: (
+                            counts.pop(str(channel_id))
+                            if str(channel_id) in counts
+                            else 0
+                        )
+                        + 1
+                    },
+                    **counts,
+                },
+            )
+        else:
+            self.model.create(f"{self.path}/{_id}/messages_count", args={channel_id: 1})
+
+    @Utils.resolve_guild_path
+    @__check_user_exists
+    def add_command_count(self, guild_id: int, _id: int, command: str) -> None:
+        counts = self.model.get(f"{self.path}/{_id}/commands_count")
+
+        if counts:
+            self.model.update(
+                f"{self.path}/{_id}/commands_count",
+                args={
+                    **{command: (counts.pop(command) if command in counts else 0) + 1},
+                    **counts,
+                },
+            )
+        else:
+            self.model.create(f"{self.path}/{_id}/commands_count", args={command: 1})
+
+    @Utils.resolve_guild_path
+    @__check_user_exists
+    def add_voice_time(
+        self, guild_id: int, _id: int, channel_id: int, value: int = 1
+    ) -> None:
+        counts = self.model.get(f"{self.path}/{_id}/voice_count")
+
+        if counts:
+            self.model.update(
+                f"{self.path}/{_id}/voice_count",
+                args={
+                    **{
+                        channel_id: (
+                            counts.pop(str(channel_id))
+                            if str(channel_id) in counts
+                            else 0
+                        )
+                        + value
+                    },
+                    **counts,
+                },
+            )
+        else:
+            self.model.create(
+                f"{self.path}/{_id}/voice_count", args={channel_id: value}
+            )

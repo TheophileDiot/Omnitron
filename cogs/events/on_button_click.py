@@ -1,5 +1,6 @@
 from disnake import Forbidden, MessageInteraction, NotFound, PermissionOverwrite
 from disnake.ext.commands import Cog
+from disnake.utils import find
 
 from bot import Omnitron
 
@@ -63,11 +64,11 @@ class Events(Cog, name="events.on_button_click"):
             if channel_name in [
                 channel.name for channel in set(interaction.guild.text_channels)
             ]:
-                ticket = self.bot.ticket_repo.get_ticket(
-                    interaction.guild.id, interaction.author.id
+                channel = find(
+                    lambda c: c.name == channel_name, interaction.guild.text_channels
                 )
                 return await interaction.response.send_message(
-                    content=f"You already have an existing ticket channel! {(self.bot.get_channel(ticket['id']) or await self.bot.fetch_channel(ticket['id'])).mention}",
+                    content=f"You already have an existing ticket channel! {channel.mention if channel else ''}",
                     ephemeral=True,
                 )
 
