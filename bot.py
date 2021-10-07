@@ -120,8 +120,8 @@ class Omnitron(Bot):
 
     """ EVENTS """
 
-    async def on_slash_command_complete(self, inter: ApplicationCommandInteraction):
-        name = inter.data.name
+    async def on_slash_command_completion(self, inter: ApplicationCommandInteraction):
+        cmd_name = inter.data.name
         options = bool(inter.data.options)
         data = inter.data
 
@@ -132,12 +132,12 @@ class Omnitron(Bot):
                 options = False
                 continue
 
-            name += f" {data.name}"
+            cmd_name += f" {data.name}"
 
             if not data.options:
                 options = False
 
-        self.user_repo.add_command_count(inter.guild.id, inter.author.id, name)
+        self.user_repo.add_command_count(inter.guild.id, inter.author.id, cmd_name)
 
     async def on_command_completion(self, ctx: Context):
         self.user_repo.add_command_count(
