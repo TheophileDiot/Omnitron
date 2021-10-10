@@ -201,12 +201,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_moderators_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
+        mods: List[Union[Member, Role]] = Param(
+            default=None, converter=Utils.mentionable_converter
+        ),
     ):
         if mods:
             await self.handle_moderators(inter, "add", *mods)
-        else:
-            await self.handle_moderators(inter, "add")
 
     @config_moderators_slash_group.sub_command(
         name="remove",
@@ -215,12 +215,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_moderators_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
+        mods: List[Union[Member, Role]] = Param(
+            default=None, converter=Utils.mentionable_converter
+        ),
     ):
         if mods:
             await self.handle_moderators(inter, "remove", *mods)
-        else:
-            await self.handle_moderators(inter, "remove")
 
     @config_moderators_slash_group.sub_command(
         name="purge", description="This option purge the server's moderators list"
@@ -501,12 +501,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_djs_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
+        djs: List[Union[Member, Role]] = Param(
+            default=None, converter=Utils.mentionable_converter
+        ),
     ):
-        if mods:
-            await self.handle_djs(inter, "add", *mods)
-        else:
-            await self.handle_djs(inter, "add")
+        if djs:
+            await self.handle_djs(inter, "add", *djs)
 
     @config_djs_slash_group.sub_command(
         name="remove",
@@ -515,12 +515,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_djs_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        mods: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
+        djs: List[Union[Member, Role]] = Param(
+            default=None, converter=Utils.mentionable_converter
+        ),
     ):
-        if mods:
-            await self.handle_djs(inter, "remove", *mods)
-        else:
-            await self.handle_djs(inter, "remove")
+        if djs:
+            await self.handle_djs(inter, "remove", *djs)
 
     @config_djs_slash_group.sub_command(
         name="purge", description="This option purge the server's djs list"
@@ -1502,16 +1502,16 @@ class Moderation(Cog, name="moderation.config"):
 
                         members = set(source.guild.members)
                         if source.channel.permissions_for(source.guild.me).manage_roles:
-                            async with self.bot.limiter:
-                                for member in members:
-                                    if member.bot:
-                                        continue
+                            # async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or role not in member.roles:
+                                    continue
 
-                                    try:
-                                        await member.remove_roles(role)
-                                    except Forbidden as f:
-                                        f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
-                                        raise
+                                try:
+                                    await member.remove_roles(role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
+                                    raise
                         else:
                             await self.bot.utils_class.send_message_to_mods(
                                 f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old select to role role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -1563,16 +1563,16 @@ class Moderation(Cog, name="moderation.config"):
                     members = set(source.guild.members)
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
-                        async with self.bot.limiter:
-                            for member in members:
-                                if member.bot:
-                                    continue
+                        # async with self.bot.limiter:
+                        for member in members:
+                            if member.bot or not roles & set(member.roles):
+                                continue
 
-                                try:
-                                    await member.remove_roles(*roles)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
-                                    raise
+                            try:
+                                await member.remove_roles(*roles)
+                            except Forbidden as f:
+                                f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
+                                raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -1704,6 +1704,8 @@ class Moderation(Cog, name="moderation.config"):
                             )
             except MissingRequiredArgument as mre:
                 raise MissingRequiredArgument(param=mre.param)
+            except Forbidden as f:
+                raise f
             except Exception as e:
                 await source.channel.send(
                     f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the value `{title}` {'to' if option != 'update' else 'from'} the select to role message! please try again in a few seconds! Error type: {type(e)}",
@@ -1858,7 +1860,8 @@ class Moderation(Cog, name="moderation.config"):
 
                                 if old_role:
                                     try:
-                                        await member.remove_roles(old_role)
+                                        if old_role in member.roles:
+                                            await member.remove_roles(old_role)
                                     except Forbidden as f:
                                         f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
                                         raise
@@ -1883,15 +1886,17 @@ class Moderation(Cog, name="moderation.config"):
                     old_role = self.bot.configs[source.guild.id]["muted_role"]
                     self.bot.config_repo.set_muted_role(source.guild.id, None)
                     del self.bot.configs[source.guild.id]["muted_role"]
+                    msg = f"ℹ️ - The muted role is now removed from this guild!"
+
+                    if "mute_on_join" in self.bot.configs[source.guild.id]:
+                        self.bot.config_repo.remove_mute_on_join(source.guild.id)
+                        del self.bot.configs[source.guild.id]["mute_on_join"]
+                        msg += "\nThe mute_on_join feature was activated, therefore it is now set to off!"
 
                     if isinstance(source, Context):
-                        await source.send(
-                            f"ℹ️ - The muted role is now removed from this guild!"
-                        )
+                        await source.send(msg)
                     else:
-                        await source.response.send_message(
-                            f"ℹ️ - The muted role is now removed from this guild!"
-                        )
+                        await source.response.send_message(msg)
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         db_users = self.bot.user_repo.get_users(source.guild.id)
@@ -1908,7 +1913,8 @@ class Moderation(Cog, name="moderation.config"):
                                     continue
 
                                 try:
-                                    await member.remove_roles(*old_role)
+                                    if old_role in member.roles:
+                                        await member.remove_roles(*old_role)
                                 except Forbidden as f:
                                     f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
                                     raise
@@ -1926,6 +1932,8 @@ class Moderation(Cog, name="moderation.config"):
                 raise MissingRequiredArgument(param=mre.param)
             except BadArgument:
                 raise BadArgument
+            except Forbidden as f:
+                raise f
             except Exception as e:
                 await source.channel.send(
                     f"⚠️ - {source.author.mention} - An error occurred while configuring the muted_role! please try again in a few seconds! Error type: {type(e)}",
@@ -2964,16 +2972,16 @@ class Moderation(Cog, name="moderation.config"):
 
                         db_users = self.bot.user_repo.get_users(source.guild.id)
                         members = set(source.guild.members)
-                        async with self.bot.limiter:
-                            for member in members:
-                                if member.bot:
-                                    continue
+                        # async with self.bot.limiter:
+                        for member in members:
+                            if member.bot:
+                                continue
 
-                                await self.xp_class.manage_levels(
-                                    member,
-                                    db_users[str(member.id)]["level"],
-                                    "new_r_2_l",
-                                )
+                            await self.xp_class.manage_levels(
+                                member,
+                                db_users[str(member.id)]["level"],
+                                "new_r_2_l",
+                            )
                     elif option == "remove":
                         if "lvl2role" not in self.bot.configs[source.guild.id][
                             "xp"
@@ -3010,16 +3018,16 @@ class Moderation(Cog, name="moderation.config"):
 
                         if source.channel.permissions_for(source.guild.me).manage_roles:
                             members = set(source.guild.members)
-                            async with self.bot.limiter:
-                                for member in members:
-                                    if member.bot:
-                                        continue
+                            # async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or role not in member.roles:
+                                    continue
 
-                                    try:
-                                        await member.remove_roles(role)
-                                    except Forbidden as f:
-                                        f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
-                                        raise
+                                try:
+                                    await member.remove_roles(role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
+                                    raise
                         else:
                             await self.bot.utils_class.send_message_to_mods(
                                 f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3055,16 +3063,16 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        async with self.bot.limiter:
-                            for member in members:
-                                if member.bot:
-                                    continue
+                        # async with self.bot.limiter:
+                        for member in members:
+                            if member.bot or not roles & set(member.roles):
+                                continue
 
-                                try:
-                                    await member.remove_roles(*roles)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
-                                    raise
+                            try:
+                                await member.remove_roles(*roles)
+                            except Forbidden as f:
+                                f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
+                                raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3083,6 +3091,8 @@ class Moderation(Cog, name="moderation.config"):
                 raise BadUnionArgument(
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
+            except Forbidden as f:
+                raise f
             except Exception as e:
                 await source.channel.send(
                     f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the level `{lvl}` {'to' if option != 'update' else 'from'} the level to role list! please try again in a few seconds! Error type: {type(e)}",
@@ -3314,22 +3324,22 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        async with self.bot.limiter:
-                            for member in members:
-                                if member.bot or old_role not in member.roles:
-                                    continue
+                        # async with self.bot.limiter:
+                        for member in members:
+                            if member.bot or old_role not in member.roles:
+                                continue
 
-                                try:
-                                    await member.remove_roles(old_role)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
-                                    raise
+                            try:
+                                await member.remove_roles(old_role)
+                            except Forbidden as f:
+                                f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
+                                raise
 
-                                try:
-                                    await member.add_roles(role)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to add the role `{role}` to {member} (maybe the role is above mine)"
-                                    raise
+                            try:
+                                await member.add_roles(role)
+                            except Forbidden as f:
+                                f.text = f"⚠️ - I don't have the right permissions to add the role `{role}` to {member} (maybe the role is above mine)"
+                                raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3366,22 +3376,22 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        async with self.bot.limiter:
-                            for member in members:
-                                if member.bot or old_role not in member.roles:
-                                    continue
+                        # async with self.bot.limiter:
+                        for member in members:
+                            if member.bot or old_role not in member.roles:
+                                continue
 
-                                try:
-                                    await member.remove_roles(old_role)
-                                except Forbidden:
-                                    await self.bot.utils_class.send_message_to_mods(
-                                        f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)",
-                                        source.guild.id,
-                                    )
-
-                                await self.xp_class.manage_prestige(
-                                    member, "removed_prestige"
+                            try:
+                                await member.remove_roles(old_role)
+                            except Forbidden:
+                                await self.bot.utils_class.send_message_to_mods(
+                                    f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)",
+                                    source.guild.id,
                                 )
+
+                            await self.xp_class.manage_prestige(
+                                member, "removed_prestige"
+                            )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3417,22 +3427,22 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        async with self.bot.limiter:
-                            for member in members:
-                                if member.bot or not set(member.roles) & set(old_roles):
-                                    continue
+                        # async with self.bot.limiter:
+                        for member in members:
+                            if member.bot or not set(member.roles) & set(old_roles):
+                                continue
 
-                                try:
-                                    await member.remove_roles(*old_roles)
-                                except Forbidden:
-                                    await self.bot.utils_class.send_message_to_mods(
-                                        f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in old_roles])} from {member} (maybe one of these roles is above mine)",
-                                        source.guild.id,
-                                    )
-
-                                await self.xp_class.manage_prestige(
-                                    member, "purged_prestiges"
+                            try:
+                                await member.remove_roles(*old_roles)
+                            except Forbidden:
+                                await self.bot.utils_class.send_message_to_mods(
+                                    f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in old_roles])} from {member} (maybe one of these roles is above mine)",
+                                    source.guild.id,
                                 )
+
+                            await self.xp_class.manage_prestige(
+                                member, "purged_prestiges"
+                            )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3451,6 +3461,8 @@ class Moderation(Cog, name="moderation.config"):
                 raise BadUnionArgument(
                     param=bua.param, converters=bua.converters, errors=bua.errors
                 )
+            except Forbidden as f:
+                raise f
             except Exception as e:
                 await source.channel.send(
                     f"⚠️ - {source.author.mention} - An error occurred while {'adding' if option == 'add' else ('removing' if option == 'remove' else 'updating')} the role `@{role}` to the prestige `{prestige}` {'to' if option != 'update' else 'from'} the prestiges list! please try again in a few seconds! Error type: {type(e)}",
@@ -3532,12 +3544,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_channels_commands_channels_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[TextChannel] = Param(converter=Utils.channel_converter),
+        channels: List[TextChannel] = Param(
+            default=None, converter=Utils.channel_converter
+        ),
     ):
         if channels:
             await self.handle_commands_channels(inter, "add", *channels)
-        else:
-            await self.handle_commands_channels(inter, "add")
 
     @config_channels_commands_channels_slash_group.sub_command(
         name="remove",
@@ -3546,12 +3558,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_channels_commands_channels_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[TextChannel] = Param(converter=Utils.channel_converter),
+        channels: List[TextChannel] = Param(
+            default=None, converter=Utils.channel_converter
+        ),
     ):
         if channels:
             await self.handle_commands_channels(inter, "remove", *channels)
-        else:
-            await self.handle_commands_channels(inter, "remove")
 
     @config_channels_commands_channels_slash_group.sub_command(
         name="purge",
@@ -3767,12 +3779,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_channels_music_channels_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[VoiceChannel] = Param(converter=Utils.channel_converter),
+        channels: List[VoiceChannel] = Param(
+            default=None, converter=Utils.channel_converter
+        ),
     ):
         if channels:
             await self.handle_music_channels(inter, "add", *channels)
-        else:
-            await self.handle_music_channels(inter, "add")
 
     @config_channels_music_channels_slash_group.sub_command(
         name="remove",
@@ -3781,12 +3793,12 @@ class Moderation(Cog, name="moderation.config"):
     async def config_channels_music_channels_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[VoiceChannel] = Param(converter=Utils.channel_converter),
+        channels: List[VoiceChannel] = Param(
+            default=None, converter=Utils.channel_converter
+        ),
     ):
         if channels:
             await self.handle_music_channels(inter, "remove", *channels)
-        else:
-            await self.handle_music_channels(inter, "remove")
 
     @config_channels_music_channels_slash_group.sub_command(
         name="purge",
@@ -4026,13 +4038,11 @@ class Moderation(Cog, name="moderation.config"):
         self,
         inter: ApplicationCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
-            converter=Utils.channel_converter
+            default=None, converter=Utils.channel_converter
         ),
     ):
         if channels:
             await self.handle_xp_gain_channels(inter, "add", *channels)
-        else:
-            await self.handle_xp_gain_channels(inter, "add")
 
     @config_channels_xp_gain_channels_slash_group.sub_command(
         name="remove",
@@ -4042,13 +4052,11 @@ class Moderation(Cog, name="moderation.config"):
         self,
         inter: ApplicationCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
-            converter=Utils.channel_converter
+            default=None, converter=Utils.channel_converter
         ),
     ):
         if channels:
             await self.handle_xp_gain_channels(inter, "remove", *channels)
-        else:
-            await self.handle_xp_gain_channels(inter, "remove")
 
     @config_channels_xp_gain_channels_slash_group.sub_command(
         name="purge",

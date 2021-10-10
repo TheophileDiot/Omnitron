@@ -698,13 +698,13 @@ class Utils:
 
         if "lvl2role" in xp:
             bot.configs[guild.id]["xp"]["lvl2role"] = {
-                int(key): guild.get_role(value["role_id"])
+                int(key): guild.get_role(int(value["role_id"]))
                 for key, value in xp["lvl2role"].items()
             }
 
         if "prestiges" in xp:
             bot.configs[guild.id]["xp"]["prestiges"] = {
-                int(key[2]): guild.get_role(value["role_id"])
+                int(key[2]): guild.get_role(int(value["role_id"]))
                 for key, value in xp["prestiges"].items()
             }
 
@@ -830,7 +830,7 @@ class Utils:
             if "selects" in select2role:
                 bot.configs[guild.id]["select2role"]["selects"] = {
                     key: {
-                        "role": guild.get_role(value["role_id"]),
+                        "role": guild.get_role(int(value["role_id"])),
                         "description": value["description"]
                         if "description" in value
                         else "",
@@ -908,14 +908,16 @@ class Utils:
         inter: ApplicationCommandInteraction,
         argument: str,
     ) -> List[Union[Member, Role]] or None:
+        print(argument)
         ids = findall(r"([0-9]{15,20})", argument)
         result = []
+        print(ids)
         for id in ids:
             try:
                 result.append(
-                    inter.guild.get_role(id)
-                    or inter.guild.get_member(id)
-                    or await inter.guild.fetch_member(id)
+                    inter.guild.get_role(int(id))
+                    or inter.guild.get_member(int(id))
+                    or await inter.guild.fetch_member(int(id))
                 )
             except NotFound:
                 continue

@@ -90,7 +90,9 @@ class Omnitron(Bot):
         self._extensions = [f for f in dirs]
         self.load_extensions()
         self.session = ClientSession(loop=self.loop)
-        self.limiter = RateLimiter(max_calls=1, period=1, callback=limited)
+        self.limiter = RateLimiter(
+            max_calls=1, period=1, callback=limited
+        )  # TODO fix this asap
 
         self.starting = True
         self.model = Model.setup()
@@ -148,7 +150,6 @@ class Omnitron(Bot):
         self, inter: ApplicationCommandInteraction, _error
     ):
         """Override default slash command error handler to log errors and prevent the bot from crashing."""
-        print("yes")
         await self.handle_error(inter, _error)
 
     async def on_command_error(self, ctx: Context, _error):
