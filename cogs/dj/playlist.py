@@ -127,7 +127,7 @@ class Dj(Cog, name="dj.playlist"):
         em.title = "Playlist"
 
         em.set_author(
-            name=source.author.display_name,
+            name=f"{source.author}",
             icon_url=source.author.avatar.url if source.author.avatar else None,
         )
 

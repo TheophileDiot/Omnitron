@@ -306,6 +306,7 @@ Search.setIndex({
     type: 0,
     type_of_dur: 0,
     ui: 0,
+    unban: 0,
     under: 1,
     unlik: 0,
     unmut: 0,
