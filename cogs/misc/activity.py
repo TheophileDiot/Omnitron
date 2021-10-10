@@ -261,7 +261,7 @@ class Miscellaneous(Cog, name="misc.activity"):
             url=f"https://cdn.discordapp.com/app-icons/{resp['target_application']['id']}/{resp['target_application']['icon']}.png"
         )
         em.set_author(
-            name=source.author.display_name,
+            name=f"{source.author}",
             icon_url=source.author.avatar.url if source.author.avatar else None,
         )
 

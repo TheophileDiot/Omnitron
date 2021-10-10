@@ -1,3 +1,4 @@
+from math import ceil
 from time import time
 from typing import Union
 
@@ -6,6 +7,7 @@ from disnake import (
     Embed,
     Forbidden,
     Member,
+    User,
 )
 from disnake.ext.commands import (
     bot_has_permissions,
@@ -110,6 +112,30 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_mute_slash_group(self, inter: ApplicationCommandInteraction):
         pass
 
+    @sanction_group.group(
+        pass_context=True,
+        name="ban",
+        aliases=["bans"],
+        brief="🔨",
+        usage="(sub-command)",
+        description="This option manage the server's bans",
+    )
+    async def sanction_ban_group(self, ctx: Context):
+        if ctx.invoked_subcommand is None:
+            await ctx.send(
+                embed=self.bot.utils_class.get_embed_from_ctx(
+                    ctx, title="Server's sanction ban feature"
+                )
+            )
+
+    @sanction_slash_group.sub_command_group(
+        name="ban",
+        description="This option manage the server's bans",
+    )
+    @max_concurrency(1, per=BucketType.guild)
+    async def sanction_ban_slash_group(self, inter: ApplicationCommandInteraction):
+        pass
+
     """ MAIN GROUP'S COMMAND(S) """
 
     """ KICK """
@@ -152,23 +178,7 @@ class Moderation(Cog, name="moderation.sanction"):
             description=f"The member {member} has been kicked by {source.author.mention}",
         )
 
-        if source.guild.icon:
-            em.set_thumbnail(url=source.guild.icon.url)
-
-        if member.avatar:
-            em.set_author(
-                name=source.author.display_name,
-                icon_url=member.avatar.url,
-            )
-        else:
-            em.set_author(
-                name=source.author.display_name,
-            )
-
-        if self.bot.user.avatar:
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
-        else:
-            em.set_footer(text=self.bot.user.name)
+        em = self.configure_embed(source, em)
 
         if reason:
             em.add_field(name="raison:", value=reason, inline=False)
@@ -186,155 +196,6 @@ class Moderation(Cog, name="moderation.sanction"):
             else:
                 return await source.response.send_message(
                     f"⛔ - {source.author.mention} - I can't kick the member `{member}`!",
-                    ephemeral=True,
-                )
-
-        if isinstance(source, Context):
-            await source.send(embed=em)
-        else:
-            await source.response.send_message(embed=em)
-
-    """ BAN """
-
-    @sanction_group.command(
-        name="ban",
-        brief="🔨",
-        usage='@member ("reason") (<duration_value> <duration_type>)',
-        description="Ban a member for a certain duration with a reason attached if specified! (default/minimum duration = 1 day) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
-    )
-    @has_guild_permissions(ban_members=True)
-    @bot_has_guild_permissions(ban_members=True)
-    @max_concurrency(1, per=BucketType.member)
-    async def sanction_ban_command(self, ctx: Context, member: Member, *args: str):
-        reason = None
-        _duration = "1"
-        type_duration = "d"
-
-        if args and not "".join(args[0][:-1]).isdigit():
-            reason = args[0]
-
-        if reason:
-            if len(args) > 2:
-                _duration, type_duration = (*args[1::],)
-            elif len(args) > 1:
-                _duration = args[1][0:-1]
-                type_duration = args[1][-1]
-        elif args:
-            if len(args) > 1:
-                _duration, type_duration = (*args[0::],)
-            else:
-                _duration = args[0][0:-1]
-                type_duration = args[0][-1]
-
-        if not _duration.isdigit():
-            try:
-                await ctx.reply(
-                    f"⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
-                    delete_after=15,
-                )
-            except Forbidden as f:
-                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join(['SEND_MESSAGES'])}`"
-                raise
-            return
-
-        await self.handle_ban(ctx, member, reason, _duration, type_duration)
-
-    @sanction_slash_group.sub_command(
-        name="ban",
-        description="Ban a member for a certain duration with a reason attached if specified!",
-    )
-    @has_guild_permissions(ban_members=True)
-    @bot_has_guild_permissions(ban_members=True)
-    @max_concurrency(1, per=BucketType.member)
-    async def sanction_ban_slash_command(
-        self,
-        inter: ApplicationCommandInteraction,
-        member: Member,
-        reason: str = None,
-        duration: int = 1,
-        type_duration: DurationType = "d",
-    ):
-        await self.handle_ban(inter, member, reason, duration, type_duration)
-
-    async def handle_ban(
-        self,
-        source: Union[Context, ApplicationCommandInteraction],
-        member: Member,
-        reason: str = None,
-        duration: int = None,
-        type_duration: str = None,
-    ):
-        duration_s = await self.bot.utils_class.parse_duration(
-            int(duration), type_duration, source
-        )
-        if not duration_s:
-            return
-
-        em = Embed(
-            colour=self.bot.color,
-            title=f"🚫 - Ban",
-            description=f"The member {member} has been banned by {source.author.mention}",
-        )
-
-        if source.guild.icon:
-            em.set_thumbnail(url=source.guild.icon.url)
-
-        if member.avatar:
-            em.set_author(
-                name=source.author.display_name,
-                icon_url=member.avatar.url,
-            )
-        else:
-            em.set_author(
-                name=source.author.display_name,
-            )
-
-        if self.bot.user.avatar:
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
-        else:
-            em.set_footer(text=self.bot.user.name)
-
-        if reason:
-            em.add_field(name="raison:", value=reason, inline=False)
-
-        try:
-            await member.ban(
-                reason=f"The member {member} has been banned by {source.author}"
-                + (
-                    f" for {self.bot.utils_class.duration(duration_s)}"
-                    if duration_s
-                    else ""
-                )
-                + (f" for the reason: {reason}'" if reason else "")
-            )
-            self.bot.user_repo.ban_user(
-                source.guild.id,
-                member.id,
-                duration_s,
-                time(),
-                source.author.display_name,
-                reason,
-            )
-
-            if duration_s:
-                em.description += f" for {self.bot.utils_class.duration(duration_s)}"
-                self.bot.utils_class.task_launcher(
-                    self.bot.utils_class.ban_completion,
-                    (
-                        self.bot.user_repo.get_user(source.guild.id, member.id),
-                        source.guild.id,
-                    ),
-                    count=1,
-                )
-        except Forbidden:
-            if isinstance(source, Context):
-                return await source.reply(
-                    f"⛔ - {source.author.mention} - I can't ban the member `{member}`!",
-                    delete_after=20,
-                )
-            else:
-                return await source.response.send_message(
-                    f"⛔ - {source.author.mention} - I can't ban the member `{member}`!",
                     ephemeral=True,
                 )
 
@@ -393,33 +254,17 @@ class Moderation(Cog, name="moderation.sanction"):
             description=f"The user `{member}` has been warned by {source.author.mention}",
         )
 
-        if source.guild.icon:
-            em.set_thumbnail(url=source.guild.icon.url)
-
-        if member.avatar:
-            em.set_author(
-                name=source.author.display_name,
-                icon_url=member.avatar.url,
-            )
-        else:
-            em.set_author(
-                name=source.author.display_name,
-            )
-
-        if self.bot.user.avatar:
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
-        else:
-            em.set_footer(text=self.bot.user.name)
+        em = self.configure_embed(source, em)
 
         if reason:
             em.add_field(name="reason:", value=reason, inline=False)
 
         self.bot.user_repo.warn_user(
-            source.guild.id, member.id, time(), source.author.display_name, reason
+            source.guild.id, member.id, time(), f"{source.author}", reason
         )
         warns = len(self.bot.user_repo.get_warns(source.guild.id, member.id))
         em.add_field(
-            name=f"**Number of warnings of {member.display_name}:**",
+            name=f"**Number of warnings of {member}:**",
             value=f"{warns}",
             inline=False,
         )
@@ -445,7 +290,7 @@ class Moderation(Cog, name="moderation.sanction"):
                     member.id,
                     10800 if warns == 2 else 86400,
                     time(),
-                    self.bot.user.display_name,
+                    f"{self.bot.user}",
                     f"{'2nd' if warns == 2 else '4th'} warn",
                 )
                 self.bot.tasks[source.guild.id]["mute_completions"][
@@ -531,23 +376,7 @@ class Moderation(Cog, name="moderation.sanction"):
             colour=self.bot.color, title=f"⚠️ - list of previous warns from {member}"
         )
 
-        if source.guild.icon:
-            em.set_thumbnail(url=source.guild.icon.url)
-
-        if member.avatar:
-            em.set_author(
-                name=source.author.display_name,
-                icon_url=member.avatar.url,
-            )
-        else:
-            em.set_author(
-                name=source.author.display_name,
-            )
-
-        if self.bot.user.avatar:
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
-        else:
-            em.set_footer(text=self.bot.user.name)
+        em = self.configure_embed(source, em)
 
         warns = self.bot.user_repo.get_warns(source.guild.id, member.id)
 
@@ -727,23 +556,7 @@ class Moderation(Cog, name="moderation.sanction"):
             description=f"The member `{member}` has been muted by {source.author.mention}",
         )
 
-        if source.guild.icon:
-            em.set_thumbnail(url=source.guild.icon.url)
-
-        if member.avatar:
-            em.set_author(
-                name=source.author.display_name,
-                icon_url=member.avatar.url,
-            )
-        else:
-            em.set_author(
-                name=source.author.display_name,
-            )
-
-        if self.bot.user.avatar:
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
-        else:
-            em.set_footer(text=self.bot.user.name)
+        em = self.configure_embed(source, em)
 
         if reason:
             em.add_field(name="reason:", value=reason, inline=False)
@@ -764,7 +577,7 @@ class Moderation(Cog, name="moderation.sanction"):
                 member.id,
                 duration_s,
                 time(),
-                source.author.display_name,
+                f"{source.author}",
                 reason,
             )
             self.bot.tasks[source.guild.id]["mute_completions"][
@@ -841,23 +654,7 @@ class Moderation(Cog, name="moderation.sanction"):
             title=f"🔇 - List of previous mutes of {member}",
         )
 
-        if source.guild.icon:
-            em.set_thumbnail(url=source.guild.icon.url)
-
-        if member.avatar:
-            em.set_author(
-                name=source.author.display_name,
-                icon_url=member.avatar.url,
-            )
-        else:
-            em.set_author(
-                name=source.author.display_name,
-            )
-
-        if self.bot.user.avatar:
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
-        else:
-            em.set_footer(text=self.bot.user.name)
+        em = self.configure_embed(source, em)
 
         db_user = self.bot.user_repo.get_user(source.guild.id, member.id)
 
@@ -961,6 +758,401 @@ class Moderation(Cog, name="moderation.sanction"):
             await source.send(resp)
         else:
             await source.response.send_message(resp)
+
+    """ MAIN GROUP'S BAN COMMAND(S) """
+
+    """ ADD """
+
+    @sanction_ban_group.command(
+        name="add",
+        brief="🚷",
+        usage='@member ("reason") (<duration_value> <duration_type>)',
+        description="Ban a member for a certain duration with a reason attached if specified! (minimum duration = 1 day) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
+    )
+    @has_guild_permissions(ban_members=True)
+    @bot_has_guild_permissions(ban_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_ban_add_command(self, ctx: Context, member: Member, *args: str):
+        reason = None
+        _duration = None
+        type_duration = None
+
+        if args and not "".join(args[0][:-1]).isdigit():
+            reason = args[0]
+
+        if reason:
+            if len(args) > 2:
+                _duration, type_duration = (*args[1::],)
+            elif len(args) > 1:
+                _duration = args[1][0:-1]
+                type_duration = args[1][-1]
+        elif args:
+            if len(args) > 1:
+                _duration, type_duration = (*args[0::],)
+            else:
+                _duration = args[0][0:-1]
+                type_duration = args[0][-1]
+
+        if _duration and not _duration.isdigit():
+            try:
+                await ctx.reply(
+                    f"⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.",
+                    delete_after=15,
+                )
+            except Forbidden as f:
+                f.text = f"⚠️ - I don't have the right permissions to send messages in the channel {ctx.channel.mention} (message: `⚠️ - {ctx.author.mention} - Please provide a valid duration! `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}{f'{ctx.command.parents[0]}' if ctx.command.parents else f'help {ctx.command.qualified_name}'}` to get more help.`)! Required perms: `{', '.join(['SEND_MESSAGES'])}`"
+                raise
+            return
+
+        await self.handle_ban_add(ctx, member, reason, _duration, type_duration)
+
+    @sanction_ban_slash_group.sub_command(
+        name="add",
+        description="Ban a member for a certain duration with a reason attached if specified!",
+    )
+    @has_guild_permissions(ban_members=True)
+    @bot_has_guild_permissions(ban_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_ban_add_slash_command(
+        self,
+        inter: ApplicationCommandInteraction,
+        member: Member,
+        reason: str = None,
+        duration: int = None,
+        type_duration: DurationType = None,
+    ):
+        await self.handle_ban_add(inter, member, reason, duration, type_duration)
+
+    async def handle_ban_add(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member,
+        reason: str = None,
+        duration: int = None,
+        type_duration: str = None,
+    ):
+        duration_s = None
+
+        if duration:
+            duration_s = await self.bot.utils_class.parse_duration(
+                int(duration), type_duration, source
+            )
+            if not duration_s:
+                return
+
+        em = Embed(
+            colour=self.bot.color,
+            title=f"🚫 - Ban",
+            description=f"The member {member} has been banned by {source.author.mention}",
+        )
+
+        em = self.configure_embed(source, em)
+
+        if reason:
+            em.add_field(name="raison:", value=reason, inline=False)
+
+        try:
+            await member.ban(
+                reason=f"The member {member} has been banned by {source.author}"
+                + (
+                    f" for {self.bot.utils_class.duration(duration_s)}"
+                    if duration_s
+                    else ""
+                )
+                + (f" for the reason: {reason}'" if reason else "")
+            )
+            self.bot.user_repo.ban_user(
+                source.guild.id,
+                member.id,
+                duration_s,
+                time(),
+                f"{source.author}",
+                reason,
+            )
+
+            if duration_s:
+                em.description += f" for {self.bot.utils_class.duration(duration_s)}"
+                self.bot.utils_class.task_launcher(
+                    self.bot.utils_class.ban_completion,
+                    (
+                        self.bot.user_repo.get_user(source.guild.id, member.id),
+                        source.guild.id,
+                    ),
+                    count=1,
+                )
+        except Forbidden:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⛔ - {source.author.mention} - I can't ban the member `{member}`!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⛔ - {source.author.mention} - I can't ban the member `{member}`!",
+                    ephemeral=True,
+                )
+        except AttributeError:
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⛔ - {source.author.mention} - I can't ban the member `{member}` because he is not present in the guild!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"⛔ - {source.author.mention} - I can't ban the member `{member}` because he is not present in the guild!",
+                    ephemeral=True,
+                )
+
+        if isinstance(source, Context):
+            await source.send(embed=em)
+        else:
+            await source.response.send_message(embed=em)
+
+    """ REMOVE """
+
+    @sanction_ban_group.command(
+        name="remove",
+        brief="❤️‍🩹",
+        usage='@user ("reason")',
+        description="Unban a user from the server with a reason attached if specified!",
+    )
+    @has_guild_permissions(ban_members=True)
+    @bot_has_guild_permissions(ban_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_ban_remove_command(
+        self, ctx: Context, user: User, *, reason: str = None
+    ):
+        await self.handle_ban_remove(ctx, user, reason)
+
+    @sanction_ban_slash_group.sub_command(
+        name="remove",
+        description="Unban a user from the server with a reason attached if specified!",
+    )
+    @has_guild_permissions(ban_members=True)
+    @bot_has_guild_permissions(ban_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_ban_remove_slash_command(
+        self, inter: ApplicationCommandInteraction, user: User, reason: str = None
+    ):
+        await self.handle_ban_remove(inter, user, reason)
+
+    async def handle_ban_remove(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        user: User,
+        reason: str = None,
+    ):
+        bans = await source.guild.bans()
+
+        if not bans:
+            if isinstance(source, Context):
+                return await source.send(
+                    f"ℹ - {source.author.mention} - There is no ban in this server!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ - {source.author.mention} - There is no ban in this server!",
+                    ephemeral=True,
+                )
+
+        banned = False
+        for ban in bans:
+            if ban.user.id == user.id:
+                banned = True
+
+        if not banned:
+            if isinstance(source, Context):
+                return await source.send(
+                    f"ℹ - {source.author.mention} - The user `{user}` is not banned from the server!",
+                    delete_after=20,
+                )
+            else:
+                return await source.response.send_message(
+                    f"ℹ - {source.author.mention} - The user `{user}` is not banned from the server!",
+                    ephemeral=True,
+                )
+
+        self.bot.user_repo.unban_user(
+            source.guild.id, user.id, time(), f"{source.author}", reason
+        )
+        await source.guild.unban(user, reason=reason)
+
+        if isinstance(source, Context):
+            await source.send(
+                f"🚫 - The user `{user}` is no longer banned from the server.",
+            )
+        else:
+            await source.response.send_message(
+                f"🚫 - The user `{user}` is no longer banned from the server.",
+            )
+
+        if user.id in self.bot.tasks[source.guild.id]["ban_completions"]:
+            del self.bot.tasks[source.guild.id]["ban_completions"][user.id]
+
+    """ LIST """
+
+    @sanction_ban_group.command(
+        name="list",
+        brief="🙅🏽‍♂️",
+        usage="(@member)",
+        description="List the bans from the server or for a specific member!",
+    )
+    @has_guild_permissions(ban_members=True)
+    @bot_has_guild_permissions(ban_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_ban_list_command(self, ctx: Context, member: Member = None):
+        await self.handle_ban_list(ctx, member)
+
+    @sanction_ban_slash_group.sub_command(
+        name="list",
+        description="List the bans from the server or for a specific member!",
+    )
+    @has_guild_permissions(ban_members=True)
+    @bot_has_guild_permissions(ban_members=True)
+    @max_concurrency(1, per=BucketType.member)
+    async def sanction_ban_list_slash_command(
+        self, inter: ApplicationCommandInteraction, member: Member = None
+    ):
+        await self.handle_ban_list(inter, member)
+
+    async def handle_ban_list(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        member: Member = None,
+    ):
+        if member:
+            db_user = self.bot.user_repo.get_user(source.guild.id, member.id)
+
+            if "unban" not in db_user:
+                if isinstance(source, Context):
+                    return await source.send(
+                        f"ℹ - {source.author.mention} - {member} has never been ban from the server!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ - {source.author.mention} - {member} has never been ban from the server!",
+                        ephemeral=True,
+                    )
+
+            em = Embed(
+                colour=self.bot.color,
+                title=f"🔨 - {member}'s bans",
+                description=f"The list of {member}'s old bans",
+            )
+            em = self.configure_embed(source, em, member)
+            bans = db_user["unban"]
+            x = 0
+
+            while x < len(bans) and x <= 24:
+                if x == 24:
+                    em.add_field(
+                        name="**Too many bans to display them all**",
+                        value="...",
+                        inline=False,
+                    )
+                else:
+                    ban = bans[list(bans.keys())[x]]
+                    print(ban)
+                    em.add_field(
+                        name=f"ban `{ceil(ban['original_ban']['at_s'] * 1000)}`:",
+                        value=f"**date**: {ban['original_ban']['at']}\n**by**: `{ban['original_ban']['by']}`\n**duration**: {ban['original_ban']['duration']}"
+                        + (
+                            f"\n**reason**: {ban['original_ban']['reason']}"
+                            if "reason" in ban["original_ban"]
+                            else ""
+                        )
+                        + f"\n\n**unbanned date**: {ban['at']}\n**by**: `{ban['by']}"
+                        + (f"\n**reason**: {ban['reason']}" if "reason" in ban else ""),
+                        inline=True,
+                    )
+                x += 1
+
+            if isinstance(source, Context):
+                await source.send(embed=em)
+            else:
+                await source.response.send_message(embed=em)
+        else:
+            bans = await source.guild.bans()
+
+            if not bans:
+                if isinstance(source, Context):
+                    return await source.send(
+                        f"ℹ - {source.author.mention} - There is no ban in this server!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"ℹ - {source.author.mention} - There is no ban in this server!",
+                        ephemeral=True,
+                    )
+
+            em = Embed(
+                colour=self.bot.color,
+                title=f"🔨 - Server's bans",
+                description=f"The list of the server bans",
+            )
+            em = self.configure_embed(source, em)
+            x = 0
+
+            while x < len(bans) and x <= 24:
+                if x == 24:
+                    em.add_field(
+                        name="**Too many bans to display them all**",
+                        value="...",
+                        inline=False,
+                    )
+                else:
+                    ban = bans[x]
+                    db_user = self.bot.user_repo.get_user(source.guild.id, ban.user.id)
+                    em.add_field(
+                        name=f"{ban.user}",
+                        value=f"**date**: {db_user['ban']['at']}\n**by**: `{db_user['ban']['by']}`\n**duration**: {db_user['ban']['duration']}"
+                        + (
+                            f"\n**reason**: {db_user['ban']['reason']}"
+                            if "reason" in db_user["ban"]
+                            else ""
+                        ),
+                        inline=True,
+                    )
+                x += 1
+
+            if isinstance(source, Context):
+                await source.send(embed=em)
+            else:
+                await source.response.send_message(embed=em)
+
+    """ METHODS """
+
+    def configure_embed(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        em: Embed,
+        member: Member = None,
+    ) -> Embed:
+        if not member:
+            member = source.author
+
+        if source.guild.icon:
+            em.set_thumbnail(url=source.guild.icon.url)
+
+        if member.avatar:
+            em.set_author(
+                name=f"{member}",
+                icon_url=member.avatar.url,
+            )
+        else:
+            em.set_author(
+                name=f"{member}",
+            )
+
+        if self.bot.user.avatar:
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+        else:
+            em.set_footer(text=self.bot.user.name)
+
+        return em
 
 
 def setup(bot):

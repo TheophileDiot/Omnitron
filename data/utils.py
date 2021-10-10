@@ -82,7 +82,7 @@ class Utils:
                     ctx.guild.id,
                     ctx.author.id,
                     time(),
-                    self.bot.user.display_name,
+                    f"{self.bot.user}",
                     "Sent three invitation links to other servers.",
                 )
                 self.bot.user_repo.clear_invites(ctx.guild.id, ctx.author.id)
@@ -672,7 +672,7 @@ class Utils:
                 else:
                     bot.user_repo.unmute_user(guild.id, db_user["id"])
 
-            if "ban" in db_user:
+            if "ban" in db_user and db_user["ban"]["duration"] != "all Eternity":
                 self.bot.tasks[guild.id]["ban_completions"][
                     db_user["id"]
                 ] = self.task_launcher(

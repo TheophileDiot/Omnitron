@@ -57,7 +57,7 @@ class Miscellaneous(Cog, name="misc.userinfo"):
             member = source.author
 
         em = Embed(
-            title=f"{member.display_name}'s information",
+            title=f"{member}'s information",
             colour=member.colour,
         )
 

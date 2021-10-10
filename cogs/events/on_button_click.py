@@ -114,7 +114,7 @@ class Events(Cog, name="events.on_button_click"):
                 ].create_text_channel(
                     name=channel_name,
                     overwrites=overwrites,
-                    reason=f"Creation of the ticket channel of {interaction.author.display_name}",
+                    reason=f"Creation of the ticket channel of {interaction.author}",
                 )
             except Forbidden as f:
                 await interaction.response.send_message(

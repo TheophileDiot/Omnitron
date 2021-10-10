@@ -211,7 +211,7 @@ class Miscellaneous(Cog, name="misc.xp"):
             if member.id == source.author.id:
                 resp = f"🆙 - {member.mention} - You have gained `{true_value}` levels ! You are now at level `{nbr_lvls}`!"
             else:
-                resp = f"🆙 - {member.mention} - You have just gained `{true_value}` levels from `{source.author.display_name}`! You are now at level `{nbr_lvls}`!"
+                resp = f"🆙 - {member.mention} - You have just gained `{true_value}` levels from `{source.author}`! You are now at level `{nbr_lvls}`!"
         elif option == "set":
             if not value:
                 raise MissingRequiredArgument(
@@ -265,7 +265,7 @@ class Miscellaneous(Cog, name="misc.xp"):
             if member.id == source.author.id:
                 resp = f"🆙 - {member.mention} - You have lost `{true_value}` levels! You are now at level `{nbr_lvls}`!"
             else:
-                resp = f"🆙 - {member.mention} - You have just lost `{true_value}` levels from `{source.author.display_name}`! You are now at level `{nbr_lvls}`!"
+                resp = f"🆙 - {member.mention} - You have just lost `{true_value}` levels from `{source.author}`! You are now at level `{nbr_lvls}`!"
         else:
             return await source.reply(
                 f"ℹ️ - {source.author.mention} - This option isn't available for the command `{source.command.qualified_name}`! option: `{option}`! Use the command `{self.bot.utils_class.get_guild_pre(source.message)[0]}{source.command.parents[0]}` for more details!",
