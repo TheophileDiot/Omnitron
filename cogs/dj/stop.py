@@ -39,7 +39,7 @@ class Dj(Cog, name="dj.stop"):
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
-    async def stop_command(self, inter: ApplicationCommandInteraction):
+    async def stop_slash_command(self, inter: ApplicationCommandInteraction):
         await self.handle_stop(inter)
 
     """ METHOD(S) """
