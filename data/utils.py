@@ -42,7 +42,7 @@ class Utils:
         if self.is_mod(ctx.author, ctx.bot):
             return
         regex = re_compile(
-            r"discord(?:\.com|app\.com|\.gg)[\/invite\/]?(?:[a-zA-Z0-9\-]{2,32})"
+            r"(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)/?[a-zA-Z0-9]+/?"
         )
         if regex.findall(ctx.message.content):
             links = len(
@@ -908,10 +908,8 @@ class Utils:
         inter: ApplicationCommandInteraction,
         argument: str,
     ) -> List[Union[Member, Role]] or None:
-        print(argument)
         ids = findall(r"([0-9]{15,20})", argument)
         result = []
-        print(ids)
         for id in ids:
             try:
                 result.append(
