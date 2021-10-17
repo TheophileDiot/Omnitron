@@ -208,7 +208,7 @@ class Moderation(Cog, name="moderation.stats"):
         await self.handle_voice_time_count(inter, member, voice_channel)
 
     @user_command(
-        name="count voice time",
+        name="count_voice_time",
         description="Count every seconds everyone (or a member) has passed inside every voice channels or a specific one",
     )
     @Utils.check_bot_starting()

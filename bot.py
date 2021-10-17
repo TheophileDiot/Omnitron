@@ -184,7 +184,8 @@ class Omnitron(Bot):
                 )
             elif isinstance(source, ApplicationCommandInteraction):
                 await source.response.send_message(
-                    f"⚠️ - An error happened, the developer has been informed about this! If you want help contact `Batgregate900#2562`"
+                    f"⚠️ - An error happened, the developer has been informed about this! If you want help contact `Batgregate900#2562`",
+                    ephemeral=True,
                 )
 
             bot_owner = self.owner
