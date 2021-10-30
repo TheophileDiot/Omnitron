@@ -93,7 +93,7 @@ class Moderation(Cog, name="moderation.stats"):
         await self.handle_messages_count(inter, member, text_channel)
 
     @user_command(
-        name="count messages",
+        name="count_messages",
         description="Count the number of messages a member (our yourself) has sent in the server or in a specific channel",
     )
     @Utils.check_bot_starting()
@@ -416,11 +416,11 @@ class Moderation(Cog, name="moderation.stats"):
 
         if isinstance(source, Context):
             await source.send(
-                f"ℹ️ - There are `{count}` members in this guild!{' Including bots' if bots else None}"
+                f"ℹ️ - There are `{count}` members in this guild!{' Including bots' if bots else ''}"
             )
         else:
             await source.response.send_message(
-                f"ℹ️ - There are `{count}` members in this guild!{' Including bots' if bots else None}"
+                f"ℹ️ - There are `{count}` members in this guild!{' Including bots' if bots else ''}"
             )
 
 
