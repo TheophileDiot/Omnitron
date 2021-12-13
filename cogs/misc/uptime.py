@@ -23,6 +23,14 @@ class Miscellaneous(Cog, name="misc.uptime"):
     )
     @bot_has_permissions(send_messages=True)
     async def uptime_command(self, ctx: Context):
+        """
+        This command shows how long the bot has been connected!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         await ctx.send(
             f"ℹ️ - I have been connected since: `{self.bot.utils_class.duration((datetime.now() - self.start_time).total_seconds())}`"
         )
@@ -32,6 +40,14 @@ class Miscellaneous(Cog, name="misc.uptime"):
         description="Shows how long the bot has been connected!",
     )
     async def uptime_slash_command(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command shows how long the bot has been connected!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await inter.response.send_message(
             f"ℹ️ - I have been connected since: `{self.bot.utils_class.duration((datetime.now() - self.start_time).total_seconds())}`"
         )

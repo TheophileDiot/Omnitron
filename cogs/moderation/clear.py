@@ -23,7 +23,7 @@ class Moderation(Cog, name="moderation.clear"):
         name="clear",
         aliases=["delete"],
         usage="<number of messages> (@member)",
-        description="Delete a given number of messages in the channel from everyone or a certain member! (default: 10)",
+        description="Deletes a given number of messages in the channel from everyone or a certain member! (default: 10)",
     )
     @has_permissions(manage_messages=True)
     @bot_has_permissions(
@@ -31,13 +31,25 @@ class Moderation(Cog, name="moderation.clear"):
     )
     @max_concurrency(1, per=BucketType.channel)
     async def clear_command(
-        self, ctx: Context, nbr_msgs: int = 10, member: Member = None
+        self, ctx: Context, number_messages: int = 10, member: Member = None
     ):
-        await self.handle_clear(ctx, nbr_msgs, member)
+        """
+        This command deletes a given number of messages in the channel from everyone or a certain member! (default: 10)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        number_messages: :class:`int` optional
+            The number of messages to delete (10 by default)
+        member: :class:`disnake.Member` optional
+            Deletes messages only sent by this member
+        """
+        await self.handle_clear(ctx, number_messages, member)
 
     @slash_command(
         name="clear",
-        description="Delete a given number of messages in the channel from everyone or a certain member! (default: 10)",
+        description="Deletes a given number of messages in the channel from everyone or a certain member! (default: 10)",
     )
     @has_permissions(manage_messages=True)
     @bot_has_permissions(read_message_history=True, manage_messages=True)
@@ -48,6 +60,18 @@ class Moderation(Cog, name="moderation.clear"):
         number_messages: int = 10,
         member: Member = None,
     ):
+        """
+        This slash command deletes a given number of messages in the channel from everyone or a certain member! (default: 10)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        number_messages: :class:`int` optional
+            The number of messages to delete (10 by default)
+        member: :class:`disnake.Member` optional
+            Deletes messages only sent by this member
+        """
         await self.handle_clear(inter, number_messages, member)
 
     """ METHOD(S) """

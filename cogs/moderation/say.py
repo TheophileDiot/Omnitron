@@ -62,11 +62,21 @@ class Moderation(Cog, name="moderation.say"):
         name="say",
         aliases=["acc", "announcement", "talk"],
         usage='(#channel) "message"',
-        description="Send a message to a specified salon or the current one!",
+        description="Sends a message to a specified channel or the current one!",
     )
     @Utils.check_moderator()
     @bot_has_permissions(send_messages=True)
     async def say_command(self, ctx: Context, *, args: str):
+        """
+        This command sends a message to a specified channel or the current one!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        args: :class:`str` optional
+            The other options including a channel to send the message in if there is one and the message to send
+        """
         channel: TextChannel = ctx.channel
 
         if ctx.message.channel_mentions:
@@ -87,6 +97,18 @@ class Moderation(Cog, name="moderation.say"):
         message: str,
         channel: TextChannel = None,
     ):
+        """
+        This slash command sends a message to a specified channel or the current one!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        message: :class:`str`
+            The message to send
+        channel: :class:`disnake.TextChannel` optional
+            the text channel to send the message in
+        """
         if not channel:
             channel = inter.channel
         elif not isinstance(channel, TextChannel):

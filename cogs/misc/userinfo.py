@@ -22,28 +22,56 @@ class Miscellaneous(Cog, name="misc.userinfo"):
         name="userinfo",
         aliases=["ui", "userinfos"],
         usage="(@member)",
-        description="Get the information from a member or from yourself!",
+        description="Gets the information from a member or from yourself!",
     )
     @bot_has_permissions(send_messages=True)
     async def userinfo_command(self, ctx: Context, member: Member = None):
+        """
+        This command gets the information from a member or from yourself!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member` optional
+            The member you want to show information
+        """
         await self.handle_userinfo(ctx, member)
 
     @slash_command(
         name="userinfo",
-        description="Get the information from a member or from yourself!",
+        description="Gets the information from a member or from yourself!",
     )
     @guild_only()
     async def userinfo_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member = None
     ):
+        """
+        This slash command gets the information from a member or from yourself!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member` optional
+            The member you want to show information
+        """
         await self.handle_userinfo(inter, member)
 
     @user_command(
-        name="userinfo",
-        description="Get the information from a member or from yourself!",
+        name="🔎 User Info",
+        description="Gets the information from a member!",
     )
     @guild_only()
     async def userinfo_user_command(self, inter: ApplicationCommandInteraction):
+        """
+        This user command gets the information from a member!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_userinfo(inter, inter.target)
 
     """ METHOD(S) """

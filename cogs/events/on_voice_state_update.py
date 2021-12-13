@@ -1,3 +1,5 @@
+from time import time
+
 from disnake import Member, VoiceState
 from disnake.ext.commands import Cog
 
@@ -25,13 +27,11 @@ class Events(Cog, name="events.on_voice_state_update"):
         _id = f"{member.guild.id}.{member.id}"
 
         if _id in self.count_intervals:
-            self.count_intervals[_id]["task"].cancel()
-
             self.bot.user_repo.add_voice_time(
                 member.guild.id,
                 member.id,
                 self.count_intervals[_id]["voice_channel"].id,
-                self.count_intervals[_id]["count"],
+                time() - self.count_intervals[_id]["joining_time"],
             )
 
             del self.count_intervals[_id]
@@ -39,10 +39,7 @@ class Events(Cog, name="events.on_voice_state_update"):
         if after.channel:
             if member.voice.channel != member.guild.afk_channel:
                 self.count_intervals[_id] = {
-                    "task": self.bot.utils_class.task_launcher(
-                        self.count_time, (member,), seconds=1
-                    ),
-                    "count": 0,
+                    "joining_time": time(),
                     "voice_channel": after.channel,
                 }
 
@@ -95,9 +92,6 @@ class Events(Cog, name="events.on_voice_state_update"):
     async def vocal_interval(self, member: Member):
         """This method manage the vocal xp cooldown"""
         await self.xp_class.manage_xp(member, "vocal")
-
-    async def count_time(self, member: Member):
-        self.count_intervals[f"{member.guild.id}.{member.id}"]["count"] += 1
 
 
 def setup(bot: Omnitron):

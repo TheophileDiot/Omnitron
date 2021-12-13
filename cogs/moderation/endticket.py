@@ -25,7 +25,7 @@ class Moderation(Cog, name="moderation.endticket"):
     @command(
         name="endticket",
         aliases=["et"],
-        description="Create a procedure to delete a ticket. (can only be used in a ticket channel)",
+        description="Creates a procedure to delete a ticket. (can only be used in a ticket channel)",
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
@@ -33,6 +33,14 @@ class Moderation(Cog, name="moderation.endticket"):
     @bot_has_permissions(send_messages=True)
     @max_concurrency(1, BucketType.channel)
     async def endticket_command(self, ctx: Context):
+        """
+        This command creates a procedure to delete a ticket. (can only be used in a ticket channel)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         await self.handle_endticket(ctx)
 
     @slash_command(
@@ -45,6 +53,14 @@ class Moderation(Cog, name="moderation.endticket"):
     @bot_has_guild_permissions(manage_channels=True)
     @max_concurrency(1, BucketType.channel)
     async def endticket_slash_command(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command creates a procedure to delete a ticket. (can only be used in a ticket channel)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_endticket(inter)
 
     """ METHOD(S) """

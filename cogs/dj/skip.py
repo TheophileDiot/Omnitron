@@ -30,11 +30,21 @@ class Dj(Cog, name="dj.skip"):
     @bot_has_permissions(send_messages=True)
     @max_concurrency(1, per=BucketType.guild)
     async def skip_command(self, ctx: Context, skips: int = 1):
+        """
+        This command skips the music a given number of times!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        skips: :class:`int` optional
+            The number of skips to do
+        """
         await self.handle_skip(ctx, skips)
 
     @slash_command(
         name="skip",
-        description="Skip the music a given number of times!",
+        description="Skips the music a given number of times!",
     )
     @guild_only()
     @Utils.check_bot_starting()
@@ -43,6 +53,16 @@ class Dj(Cog, name="dj.skip"):
     async def skip_slash_command(
         self, inter: ApplicationCommandInteraction, skips: int = 1
     ):
+        """
+        This slash command skips the music a given number of times!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        skips: :class:`int` optional
+            The number of skips to do
+        """
         await self.handle_skip(inter, skips)
 
     """ METHOD(S) """

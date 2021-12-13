@@ -46,8 +46,30 @@ from dotenv import load_dotenv
 from ratelimiter import RateLimiter
 
 
-async def limited(until):
-    return int(round(until - time()))
+def limited(until):
+    duration = int(round(until - time()))
+    print(f"Rate limited, sleeping for {duration:d} seconds")
+    info(f"Rate limited, sleeping for {duration:d} seconds")
+
+
+def get_qualified_name_from_interaction(inter: ApplicationCommandInteraction) -> str:
+    cmd_name = inter.data.name
+    options = bool(inter.data.options)
+    data = inter.data
+
+    while options:
+        data = data.options[0]
+
+        if data.type not in (OptionType.sub_command_group, OptionType.sub_command):
+            options = False
+            continue
+
+        cmd_name += f" {data.name}"
+
+        if not data.options:
+            options = False
+
+    return cmd_name
 
 
 class Omnitron(Bot):
@@ -61,6 +83,9 @@ class Omnitron(Bot):
             strip_after_prefix=True,
             self_bot=False,
             sync_commands_debug=True,
+            test_guilds=[872500404540280893, 874311358018105385]
+            if getenv("ENV") == "DEVELOPMENT"
+            else None,
             **kwargs,
         )
 
@@ -91,8 +116,8 @@ class Omnitron(Bot):
         self.load_extensions()
         self.session = ClientSession(loop=self.loop)
         self.limiter = RateLimiter(
-            max_calls=1, period=1, callback=limited
-        )  # TODO fix this asap
+            max_calls=50, period=1, callback=limited
+        )
 
         self.starting = True
         self.model = Model.setup()
@@ -122,37 +147,51 @@ class Omnitron(Bot):
 
     """ EVENTS """
 
+    async def on_message_command(self, inter: ApplicationCommandInteraction):
+        self.user_repo.add_command_count(
+            inter.guild.id,
+            inter.author.id,
+            get_qualified_name_from_interaction(inter),
+        )
+
+    async def on_user_command(self, inter: ApplicationCommandInteraction):
+        self.user_repo.add_command_count(
+            inter.guild.id,
+            inter.author.id,
+            get_qualified_name_from_interaction(inter),
+        )
+
     async def on_slash_command_completion(self, inter: ApplicationCommandInteraction):
-        cmd_name = inter.data.name
-        options = bool(inter.data.options)
-        data = inter.data
-
-        while options:
-            data = data.options[0]
-
-            if data.type not in (OptionType.sub_command_group, OptionType.sub_command):
-                options = False
-                continue
-
-            cmd_name += f" {data.name}"
-
-            if not data.options:
-                options = False
-
-        self.user_repo.add_command_count(inter.guild.id, inter.author.id, cmd_name)
+        self.user_repo.add_command_count(
+            inter.guild.id,
+            inter.author.id,
+            get_qualified_name_from_interaction(inter),
+        )
 
     async def on_command_completion(self, ctx: Context):
         self.user_repo.add_command_count(
             ctx.guild.id, ctx.author.id, ctx.command.qualified_name
         )
 
+    async def on_message_command_error(
+        self, inter: ApplicationCommandInteraction, _error
+    ) -> None:
+        """Override default message command error handler to log errors and prevent the bot from crashing."""
+        await self.handle_error(inter, _error)
+
+    async def on_user_command_error(
+        self, inter: ApplicationCommandInteraction, _error
+    ) -> None:
+        """Override default user command error handler to log errors and prevent the bot from crashing."""
+        await self.handle_error(inter, _error)
+
     async def on_slash_command_error(
         self, inter: ApplicationCommandInteraction, _error
-    ):
+    ) -> None:
         """Override default slash command error handler to log errors and prevent the bot from crashing."""
         await self.handle_error(inter, _error)
 
-    async def on_command_error(self, ctx: Context, _error):
+    async def on_command_error(self, ctx: Context, _error) -> None:
         """Override default command error handler to log errors and prevent the bot from crashing."""
         await self.handle_error(ctx, _error)
 
@@ -222,26 +261,31 @@ class Omnitron(Bot):
     async def handle_error(
         self, source: Union[Context, ApplicationCommandInteraction], _error
     ):
+        if isinstance(source, Context):
+            cmd_name = source.command.qualified_name
+        else:
+            cmd_name = get_qualified_name_from_interaction(source)
+
         if isinstance(_error, NoPrivateMessage):
             resp = f"⚠️ - this command is deactivated outside of guilds!"
         elif isinstance(_error, MissingRequiredArgument):
-            resp = f"ℹ️ - The `{source.command.qualified_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
+            resp = f"ℹ️ - The `{cmd_name}` command is missing an argument! Missing parameter: `{_error.param.name}`. `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command and source.command.parents else f'help {cmd_name}'}` to get more help."
         elif isinstance(_error, MissingPermissions):
             resp = f"⛔ - You do not have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_permissions)}`"
         elif isinstance(_error, MissingAnyRole):
             resp = f"⛔ - You do not have one of the required roles to run this command! One of these roles is required: `{', '.join(_error.missing_roles)}`"
         elif isinstance(_error, NotOwner):
-            resp = f"⛔ - The `{source.command.qualified_name}` command is reserved for the bot owner!"
+            resp = f"⛔ - The `{cmd_name}` command is reserved for the bot owner!"
         elif isinstance(_error, BotMissingPermissions):
             resp = f"⛔ - I don't have the necessary perms to run this command! Required perms: `{', '.join(_error.missing_permissions)}`"
         elif isinstance(_error, CommandOnCooldown):
-            resp = f"ℹ️ - The `{source.command.qualified_name}`command is currently in cooldown, please try again in `{'%.2f' % _error.retry_after}` seconds, this command can be used `{_error.cooldown.rate}` times every `{_error.cooldown.per}` seconds."
+            resp = f"ℹ️ - The `{cmd_name}` command is currently in cooldown, please try again in `{'%.2f' % _error.retry_after}` seconds, this command can be used `{_error.cooldown.rate}` times every `{_error.cooldown.per}` seconds."
         elif isinstance(_error, MaxConcurrencyReached):
-            resp = f"ℹ️ - The `{source.command.qualified_name}` command has too many executions in progress (`{_error.number}` executions), please try again in a few seconds, this command can only be used a maximum of `{_error.number}` times simultaneously."
+            resp = f"ℹ️ - The `{cmd_name}` command has too many executions in progress (`{_error.number}` executions), please try again in a few seconds, this command can only be used a maximum of `{_error.number}` times simultaneously."
         elif isinstance(_error, BadArgument):
-            resp = f"⚠️ - Please provide valid arguments! `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
+            resp = f"⚠️ - Please provide valid arguments! `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command and source.command.parents else f'help {cmd_name}'}` to get more help."
         elif isinstance(_error, BadUnionArgument):
-            resp = f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command.parents else f'help {source.command.qualified_name}'}` to get more help."
+            resp = f"⚠️ - Please provide valid arguments! The argument `{_error.param.name}` should be within these types: ({', '.join([f'`{c.__name__}`' for c in _error.converters])})! `{self.utils_class.get_guild_pre(source.author)[0]}{f'{source.command.parents[0]}' if source.command and source.command.parents else f'help {cmd_name}'}` to get more help."
         elif isinstance(_error, CheckFailure):
             if self.last_check == "moderator":
                 resp = f"⛔ - {source.author.mention} - You must be moderator of this server to use this command!"
