@@ -33,12 +33,20 @@ class Moderation(Cog, name="moderation.stats"):
         name="stats",
         aliases=["stat"],
         usage="(sub-command)",
-        description="This command manage the server's stats",
+        description="This command manages the server's stats",
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     @bot_has_permissions(send_messages=True)
     async def stats_group(self, ctx: Context):
+        """
+        This command group manages the server's stats
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -48,12 +56,20 @@ class Moderation(Cog, name="moderation.stats"):
 
     @slash_command(
         name="stats",
-        description="This command manage the server's stats",
+        description="This command manages the server's stats",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def stats_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's stats
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     """ MAIN GROUP'S COMMAND(S) """
@@ -65,7 +81,7 @@ class Moderation(Cog, name="moderation.stats"):
         name="messages_count",
         aliases=["messages_counts", "messages"],
         brief="💬",
-        description="This option count every messages (or a member's) sent in this server or in a specific channel",
+        description="Counts every messages (or a member's) sent in this server or in a specific channel",
         usage="(@member) (#text_channel)",
     )
     async def stats_message_count_command(
@@ -74,6 +90,18 @@ class Moderation(Cog, name="moderation.stats"):
         member: Union[Member, TextChannel] = None,
         text_channel: TextChannel = None,
     ):
+        """
+        This command counts every messages (or a member has) sent in this server or in a specific channel
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`typing.Union[disnake.Member, disnake.TextChannel]` optional
+            The member or text channel to count messages from (there's two type because there are multiple options)
+        text_channel: :class:`disnake.TextChannel` optional
+            The text_channel to count messages from
+        """
         if isinstance(member, TextChannel):
             text_channel = member
             member = None
@@ -82,7 +110,7 @@ class Moderation(Cog, name="moderation.stats"):
 
     @stats_slash_group.sub_command(
         name="messages_count",
-        description="Count the number of messages a member (our yourself) has sent in the server or in a specific channel",
+        description="Counts every messages (or a member has) sent in this server or in a specific channel",
     )
     async def stats_message_count_slash_command(
         self,
@@ -90,11 +118,23 @@ class Moderation(Cog, name="moderation.stats"):
         member: Member = None,
         text_channel: TextChannel = None,
     ):
+        """
+        Counts every messages (or a member has) sent in this server or in a specific channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member` optional
+            The member to count messages from
+        text_channel: :class:`disnake.TextChannel` optional
+            The text_channel to count messages from
+        """
         await self.handle_messages_count(inter, member, text_channel)
 
     @user_command(
-        name="count_messages",
-        description="Count the number of messages a member (our yourself) has sent in the server or in a specific channel",
+        name="💬 Count Messages",
+        description="Count the number of messages a member has sent in the server",
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
@@ -102,6 +142,14 @@ class Moderation(Cog, name="moderation.stats"):
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This user command counts every messages a member has sent in this server
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_messages_count(inter, inter.target)
 
     async def handle_messages_count(
@@ -180,24 +228,36 @@ class Moderation(Cog, name="moderation.stats"):
         name="voice_time_count",
         aliases=["voice_time_counts", "voice_time"],
         brief="🎙️",
-        description="This option count every seconds everyone (or a specific member) has passed inside every voice channels or a specific one",
+        description="Counts every seconds everyone (or a specific member) has passed inside voice channels or a specific one",
         usage="(@member) (#voice_channel)",
     )
     async def stats_voice_time_count_command(
         self,
         ctx: Context,
         member: Union[Member, VoiceChannel] = None,
-        text_channel: VoiceChannel = None,
+        voice_channel: VoiceChannel = None,
     ):
+        """
+        This command counts every seconds everyone (or a specific member) has passed inside every voice channels or a specific one
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`typing.Union[disnake.Member, disnake.VoiceChannel]` optional
+            The member to count every second passed inside voice channels or everyone's seconds passed inside a specific one
+        voice_channel: :class:`disnake.VoiceChannel` optional
+            The voice channel to count every seconds from
+        """
         if isinstance(member, VoiceChannel):
-            text_channel = member
+            voice_channel = member
             member = None
 
-        await self.handle_voice_time_count(ctx, member, text_channel)
+        await self.handle_voice_time_count(ctx, member, voice_channel)
 
     @stats_slash_group.sub_command(
         name="voice_time_count",
-        description="Count every seconds everyone (or a member) has passed inside every voice channels or a specific one",
+        description="Counts every second everyone (or a member) has passed inside voice channels or a specific one",
     )
     async def stats_voice_time_count_slash_command(
         self,
@@ -205,11 +265,23 @@ class Moderation(Cog, name="moderation.stats"):
         member: Member = None,
         voice_channel: VoiceChannel = None,
     ):
+        """
+        Counts every second everyone (or a member) has passed inside voice channels or a specific one
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member` optional
+            The member to count every seconds passed in voice channels from
+        voice_channel: :class:`disnake.VoiceChannel` optional
+            The voice channel to count every seconds everyone passed in from
+        """
         await self.handle_voice_time_count(inter, member, voice_channel)
 
     @user_command(
-        name="count_voice_time",
-        description="Count every seconds everyone (or a member) has passed inside every voice channels or a specific one",
+        name="🎤 Count Voice Time",
+        description="Counts every seconds a member has passed inside voice channels",
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
@@ -217,6 +289,14 @@ class Moderation(Cog, name="moderation.stats"):
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This user command counts every seconds the member has passed inside voice channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_voice_time_count(inter, inter.target)
 
     async def handle_voice_time_count(
@@ -295,12 +375,24 @@ class Moderation(Cog, name="moderation.stats"):
         name="commands_count",
         aliases=["commands_counts", "commands"],
         brief="⌨️",
-        description="This option count the number of commands a member (our yourself) has executed in the server (add details at the end to get the full list)",
+        description="Counts the number of commands a member (our yourself) has executed in the server (add details at the end to get the full list)",
         usage="(@member) (details)",
     )
     async def stats_commands_count_command(
         self, ctx: Context, member: Union[Member, str] = None, details: str = None
     ):
+        """
+        This command counts the number of commands a member (our yourself) has executed in the server (add details at the end to get the full list)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`typing.Union[disnake.Member, str]` optional
+            The member to count the number of commands executed or a str that check if it's written "details" in it (see description below)
+        details: :class:`str` optional
+            If "details" is written somewhere in the command message then show the details
+        """
         res = False
 
         if details == "details":
@@ -315,7 +407,7 @@ class Moderation(Cog, name="moderation.stats"):
 
     @stats_slash_group.sub_command(
         name="commands_count",
-        description="Count the number of commands a member (our yourself) has executed in the server",
+        description="Counts the number of commands a member (our yourself) has executed in the server",
     )
     async def stats_commands_count_slash_command(
         self,
@@ -323,11 +415,23 @@ class Moderation(Cog, name="moderation.stats"):
         member: Member = None,
         details: bool = False,
     ):
+        """
+        Counts the number of commands a member (our yourself) has executed in the server
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member` optional
+            The member to count commands executed from
+        details: :class:`bool` optional
+            Show the executed commands details (if True)
+        """
         await self.handle_commands_count(inter, member, details)
 
     @user_command(
-        name="count commands",
-        description="Count the number of commands a member (our yourself) has executed in the server",
+        name="🤖 Count Commands",
+        description="Counts the number of commands a member has executed in the server",
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
@@ -335,6 +439,14 @@ class Moderation(Cog, name="moderation.stats"):
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This user command counts the number of commands a member has executed in the server
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_commands_count(inter, inter.target)
 
     async def handle_commands_count(
@@ -386,10 +498,20 @@ class Moderation(Cog, name="moderation.stats"):
         name="members_count",
         aliases=["members_counts", "members"],
         brief="🤔",
-        description="This option count the members (including bots or not, default is False) in the server!",
+        description="Counts the members (including bots or not, default is False) in the server",
         usage="(bots)",
     )
     async def stats_members_count_command(self, ctx: Context, bots: str = None):
+        """
+        This command counts the members (including bots or not, default is False) in the server
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        bots: :class:`str` optional
+            Count bots or not
+        """
         resp = False
         if bots == "bots":
             resp = True
@@ -398,11 +520,21 @@ class Moderation(Cog, name="moderation.stats"):
 
     @stats_slash_group.sub_command(
         name="members_count",
-        description="This option count the members (including bots or not, default is False) in the server!",
+        description="Counts the members (including bots or not, default is False) in the server",
     )
     async def stats_members_count_slash_command(
         self, inter: ApplicationCommandInteraction, bots: bool = False
     ):
+        """
+        This slash command counts the members (including bots or not, default is False) in the server
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        bots: :class:`bool` optional
+            Count bots or not
+        """
         await self.handle_members_count(inter, bots)
 
     async def handle_members_count(

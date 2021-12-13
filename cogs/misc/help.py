@@ -15,7 +15,7 @@ class Miscellaneous(Cog, name="misc.help"):
         name="help",
         aliases=["h", "halp"],
         usage="(command)",
-        description="Show every bot command or infos about a specific one",
+        description="Shows every bot command or infos about a specific one",
     )
     @bot_has_permissions(send_messages=True)
     async def help_command(
@@ -50,7 +50,7 @@ class Miscellaneous(Cog, name="misc.help"):
                                 )
 
                 em.description = (
-                    f"The bot prefix is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`\n\n"
+                    f"**The bot prefix for this guild is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`!**\n\n"
                     + f"**Command:** {_command.qualified_name.lower()}\n"
                     + f"**Description:** {_command.description or 'No description.'}\n"
                     + f"**Usage:** {f'{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`{_command.qualified_name}` ' + ' '.join([f'`{u}`' for u in _command.usage.split(' ')]) if _command.usage else 'No usage.'}\n"
@@ -72,7 +72,7 @@ class Miscellaneous(Cog, name="misc.help"):
                     delete_after=20,
                 )
         else:
-            em.description = f"Here are all the available commands for {ctx.guild.me.display_name}\nThe bot prefix is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`"
+            em.description = f"Here are all the available commands for {ctx.guild.me.mention}!\n**The bot prefix for this guild is: `{self.bot.utils_class.get_guild_pre(ctx.message)[0]}`!**\n***To use slash commands start typing `/`!***"
 
             cogs = {}
             for cog in OrderedDict(sorted(self.bot.cogs.items())):

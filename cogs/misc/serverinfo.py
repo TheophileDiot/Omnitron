@@ -20,18 +20,34 @@ class Miscellaneous(Cog, name="misc.serverinfo"):
     @command(
         name="serverinfo",
         aliases=["si", "serverinfos"],
-        description="Get server's information!",
+        description="Gets information about the current server",
     )
     @bot_has_permissions(send_messages=True)
     async def serverinfo_command(self, ctx: Context):
+        """
+        This command gets information about the current server
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         await self.handle_serverinfo(ctx)
 
     @slash_command(
         name="serverinfo",
-        description="Get server's information!",
+        description="Gets information about the current server",
     )
     @guild_only()
     async def serverinfo_slash_command(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command gets information about the current server
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_serverinfo(inter)
 
     """ METHOD(S) """

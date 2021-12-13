@@ -29,17 +29,33 @@ class Dj(Cog, name="dj.stop"):
     @bot_has_permissions(send_messages=True)
     @max_concurrency(1, per=BucketType.guild)
     async def stop_command(self, ctx: Context):
+        """
+        This command stops the music in progress!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         await self.handle_stop(ctx)
 
     @slash_command(
         name="stop",
-        description="Stop the music in progress!",
+        description="Stops the music in progress!",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
     async def stop_slash_command(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command stops the music in progress!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_stop(inter)
 
     """ METHOD(S) """

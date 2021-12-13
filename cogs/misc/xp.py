@@ -44,11 +44,13 @@ class Miscellaneous(Cog, name="misc.xp"):
     @Utils.check_bot_starting()
     @bot_has_permissions(send_messages=True)
     async def xp_group(self, ctx: Context):
-        """Group containing every xp commands
+        """
+        This command group contains every xp related commands
 
-        Keyword arguments:
-        self -- The self variable
-        ctx -- The context object
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
         """
 
         if ctx.invoked_subcommand is None:  # If no subcommand is passed
@@ -65,6 +67,14 @@ class Miscellaneous(Cog, name="misc.xp"):
     @guild_only()
     @Utils.check_bot_starting()
     async def xp_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group contains every xp related commands
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     """ GROUP'S COMMAND(S) """
@@ -76,25 +86,47 @@ class Miscellaneous(Cog, name="misc.xp"):
         aliases=["lvl", "lvls"],
         brief="🆙",
         usage="add|set|remove @member <number of levels>",
-        description="This option manages member's levels",
+        description="Manages a member's levels",
     )
     @Utils.check_moderator()
     @max_concurrency(1, per=BucketType.guild)
     async def xp_levels_command(
         self, ctx: Context, option: Utils.to_lower, member: Member, value: int = None
     ):
+        """
+        This command manages a member's levels
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower`
+            The option (add or set or remove)
+        member: :class:`disnake.Member`
+            The member you're managing the levels
+        value: :class:`int` optional
+            The level(s) value
+        """
         await self.handle_levels(ctx, option, member, value)
 
     @xp_slash_group.sub_command_group(
         name="levels",
-        description="This option manages member's levels",
+        description="Manages a member's levels",
     )
     async def xp_levels_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages a member's levels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @xp_levels_slash_group.sub_command(
         name="add",
-        description="Add levels to a specific member or yourself! (default levels added = 1)",
+        description="Adds levels to a specific member or yourself! (default levels added = 1)",
     )
     async def xp_levels_add_slash_command(
         self,
@@ -102,13 +134,25 @@ class Miscellaneous(Cog, name="misc.xp"):
         member: Member = None,
         value: int = 1,
     ):
+        """
+        This slash command adds levels to a specific member or yourself! (default levels added = 1)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member` optional
+            The member you're adding the levels
+        value: :class:`int` optional
+            The number of levels you want to add
+        """
         await self.handle_levels(
             inter, "add", member if member else inter.author, value
         )
 
     @xp_levels_slash_group.sub_command(
         name="set",
-        description="Set the levels of a specific member or yourself!",
+        description="Sets the levels of a specific member or yourself!",
     )
     async def xp_levels_set_slash_command(
         self,
@@ -116,13 +160,25 @@ class Miscellaneous(Cog, name="misc.xp"):
         value: int,
         member: Member = None,
     ):
+        """
+        This slash command sets the levels of a specific member or yourself!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        value: :class:`int`
+            The level value you want to set
+        member: :class:`disnake.Member` optional
+            The member you're setting the levels
+        """
         await self.handle_levels(
             inter, "set", member if member else inter.author, value
         )
 
     @xp_levels_slash_group.sub_command(
         name="remove",
-        description="Remove levels from a specific member or yourself! (default levels removed = 1)",
+        description="Removes levels from a specific member or yourself! (default levels removed = 1)",
     )
     async def xp_levels_remove_slash_command(
         self,
@@ -130,6 +186,18 @@ class Miscellaneous(Cog, name="misc.xp"):
         member: Member = None,
         value: int = 1,
     ):
+        """
+        This slash command removes levels from a specific member or yourself! (default levels removed = 1)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        value: :class:`int`
+            The level value you want to remove
+        member: :class:`disnake.Member` optional
+            The member you're removing the levels from
+        """
         await self.handle_levels(
             inter, "remove", member if member else inter.author, value
         )
@@ -141,7 +209,7 @@ class Miscellaneous(Cog, name="misc.xp"):
         member: Member,
         value: int = None,
     ):
-        """Command that manages member's levels
+        """Command that manages a member's levels
 
         Keyword arguments:
         self -- The self variable
@@ -293,6 +361,14 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @max_concurrency(1, per=BucketType.member)
     async def xp_prestige_command(self, ctx: Context):
+        """
+        This command allows you to create a prestige level passage procedure! (one procedure at a time, server's max level required)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         await self.handle_prestige(ctx)
 
     @xp_slash_group.sub_command(
@@ -301,6 +377,14 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @max_concurrency(1, per=BucketType.member)
     async def xp_prestige_slash_command(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command allows you to create a prestige level passage procedure!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prestige(inter)
 
     async def handle_prestige(
@@ -372,6 +456,16 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_info_command(self, ctx: Context, member: Member = None):
+        """
+        This command displays information about the current level for yourself or someone on the server!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member` optional
+            The member you want to show the information from
+        """
         await self.handle_info(ctx, member)
 
     @xp_slash_group.sub_command(
@@ -382,6 +476,16 @@ class Miscellaneous(Cog, name="misc.xp"):
     async def xp_info_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member = None
     ):
+        """
+        This slash command displays information about the current level for yourself or someone on the server!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member` optional
+            The member you want to show the information from
+        """
         await self.handle_info(inter, member)
 
     async def handle_info(
@@ -456,12 +560,22 @@ class Miscellaneous(Cog, name="misc.xp"):
         aliases=["ranking", "top"],
         brief="👑",
         usage="(me) (all)",
-        description="Display the top 10 members of the server or your own rank (possibility to display the rank of the moderators)!",
+        description="Displays the top 10 members of the server or your own rank (possibility to display the rank of the moderators)!",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_leaderboard_command(
         self, ctx: Context, *, options: Utils.to_lower = None
     ):
+        """
+        This command displays the top 10 members of the server or your own rank (possibility to display the rank of the moderators)!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The command context
+        options: :class:`Utils.to_lower` optional
+            The command options -> me if you want to show only your rank -> all if you want to include everyone in the server (even the moderators)
+        """
         if options:
             options = options.split(" ")
 
@@ -481,25 +595,23 @@ class Miscellaneous(Cog, name="misc.xp"):
     @xp_slash_group.sub_command(
         name="leaderboard",
         description="Display the top 10 members of the server or your own rank!",
-        options=[
-            Option(
-                name="me",
-                description="Only display your ranking",
-                type=OptionType.boolean,
-                required=False,
-            ),
-            Option(
-                name="mods",
-                description="Also count the mods in the ranking",
-                type=OptionType.boolean,
-                required=False,
-            ),
-        ],
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_leaderboard_command(
         self, inter: ApplicationCommandInteraction, me: bool = False, mods: bool = False
     ):
+        """
+        This command displays the top 10 members of the server or your own rank (possibility to display the rank of the moderators)!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        me: :class:`bool` optional
+            Only displays your ranking
+        mods: :class:`bool` optional
+            Includes the mods in the ranking
+        """
         await self.handle_leaderboard(inter, me, mods)
 
     async def handle_leaderboard(

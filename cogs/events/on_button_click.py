@@ -32,7 +32,7 @@ class Events(Cog, name="events.on_button_click"):
             )
 
             if str(interaction.author.id) in responses:
-                return await interaction.response.send_message(
+                return await interaction.send(
                     content=f"You have already answered this poll! Your answer: `{responses[str(interaction.author.id)]['response']}`",
                     ephemeral=True,
                 )
@@ -67,7 +67,7 @@ class Events(Cog, name="events.on_button_click"):
                 channel = find(
                     lambda c: c.name == channel_name, interaction.guild.text_channels
                 )
-                return await interaction.response.send_message(
+                return await interaction.send(
                     content=f"You already have an existing ticket channel! {channel.mention if channel else ''}",
                     ephemeral=True,
                 )
@@ -117,7 +117,7 @@ class Events(Cog, name="events.on_button_click"):
                     reason=f"Creation of the ticket channel of {interaction.author}",
                 )
             except Forbidden as f:
-                await interaction.response.send_message(
+                await interaction.send(
                     content=f"⚠️ - Your ticket channel couldn't be created because i'm missing permissions! Moderators have been informed about this!",
                     ephemeral=True,
                 )
@@ -130,7 +130,7 @@ class Events(Cog, name="events.on_button_click"):
             await channel.send(
                 f"ℹ️ - {interaction.author.mention} - Here goes your ticket channel, feel free to ask questions or just talk to the server's moderators privately!"
             )
-            await interaction.response.send_message(
+            await interaction.send(
                 content=f"Your ticket channel {channel.mention} has been successfully created!",
                 ephemeral=True,
             )
@@ -140,7 +140,7 @@ class Events(Cog, name="events.on_button_click"):
                 ticket for ticket in tickets
             ]:
                 if not self.bot.utils_class.is_mod(interaction.author, self.bot):
-                    return await interaction.response.send_message(
+                    return await interaction.send(
                         content=f"You cannot interact with this message because you are not a moderator of this server!",
                         ephemeral=True,
                     )
@@ -148,7 +148,7 @@ class Events(Cog, name="events.on_button_click"):
                     "deletion_pending"
                 ]
                 if interaction.author.id != delete_pending["author"]:
-                    return await interaction.response.send_message(
+                    return await interaction.send(
                         content=f"📥 - You are not the user who started the deletion procedure for this ticket, so you cannot interact with this message!",
                         ephemeral=True,
                     )
@@ -167,7 +167,7 @@ class Events(Cog, name="events.on_button_click"):
                         f.text = f"⚠️ - I don't have the right permissions to delete channels in the category {self.bot.configs[interaction.guild.id]['tickets']['tickets_category'].mention} (I tried to delete the ticket channel {interaction.channel.mention})!"
                         raise
                 else:
-                    await interaction.response.send_message(
+                    await interaction.send(
                         content=f"📥 - Cancellation of the ticket deletion!",
                         ephemeral=True,
                     )

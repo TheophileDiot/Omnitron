@@ -32,6 +32,16 @@ class Dj(Cog, name="dj.playlist"):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @max_concurrency(1, per=BucketType.guild)
     async def playlist_command(self, ctx: Context, position: int = None):
+        """
+        This command displays the information for the music in the playlist or for a particular one.
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        position: :class:`int` optional
+            The position of the music in the playlist
+        """
         await self.handle_playlist(ctx, position)
 
     @slash_command(
@@ -45,6 +55,16 @@ class Dj(Cog, name="dj.playlist"):
     async def playlist_slash_command(
         self, inter: ApplicationCommandInteraction, position: int = None
     ):
+        """
+        This slash command displays the information for the music in the playlist or for a particular one.
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        position: :class:`int` optional
+            The position of the music in the playlist
+        """
         await self.handle_playlist(inter, position)
 
     """ METHOD(S) """

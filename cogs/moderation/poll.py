@@ -34,12 +34,20 @@ class Moderation(Cog, name="moderation.poll"):
         name="poll",
         aliases=["polls"],
         usage="(sub-command)",
-        description="This command manage the server's polls",
+        description="This command manages the server's polls",
     )
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     @bot_has_permissions(send_messages=True)
     async def poll_group(self, ctx: Context):
+        """
+        This command group manages the server's polls
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -49,12 +57,20 @@ class Moderation(Cog, name="moderation.poll"):
 
     @slash_command(
         name="poll",
-        description="This command manage the server's polls",
+        description="This command manages the server's polls",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def poll_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's polls
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     """ COMMAND(S) """
@@ -66,7 +82,7 @@ class Moderation(Cog, name="moderation.poll"):
         aliases=["new"],
         brief="🎛️",
         usage='"title" <duration> <type_of_duration (d == days, h == hours, m == minutes, s == seconds)> choice 1 choice 2 ...',
-        description="Create a poll of a specific duration! (10 m minimum) (25 choices max)",
+        description="Creates a poll of a specific duration! (10 m minimum) (25 choices max)",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_create_command(
@@ -77,11 +93,27 @@ class Moderation(Cog, name="moderation.poll"):
         type_duration: Utils.to_lower,
         *choices: str,
     ):
-        await self.handle_create(ctx, title, duration, type_duration, choices)
+        """
+        This command creates a poll of a specific duration! (10 m minimum) (25 choices max)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        title: :class:`str`
+            The poll's title
+        duration: :class:`int`
+            The poll's duration value
+        type_duration: :class:`Utils.to_lower`
+            The poll's duration type (d == days, h == hours, m == minutes, s == seconds)
+        choices: :class:`str` optional
+            The choices that will be available in the poll
+        """
+        await self.handle_create(ctx, title, duration, type_duration, list(choices))
 
     @poll_slash_group.sub_command(
         name="create",
-        description="Create a poll of a specific duration! (10 m minimum/default) (25 choices max)",
+        description="Creates a poll of a specific duration! (10 m minimum/default) (25 choices max)",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_create_slash_command(
@@ -92,6 +124,22 @@ class Moderation(Cog, name="moderation.poll"):
         duration: int = 10,
         type_duration: DurationType = "m",
     ):
+        """
+        This slash command creates a poll of a specific duration! (10 m minimum) (25 choices max)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        title: :class:`str`
+            The poll's title
+        choices: :class:`str`
+            The choices that will be available in the poll
+        duration: :class:`int`
+            The poll's duration value (defaults is 10)
+        type_duration: :class:`Utils.to_lower`
+            The poll's duration type (d == days, h == hours, m == minutes, s == seconds) (defaults is "m")
+        """
         await self.handle_create(
             inter,
             title,
@@ -205,16 +253,36 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_infos_command(self, ctx: Context, id_message: int = None):
+        """
+        This command retrieves information from the specified poll. (if no identifier is specified then retrieves information from all polls)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        id_message: :class:`int` optional
+            The poll message id
+        """
         await self.handle_info(ctx, id_message)
 
     @poll_slash_group.sub_command(
         name="info",
-        description="Retrieves information from the specified poll or every polls if none specified.",
+        description="Retrieves information from the specified poll or every polls if none specified",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_infos_slash_command(
         self, inter: ApplicationCommandInteraction, id_message: int = None
     ):
+        """
+        This slash command retrieves information from the specified poll or every polls if none specified
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        id_message: :class:`int` optional
+            The poll message id
+        """
         if id_message and not isinstance(id_message, int):
             return await inter.response.send_message(
                 f"ℹ️ - {inter.author.mention} - Please enter a valid message ID!"
@@ -415,6 +483,16 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_end_command(self, ctx: Context, id_message: int):
+        """
+        This command stops a poll prematurely
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        id_message: :class:`int` optional
+            The poll message id
+        """
         await self.handle_end(ctx, id_message)
 
     @poll_slash_group.sub_command(
@@ -425,6 +503,16 @@ class Moderation(Cog, name="moderation.poll"):
     async def poll_end_slash_command(
         self, inter: ApplicationCommandInteraction, id_message: str
     ):
+        """
+        This slash command stops a poll prematurely
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        id_message: :class:`int` optional
+            The poll message id
+        """
         await self.handle_end(inter, id_message)
 
     async def handle_end(
@@ -484,20 +572,40 @@ class Moderation(Cog, name="moderation.poll"):
         aliases=["del", "remove"],
         brief="🚫",
         usage="<id_of_the_poll_message>",
-        description="Delete a poll prematurely (unlike the command end it will erase completely the poll and not just end it)",
+        description="Deletes a poll prematurely (unlike the command end it will erase completely the poll and not just end it)",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_command(self, ctx: Context, id_message: int):
+        """
+        This command deletes a poll prematurely (unlike the command end it will erase completely the poll and not just end it)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        id_message: :class:`int` optional
+            The poll message id
+        """
         await self.handle_delete(ctx, id_message)
 
     @poll_slash_group.sub_command(
         name="delete",
-        description="Delete a poll prematurely (unlike the command end it will erase completely the poll)",
+        description="Deletes a poll prematurely (unlike the command end it will erase completely the poll)",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_slash_command(
         self, inter: ApplicationCommandInteraction, id_message: str
     ):
+        """
+        This slash command deletes a poll prematurely (unlike the command end it will erase completely the poll and not just end it)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        id_message: :class:`int` optional
+            The poll message id
+        """
         await self.handle_delete(inter, id_message)
 
     async def handle_delete(

@@ -43,6 +43,14 @@ class Moderation(Cog, name="moderation.sanction"):
     @Utils.check_moderator()
     @bot_has_permissions(send_messages=True)
     async def sanction_group(self, ctx: Context):
+        """
+        This command group manages the server's sanctions
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -58,6 +66,14 @@ class Moderation(Cog, name="moderation.sanction"):
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def sanction_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's polls
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     """ MAIN GROUP'S GROUP(S) """
@@ -68,10 +84,18 @@ class Moderation(Cog, name="moderation.sanction"):
         aliases=["warns"],
         brief="⚠️",
         usage="(sub-command)",
-        description="This option manage the server's warns",
+        description="Manages the server's warns",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def sanction_warn_group(self, ctx: Context):
+        """
+        This command group manages the server's warns
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -81,10 +105,18 @@ class Moderation(Cog, name="moderation.sanction"):
 
     @sanction_slash_group.sub_command_group(
         name="warn",
-        description="This option manage the server's warns",
+        description="Manages the server's warns",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def sanction_warn_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's warns
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @sanction_group.group(
@@ -93,10 +125,18 @@ class Moderation(Cog, name="moderation.sanction"):
         aliases=["mutes"],
         brief="🔕️",
         usage="(sub-command)",
-        description="This option manage the server's mutes",
+        description="Manages the server's mutes",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def sanction_mute_group(self, ctx: Context):
+        """
+        This command group manages the server's mutes
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -106,10 +146,18 @@ class Moderation(Cog, name="moderation.sanction"):
 
     @sanction_slash_group.sub_command_group(
         name="mute",
-        description="This option manage the server's mutes",
+        description="Manages the server's mutes",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def sanction_mute_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's mutes
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @sanction_group.group(
@@ -118,9 +166,17 @@ class Moderation(Cog, name="moderation.sanction"):
         aliases=["bans"],
         brief="🔨",
         usage="(sub-command)",
-        description="This option manage the server's bans",
+        description="Manages the server's bans",
     )
     async def sanction_ban_group(self, ctx: Context):
+        """
+        This command group manages the server's bans
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -130,10 +186,18 @@ class Moderation(Cog, name="moderation.sanction"):
 
     @sanction_slash_group.sub_command_group(
         name="ban",
-        description="This option manage the server's bans",
+        description="Manages the server's bans",
     )
     @max_concurrency(1, per=BucketType.guild)
     async def sanction_ban_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's bans
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     """ MAIN GROUP'S COMMAND(S) """
@@ -144,7 +208,7 @@ class Moderation(Cog, name="moderation.sanction"):
         name="kick",
         brief="⚡",
         usage='@member ("reason")',
-        description="Kick a member from the server with a reason attached if specified",
+        description="Kicks a member from the server with a reason attached if specified",
     )
     @has_guild_permissions(kick_members=True)
     @bot_has_guild_permissions(kick_members=True)
@@ -152,6 +216,18 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_kick_command(
         self, ctx: Context, member: Member, *, reason: str = None
     ):
+        """
+        This command kicks a member from the server with a reason attached if specified
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to kick
+        reason: :class:`str` optional
+            The reason attached to the kick
+        """
         await self.handle_kick(ctx, member, reason)
 
     @sanction_slash_group.sub_command(
@@ -164,6 +240,18 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_kick_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
     ):
+        """
+        This command kicks a member from the server with a reason attached if specified
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to kick
+        reason: :class:`str` optional
+            The reason attached to the kick
+        """
         await self.handle_kick(inter, member, reason)
 
     async def handle_kick(
@@ -212,22 +300,46 @@ class Moderation(Cog, name="moderation.sanction"):
         name="add",
         brief="⚠️",
         usage='@member ("reason")',
-        description="Warn a member with a reason attached if specified",
+        description="Warns a member with a reason attached if specified",
     )
     @max_concurrency(1, per=BucketType.member)
     async def sanction_warn_add_command(
         self, ctx: Context, member: Member, *, reason: str = None
     ):
+        """
+        This command warns a member with a reason attached if specified
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to warn
+        reason: :class:`str` optional
+            The reason attached to the warn
+        """
         await self.handle_warn_add(ctx, member, reason)
 
     @sanction_warn_slash_group.sub_command(
         name="add",
-        description="Warn a member with a reason attached if specified",
+        description="Warns a member with a reason attached if specified",
     )
     @max_concurrency(1, per=BucketType.member)
     async def sanction_warn_add_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
     ):
+        """
+        This slash command warns a member with a reason attached if specified
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to warn
+        reason: :class:`str` optional
+            The reason attached to the warn
+        """
         await self.handle_warn_add(inter, member, reason)
 
     async def handle_warn_add(
@@ -350,18 +462,38 @@ class Moderation(Cog, name="moderation.sanction"):
         name="list",
         brief="ℹ️",
         usage="(@member)",
-        description="Show the list of a member's warns or yours!",
+        description="Shows the list of a member's warns or yours!",
     )
     async def sanction_warn_list_command(self, ctx: Context, member: Member = None):
+        """
+        This command shows the list of a member's warns or yours!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to list warns
+        """
         await self.handle_warn_list(ctx, member)
 
     @sanction_warn_slash_group.sub_command(
         name="list",
-        description="Show the list of a member's warns or yours!",
+        description="Shows the list of a member's warns or yours!",
     )
     async def sanction_warn_list_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member = None
     ):
+        """
+        This slash command shows the list of a member's warns or yours!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to list warns
+        """
         await self.handle_warn_list(inter, member)
 
     async def handle_warn_list(
@@ -420,18 +552,38 @@ class Moderation(Cog, name="moderation.sanction"):
         name="clear",
         brief="🧹",
         usage="(@member)",
-        description="Clear the warns of a member!",
+        description="Clears the warns of a member!",
     )
     async def sanction_warn_clear_command(self, ctx: Context, member: Member):
+        """
+        This command clears the warns of a member!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to clear warns
+        """
         await self.handle_warn_clear(ctx, member)
 
     @sanction_warn_slash_group.sub_command(
         name="clear",
-        description="Clear the warns of a member!",
+        description="Clears the warns of a member!",
     )
     async def sanction_warn_clear_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member
     ):
+        """
+        This slash command clears the warns of a member!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to clear warns
+        """
         await self.handle_warn_clear(inter, member)
 
     async def handle_warn_clear(
@@ -470,11 +622,23 @@ class Moderation(Cog, name="moderation.sanction"):
         name="add",
         brief="🔇",
         usage='@member ("reason") (<duration_value> <duration_type>)',
-        description="Mute a member for a certain duration with a reason attached if specified! (default/minimum duration = 10 min) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
+        description="Mutes a member for a certain duration with a reason attached if specified! (default/minimum duration = 10 min) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
     )
     @bot_has_permissions(manage_roles=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_mute_add_command(self, ctx: Context, member: Member, *args: str):
+        """
+        This command mutes a member for a certain duration with a reason attached if specified! (default/minimum duration = 10 min) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to mute
+        args: :class:`str` optional
+            The other options including a reason if there is one and a duration
+        """
         reason = None
         _duration = "10"
         type_duration = "m"
@@ -510,7 +674,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     @sanction_mute_slash_group.sub_command(
         name="add",
-        description="Mute a member for a certain duration with a reason attached if specified!",
+        description="Mutes a member for a certain duration with a reason attached if specified!",
     )
     @bot_has_permissions(manage_roles=True)
     @max_concurrency(1, per=BucketType.member)
@@ -522,6 +686,22 @@ class Moderation(Cog, name="moderation.sanction"):
         duration: int = 10,
         type_duration: DurationType = "m",
     ):
+        """
+        This slash command mutes a member for a certain duration with a reason attached if specified!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to mute
+        reason: :class:`str` optional
+            The reason attached to the mute
+        duration: :class:`int` optional
+            The mute's duration value (defaults to 10)
+        type_duration: :class:`Utils.DurationType` optional
+            the mute's duration type (defaults to "m")
+        """
         await self.handle_mute_add(inter, member, reason, duration, type_duration)
 
     async def handle_mute_add(
@@ -621,24 +801,44 @@ class Moderation(Cog, name="moderation.sanction"):
         name="list",
         brief="ℹ",
         usage="(@member)",
-        description="Show the list of a member's mutes or yours!",
+        description="Shows the list of a member's mutes or yours!",
     )
     async def sanction_mute_list_command(
         self,
         ctx: Context,
         member: Member = None,
     ):
+        """
+        This command shows the list of a member's mutes or yours!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to list the mutes
+        """
         await self.handle_mute_list(ctx, member)
 
     @sanction_mute_slash_group.sub_command(
         name="list",
-        description="Show the list of a member's mutes or yours!",
+        description="Shows the list of a member's mutes or yours!",
     )
     async def sanction_mute_list_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         member: Member = None,
     ):
+        """
+        This slash command shows the list of a member's mutes or yours!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to list the mutes
+        """
         await self.handle_mute_list(inter, member)
 
     async def handle_mute_list(
@@ -707,6 +907,18 @@ class Moderation(Cog, name="moderation.sanction"):
         *,
         reason: str = None,
     ):
+        """
+        This command unmute a member with a reason attached if specified!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to unmute
+        reason: :class:`str` optional
+            The reason attached to the unmute
+        """
         await self.handle_mute_remove(ctx, member, reason)
 
     @sanction_mute_slash_group.sub_command(
@@ -722,6 +934,18 @@ class Moderation(Cog, name="moderation.sanction"):
         *,
         reason: str = None,
     ):
+        """
+        This slash command unmute a member with a reason attached if specified!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to unmute
+        reason: :class:`str` optional
+            The reason attached to the unmute
+        """
         await self.handle_mute_remove(inter, member, reason)
 
     async def handle_mute_remove(
@@ -767,12 +991,24 @@ class Moderation(Cog, name="moderation.sanction"):
         name="add",
         brief="🚷",
         usage='@member ("reason") (<duration_value> <duration_type>)',
-        description="Ban a member for a certain duration with a reason attached if specified! (minimum duration = 1 day) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
+        description="Bans a member for a certain duration with a reason attached if specified! (minimum duration = 1 day) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
     )
     @has_guild_permissions(ban_members=True)
     @bot_has_guild_permissions(ban_members=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_ban_add_command(self, ctx: Context, member: Member, *args: str):
+        """
+        This command bans a member for a certain duration with a reason attached if specified! (minimum duration = 1 day) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to ban
+        args: :class:`str` optional
+            The other options including a reason if there is one and a duration
+        """
         reason = None
         _duration = None
         type_duration = None
@@ -808,7 +1044,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     @sanction_ban_slash_group.sub_command(
         name="add",
-        description="Ban a member for a certain duration with a reason attached if specified!",
+        description="Bans a member for a certain duration with a reason attached if specified!",
     )
     @has_guild_permissions(ban_members=True)
     @bot_has_guild_permissions(ban_members=True)
@@ -818,9 +1054,25 @@ class Moderation(Cog, name="moderation.sanction"):
         inter: ApplicationCommandInteraction,
         member: Member,
         reason: str = None,
-        duration: int = None,
-        type_duration: DurationType = None,
+        duration: int = 1,
+        type_duration: DurationType = "d",
     ):
+        """
+        This slash command bans a member for a certain duration with a reason attached if specified!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to ban
+        reason: :class:`str` optional
+            The reason attached to the ban
+        duration: :class:`int` optional
+            The ban's duration value (defaults to 1)
+        type_duration: :class:`Utils.DurationType` optional
+            the ban's duration type (defaults to "d")
+        """
         await self.handle_ban_add(inter, member, reason, duration, type_duration)
 
     async def handle_ban_add(
@@ -922,6 +1174,18 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_ban_remove_command(
         self, ctx: Context, user: User, *, reason: str = None
     ):
+        """
+        This command unban a user from the server with a reason attached if specified!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        user: :class:`disnake.User`
+            The user you want to ban
+        reason: :class:`str` optional
+            The reason attached to the unban
+        """
         await self.handle_ban_remove(ctx, user, reason)
 
     @sanction_ban_slash_group.sub_command(
@@ -934,6 +1198,18 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_ban_remove_slash_command(
         self, inter: ApplicationCommandInteraction, user: User, reason: str = None
     ):
+        """
+        This slash command unban a user from the server with a reason attached if specified!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        user: :class:`disnake.User`
+            The user you want to ban
+        reason: :class:`str` optional
+            The reason attached to the unban
+        """
         await self.handle_ban_remove(inter, user, reason)
 
     async def handle_ban_remove(
@@ -996,17 +1272,27 @@ class Moderation(Cog, name="moderation.sanction"):
         name="list",
         brief="🙅🏽‍♂️",
         usage="(@member)",
-        description="List the bans from the server or for a specific member!",
+        description="Lists the server's bans or for a specific member!",
     )
     @has_guild_permissions(ban_members=True)
     @bot_has_guild_permissions(ban_members=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_ban_list_command(self, ctx: Context, member: Member = None):
+        """
+        This command lists the bans from the server or for a specific member!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        member: :class:`disnake.Member`
+            The member you want to list bans
+        """
         await self.handle_ban_list(ctx, member)
 
     @sanction_ban_slash_group.sub_command(
         name="list",
-        description="List the bans from the server or for a specific member!",
+        description="Lists the server's bans or for a specific member!",
     )
     @has_guild_permissions(ban_members=True)
     @bot_has_guild_permissions(ban_members=True)
@@ -1014,6 +1300,16 @@ class Moderation(Cog, name="moderation.sanction"):
     async def sanction_ban_list_slash_command(
         self, inter: ApplicationCommandInteraction, member: Member = None
     ):
+        """
+        This slash command lists the bans from the server or for a specific member!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        member: :class:`disnake.Member`
+            The member you want to list bans
+        """
         await self.handle_ban_list(inter, member)
 
     async def handle_ban_list(
@@ -1054,7 +1350,6 @@ class Moderation(Cog, name="moderation.sanction"):
                     )
                 else:
                     ban = bans[list(bans.keys())[x]]
-                    print(ban)
                     em.add_field(
                         name=f"ban `{ceil(ban['original_ban']['at_s'] * 1000)}`:",
                         value=f"**date**: {ban['original_ban']['at']}\n**by**: `{ban['original_ban']['by']}`\n**duration**: {ban['original_ban']['duration']}"

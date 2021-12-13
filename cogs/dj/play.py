@@ -1,3 +1,4 @@
+from functools import wraps
 from inspect import Parameter
 from re import compile as re_compile
 from typing import Union
@@ -20,6 +21,7 @@ from disnake.ext.commands import (
     Context,
     guild_only,
     max_concurrency,
+    Param,
     slash_command,
 )
 from disnake.ext.commands.errors import MissingRequiredArgument
@@ -41,6 +43,7 @@ class LavalinkVoiceClient(VoiceClient):
     """
 
     def __init__(self, client: botClient, channel: Connectable):
+        super().__init__(client, channel)
         self.client = client
         self.channel = channel
         # ensure there exists a client already
@@ -151,9 +154,10 @@ class Dj(Cog, name="dj.play"):
     """ CHECKS """
 
     def __ensure_voice(function):
+        @wraps(function)
         async def check(
             self,
-            source: Union[Context, ApplicationCommandInteraction],
+            source,
             *,
             query: str = None,
             **kwargs,
@@ -266,6 +270,16 @@ class Dj(Cog, name="dj.play"):
     @__ensure_voice
     @max_concurrency(1, per=BucketType.guild)
     async def play_command(self, ctx: Context, query: str = None):
+        """
+        This command plays a link or title from a SoundCloud song! (supports playlists!)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        query: :class:`str` optional
+            The SoundCloud link or title
+        """
         await self.handle_play(ctx, query)
 
     @slash_command(
@@ -280,8 +294,20 @@ class Dj(Cog, name="dj.play"):
     @__ensure_voice
     @max_concurrency(1, per=BucketType.guild)
     async def play_slash_command(
-        self, inter: ApplicationCommandInteraction, query: str = None
+        self,
+        inter: ApplicationCommandInteraction,
+        query: str = None,
     ):
+        """
+        This slash command plays a link or title from a SoundCloud song! (supports playlists!)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        query: :class:`str` optional
+            The SoundCloud link or title
+        """
         await self.handle_play(inter, query)
 
     """ METHOD(S) """
@@ -337,9 +363,15 @@ class Dj(Cog, name="dj.play"):
                 delete_after=20,
             )
 
-        results = await player.node.get_tracks(
-            query if query else source.message.attachments[0].url
-        )
+        try:
+            results = await player.node.get_tracks(
+                query if query else source.message.attachments[0].url
+            )
+        except TimeoutError:
+            return await source.reply(
+                f"⚠️ - {source.author.mention} - Your query timed out!",
+                delete_after=20,
+            )
 
         # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
         # ALternatively, results['tracks'] could be an empty array if the query yielded no tracks.

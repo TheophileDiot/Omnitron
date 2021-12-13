@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Optional
 
 from data import Utils
 
@@ -30,7 +31,7 @@ class Main:
     """ GETTERS & SETTERS """
 
     @Utils.resolve_guild_path
-    def get_guild(self, guild_id: int) -> OrderedDict or None:
+    def get_guild(self, guild_id: int) -> Optional[OrderedDict]:
         return self.model.get(self.path) or None
 
     def get_guilds(self) -> OrderedDict:

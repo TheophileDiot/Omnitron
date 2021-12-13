@@ -33,13 +33,29 @@ class Miscellaneous(Cog, name="misc.ping"):
 
     """ COMMANDS """
 
-    @command(name="ping", aliases=["latency"], description="Check bot latency!")
+    @command(name="ping", aliases=["latency"], description="Checks the bot latency!")
     @bot_has_permissions(send_messages=True)
     async def ping_command(self, ctx: Context):
+        """
+        This command checks bot latency!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         await handle_ping(ctx)
 
-    @slash_command(name="ping", description="Check bot latency!")
+    @slash_command(name="ping", description="Checks the bot latency!")
     async def ping_slash_command(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command checks bot latency!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await handle_ping(inter)
 
 

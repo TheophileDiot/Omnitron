@@ -4,7 +4,7 @@ from math import floor
 from re import compile as re_compile
 from re import findall
 from time import time
-from typing import Union, List
+from typing import Union, List, Optional
 
 from disnake import (
     ApplicationCommandInteraction,
@@ -240,13 +240,15 @@ class Utils:
         if user and user.id in self.bot.tasks[guild_id]["ban_completions"]:
             del self.bot.tasks[guild_id]["ban_completions"][user.id]
 
-    async def send_message_to_mods(self, message: str, guild_id: int):
+    async def send_message_to_mods(self, message: str, guild_id: int, em: Embed = None):
         """This method send a message to all mods"""
         guild = self.bot.get_guild(guild_id) or await self.bot.fetch_guild(guild_id)
 
         if "mods_channel" in self.bot.configs[guild_id]:
             try:
-                return await self.bot.configs[guild_id]["mods_channel"].send(message)
+                return await self.bot.configs[guild_id]["mods_channel"].send(
+                    message, embed=em
+                )
             except Forbidden:
                 message += f"\nAnd also in the channel {self.bot.configs[guild_id]['mods_channel'].mention}!"
 
@@ -259,7 +261,7 @@ class Utils:
                 if mod:
                     for m in set(mod.members):
                         try:
-                            await m.send(message)
+                            await m.send(message, embed=em)
                         except Forbidden:
                             pass
                 else:
@@ -267,7 +269,7 @@ class Utils:
                         mod = guild.get_member(int(mod.id)) or await guild.fetch_member(
                             int(mod.id)
                         )
-                        await mod.send(message)
+                        await mod.send(message, embed=em)
                     except Forbidden or NotFound:
                         pass
 
@@ -278,7 +280,7 @@ class Utils:
                 if not guild_owner:
                     guild_owner = await guild.fetch_member(int(guild.owner_id))
 
-                await guild_owner.send(message)
+                await guild_owner.send(message, embed=em)
             except Forbidden or NotFound:
                 bot_owner = self.bot.owner
 
@@ -292,7 +294,8 @@ class Utils:
                     )
 
                 return await bot_owner.send(
-                    f"{message}\nAnd couldn't send a message to the owner of the server!"
+                    f"{message}\nAnd couldn't send a message to the owner of the server!",
+                    embed=em,
                 )
 
     def get_embed_from_ctx(self, ctx: Context, title: str) -> Embed:
@@ -362,7 +365,7 @@ class Utils:
         _duration: int,
         type_duration: str,
         source: Union[Context, ApplicationCommandInteraction],
-    ) -> bool or int or None:
+    ) -> Optional[Union[bool, int]]:
         type_duration = self.to_lower(type_duration)
 
         if _duration <= 0:
@@ -907,7 +910,7 @@ class Utils:
     async def mentionable_converter(
         inter: ApplicationCommandInteraction,
         argument: str,
-    ) -> List[Union[Member, Role]] or None:
+    ) -> Optional[List[Union[Member, Role]]]:
         ids = findall(r"([0-9]{15,20})", argument)
         result = []
         for id in ids:
@@ -933,7 +936,7 @@ class Utils:
     async def channel_converter(
         inter: ApplicationCommandInteraction,
         argument: str,
-    ) -> List[Union[TextChannel, VoiceChannel]] or None:
+    ) -> Optional[List[Union[TextChannel, VoiceChannel]]]:
         ids = findall(r"([0-9]{15,20})", argument)
         result = []
         for id in ids:

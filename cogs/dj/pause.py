@@ -19,20 +19,36 @@ class Dj(Cog, name="dj.pause"):
     def __init__(self, bot):
         self.bot = bot
 
-    @command(name="pause", description="Pause the current music!")
+    @command(name="pause", description="Pauses the current music!")
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @bot_has_permissions(send_messages=True)
     @max_concurrency(1, per=BucketType.guild)
     async def pause_command(self, ctx: Context):
+        """
+        This command Pauses the current music!
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         await self.handle_pause(ctx)
 
-    @slash_command(name="pause", description="Pause the current music!")
+    @slash_command(name="pause", description="Pauses the current music!")
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_dj()
     @max_concurrency(1, per=BucketType.guild)
     async def pause_slash_command(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command Pauses the current music!
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_pause(inter)
 
     """ METHOD(S) """

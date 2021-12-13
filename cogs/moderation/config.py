@@ -58,6 +58,14 @@ class Moderation(Cog, name="moderation.config"):
     @Utils.check_moderator()
     @bot_has_permissions(send_messages=True)
     async def config_group(self, ctx: Context):
+        """
+        This command group manages the server's configuration
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -74,9 +82,17 @@ class Moderation(Cog, name="moderation.config"):
         aliases=["secu"],
         brief="🚓",
         usage="(sub-command)",
-        description="This option manage the server's security",
+        description="Manages the server's security",
     )
     async def config_security_group(self, ctx: Context):
+        """
+        This command group manages the server's security
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -87,12 +103,20 @@ class Moderation(Cog, name="moderation.config"):
 
     @slash_command(
         name="security",
-        description="This option manage the server's security",
+        description="Manages the server's security",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_security_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's security
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_group.group(
@@ -102,9 +126,17 @@ class Moderation(Cog, name="moderation.config"):
         aliases=["experience"],
         brief="✨",
         usage="(sub-command)",
-        description="This option manage the server's experience feature",
+        description="Manages the server's experience feature",
     )
     async def config_xp_group(self, ctx: Context):
+        """
+        This command group manages the server's experience feature
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -115,12 +147,20 @@ class Moderation(Cog, name="moderation.config"):
 
     @slash_command(
         name="config_xp",
-        description="This option manage the server's experience feature",
+        description="Manages the server's experience feature",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_xp_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's experience feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_group.group(
@@ -130,9 +170,17 @@ class Moderation(Cog, name="moderation.config"):
         aliases=["channel"],
         brief="📻",
         usage="(sub-command)",
-        description="This option manage the server's special channels",
+        description="Manages the server's special channels",
     )
     async def config_channels_group(self, ctx: Context):
+        """
+        This command group manages the server's special channels
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        """
         if ctx.invoked_subcommand is None:
             await ctx.send(
                 embed=self.bot.utils_class.get_embed_from_ctx(
@@ -143,12 +191,20 @@ class Moderation(Cog, name="moderation.config"):
 
     @slash_command(
         name="channels",
-        description="This option manage the server's special channels",
+        description="Manages the server's special channels",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_channels_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's special channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     """ MAIN GROUP'S COMMAND(S) """
@@ -160,7 +216,7 @@ class Moderation(Cog, name="moderation.config"):
         name="moderators",
         aliases=["mods"],
         brief="🔨",
-        description="This option manage the server's moderators (role & members) (can add/remove multiple at a time)",
+        description="Manages the server's moderators (role & members) (can add/remove multiple at a time)",
         usage="(add|remove|purge @role|@member)",
     )
     async def config_moderators_command(
@@ -169,6 +225,18 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         *mods: Union[Role, Member],
     ):
+        """
+        This command manages the server's moderators (role & members) (can add/remove multiple at a time)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> add or remove or purge
+        mods: :class:`typing.Union[disnake.Role, disnake.Member]` optional
+            The moderators (that can be either roles or members) (mentions only)
+        """
         if mods:
             await self.handle_moderators(ctx, option, *mods)
         else:
@@ -176,41 +244,67 @@ class Moderation(Cog, name="moderation.config"):
 
     @slash_command(
         name="moderators",
-        description="This option manage the server's moderators (role & members)",
+        description="Manages the server's moderators (role & members)",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_moderators_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's moderators (role & members)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_moderators_slash_group.sub_command(
         name="list",
-        description="This option list members/roles in the server's moderators list",
+        description="Lists members/roles in the server's moderators list",
     )
     async def config_moderators_list_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command lists members/roles in the server's moderators list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_moderators(inter)
 
     @config_moderators_slash_group.sub_command(
         name="add",
-        description="This option add members/roles to the server's moderators list (can add multiple at a time)",
+        description="Adds members/roles to the server's moderators list (can add multiple at a time)",
     )
     async def config_moderators_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         mods: List[Union[Member, Role]] = Param(
-            default=None, converter=Utils.mentionable_converter
+            None, converter=Utils.mentionable_converter
         ),
     ):
+        """
+        This slash command adds members/roles to the server's moderators list (can add multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        mods: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
+            The moderators (that can be either roles or members) (mentions only)
+        """
         if mods:
             await self.handle_moderators(inter, "add", *mods)
 
     @config_moderators_slash_group.sub_command(
         name="remove",
-        description="This option remove members/roles from the server's moderators list (can remove multiple at a time)",
+        description="Removes members/roles from the server's moderators list (can remove multiple at a time)",
     )
     async def config_moderators_remove_slash_command(
         self,
@@ -219,16 +313,34 @@ class Moderation(Cog, name="moderation.config"):
             default=None, converter=Utils.mentionable_converter
         ),
     ):
+        """
+        Removes members/roles from the server's moderators list (can remove multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        mods: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
+            The moderators (that can be either roles or members) (mentions only)
+        """
         if mods:
             await self.handle_moderators(inter, "remove", *mods)
 
     @config_moderators_slash_group.sub_command(
-        name="purge", description="This option purge the server's moderators list"
+        name="purge", description="Purges the server's moderators list"
     )
     async def config_moderators_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's moderators list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_moderators(inter, "purge")
 
     async def handle_moderators(
@@ -460,7 +572,7 @@ class Moderation(Cog, name="moderation.config"):
         name="djs",
         aliases=["players"],
         brief="🧑‍🎤",
-        description="This option manage the server's djs (role & members) (if there is no dj then everyone can use music commands) (can add/remove multiple at a time)",
+        description="Manages the server's djs (role & members) (if there is no dj then everyone can use music commands) (can add/remove multiple at a time)",
         usage="(add|remove|purge @role|@member)",
     )
     async def config_djs_command(
@@ -469,6 +581,18 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         *djs: Union[Role, Member],
     ):
+        """
+        This command group manages the server's djs (role & members) (if there is no dj then everyone can use music commands) (can add/remove multiple at a time)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> add or remove or purge
+        djs: :class:`typing.Union[disnake.Role, disnake.Member]` optional
+            The djs (that can be either roles or members) (mentions only)
+        """
         if djs:
             await self.handle_djs(ctx, option, *djs)
         else:
@@ -476,41 +600,65 @@ class Moderation(Cog, name="moderation.config"):
 
     @slash_command(
         name="djs",
-        description="This option manage the server's djs (role & members)",
+        description="Manages the server's djs (role & members)",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_djs_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's djs (role & members)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_djs_slash_group.sub_command(
         name="list",
-        description="This option list members/roles in the server's djs list",
+        description="Lists members/roles in the server's djs list",
     )
     async def config_djs_list_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group lists members/roles in the server's djs list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_djs(inter)
 
     @config_djs_slash_group.sub_command(
         name="add",
-        description="This option add members/roles to the server's djs list (can add multiple at a time)",
+        description="Adds members/roles to the server's djs list (can add multiple at a time)",
     )
     async def config_djs_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        djs: List[Union[Member, Role]] = Param(
-            default=None, converter=Utils.mentionable_converter
-        ),
+        djs: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
     ):
+        """
+        This slash command adds members/roles to the server's djs list (can add multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        djs: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
+            The djs (that can be either roles or members) (mentions only)
+        """
         if djs:
             await self.handle_djs(inter, "add", *djs)
 
     @config_djs_slash_group.sub_command(
         name="remove",
-        description="This option remove members/roles from the server's djs list (can remove multiple at a time)",
+        description="Removes members/roles from the server's djs list (can remove multiple at a time)",
     )
     async def config_djs_remove_slash_command(
         self,
@@ -519,16 +667,34 @@ class Moderation(Cog, name="moderation.config"):
             default=None, converter=Utils.mentionable_converter
         ),
     ):
+        """
+        This slash command removes members/roles from the server's djs list (can remove multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        djs: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
+            The djs (that can be either roles or members) (mentions only)
+        """
         if djs:
             await self.handle_djs(inter, "remove", *djs)
 
     @config_djs_slash_group.sub_command(
-        name="purge", description="This option purge the server's djs list"
+        name="purge", description="Purges the server's djs list"
     )
     async def config_djs_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's djs list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_djs(inter, "purge")
 
     async def handle_djs(
@@ -761,53 +927,99 @@ class Moderation(Cog, name="moderation.config"):
         name="prefix",
         aliases=["prfx"],
         brief="❗",
-        description="This option manage the server's prefix",
+        description="Manages the server's prefix",
         usage="(set|reset) (<prefix>)",
     )
     async def config_prefix_command(
         self, ctx: Context, option: Utils.to_lower = None, prefix: str = None
     ):
+        """
+        This command manages the server's prefix
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> set or reset
+        prefix: :class:`str` optional
+            The prefix to set if the option set is chosen
+        """
         await self.handle_prefix(ctx, option, prefix)
 
     @slash_command(
         name="prefix",
-        description="This option manage the server's prefix",
+        description="Manages the server's prefix",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_prefix_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command manages the server's prefix
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_prefix_slash_group.sub_command(
         name="display",
-        description="This option display the current server's prefix",
+        description="Displays the current server's prefix",
     )
     async def config_prefix_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command display the current server's prefix
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prefix(inter)
 
     @config_prefix_slash_group.sub_command(
         name="set",
-        description="This option set the current server's prefix",
+        description="Sets the current server's prefix",
     )
     async def config_prefix_set_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         prefix: str,
     ):
+        """
+        This slash command display the current server's prefix
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        prefix: :class:`str`
+            The new prefix to set
+        """
         await self.handle_prefix(inter, "set", prefix)
 
     @config_prefix_slash_group.sub_command(
         name="reset",
-        description="This option reset the current server's prefix (o!)",
+        description="Reset the current server's prefix (o!)",
     )
     async def config_prefix_reset_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command reset the current server's prefix (o!)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prefix(inter, "reset")
 
     async def handle_prefix(
@@ -879,7 +1091,7 @@ class Moderation(Cog, name="moderation.config"):
         name="tickets",
         aliases=["ticket"],
         brief="📥",
-        description="This option manage the server's tickets channel and category!",
+        description="Manages the server's tickets channel and category",
         usage="(on|update|resolve|off) (#channel) (#category)",
     )
     async def config_tickets_command(
@@ -889,11 +1101,25 @@ class Moderation(Cog, name="moderation.config"):
         tickets_channel: Union[TextChannel, CategoryChannel] = None,
         tickets_category: CategoryChannel = None,
     ):
+        """
+        This command manages the server's tickets channel and category
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> on or update or resolve or off
+        tickets_channel: :class:`typing.Union[disnake.TextChannel, disnake.CategoryChannel]` optional
+            The tickets channel or category passed (is accepted if the option is on or update)
+        tickets_category: :class:`disnake.CategoryChannel` optional
+            The tickets category
+        """
         await self.handle_tickets(ctx, option, tickets_channel, tickets_category)
 
     @slash_command(
         name="tickets",
-        description="This option manage the server's tickets channel and category!",
+        description="Manages the server's tickets channel and category",
     )
     @guild_only()
     @Utils.check_bot_starting()
@@ -902,21 +1128,37 @@ class Moderation(Cog, name="moderation.config"):
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's tickets channel and category
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_tickets_slash_command.sub_command(
         name="display",
-        description="This option displays the state of the server's tickets feature!",
+        description="Displays the state of the server's tickets feature",
     )
     async def config_tickets_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the state of the server's tickets feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_tickets(inter)
 
     @config_tickets_slash_command.sub_command(
         name="on",
-        description="This option turn on the server's tickets feature!",
+        description="Turns the server's tickets feature on",
     )
     async def config_tickets_on_slash_command(
         self,
@@ -924,11 +1166,23 @@ class Moderation(Cog, name="moderation.config"):
         tickets_channel: TextChannel,
         tickets_category: CategoryChannel,
     ):
+        """
+        This slash command turns the server's tickets feature on
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        tickets_channel: :class:`disnake.TextChannel` optional
+            The channel where the ticket message will be sent
+        tickets_category: :class:`disnake.CategoryChannel` optional
+            The category where the tickets channels will be created
+        """
         await self.handle_tickets(inter, "on", tickets_channel, tickets_category)
 
     @config_tickets_slash_command.sub_command(
         name="update",
-        description="This option updates the server's tickets feature!",
+        description="Updates the server's tickets feature",
     )
     async def config_tickets_update_slash_command(
         self,
@@ -936,6 +1190,18 @@ class Moderation(Cog, name="moderation.config"):
         tickets_channel: TextChannel = None,
         tickets_category: CategoryChannel = None,
     ):
+        """
+        This slash command updates the server's tickets feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        tickets_channel: :class:`disnake.TextChannel` optional
+            The channel where the ticket message will be sent
+        tickets_category: :class:`disnake.CategoryChannel` optional
+            The category where the tickets channels will be created
+        """
         if not tickets_channel and tickets_category:
             tickets_channel = tickets_category
             tickets_category = None
@@ -944,22 +1210,38 @@ class Moderation(Cog, name="moderation.config"):
 
     @config_tickets_slash_command.sub_command(
         name="resolve",
-        description="This option resolves the server's tickets feature!",
+        description="Resolves the server's tickets feature",
     )
     async def config_tickets_resolve_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command resolves the server's tickets feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_tickets(inter, "resolve")
 
     @config_tickets_slash_command.sub_command(
         name="off",
-        description="This option turn off the server's tickets feature!",
+        description="Turns the server's tickets feature off",
     )
     async def config_tickets_off_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command turns the server's tickets feature off
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_tickets(inter, "off")
 
     async def handle_tickets(
@@ -1207,10 +1489,11 @@ class Moderation(Cog, name="moderation.config"):
                         .permissions_for(source.guild.me)
                         .manage_channels
                     ):
-                        for channel in channels:
-                            await channel.delete(
-                                reason=f"Tickets turned off by {source.author}!"
-                            )
+                        async with self.bot.limiter:
+                            for channel in channels:
+                                await channel.delete(
+                                    reason=f"Tickets turned off by {source.author}!"
+                                )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to delete channels from the category {self.bot.configs[source.guild.id]['tickets']['tickets_category'].mention}! Required perms: `{', '.join(['MANAGE_CHANNELS'])}`",
@@ -1285,7 +1568,7 @@ class Moderation(Cog, name="moderation.config"):
         name="select_to_role",
         aliases=["select_2_role", "select2role"],
         brief="🥸",
-        description="This option manage the server's server_2_role feature!",
+        description="Manages the server's select_2_role feature",
         usage='(add|update|resolve|remove|purge "Title" @role <"description">)',
     )
     async def config_select_2_role_command(
@@ -1297,11 +1580,27 @@ class Moderation(Cog, name="moderation.config"):
         *,
         description: str = "",
     ):
+        """
+        This command manages the server's select_2_role feature
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> add or update or resolve or remove or purge
+        title: :class:`str` optional
+            The title of the choice
+        role: :class:`disnake.Role` optional
+            The role that is attached to the title
+        description: :class:`str` optional
+            The description of the role/title
+        """
         await self.handle_select_to_role(ctx, option, title, role, description)
 
     @slash_command(
         name="select_to_role",
-        description="This option manage the server's select_2_role feature!",
+        description="Manages the server's select_2_role feature",
     )
     @guild_only()
     @Utils.check_bot_starting()
@@ -1310,21 +1609,37 @@ class Moderation(Cog, name="moderation.config"):
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's select_2_role feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_select_2_role_slash_group.sub_command(
         name="list",
-        description="This option list all the select to roles!",
+        description="Lists all the select to roles",
     )
     async def config_select_2_role_list_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command lists all the select to roles
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_select_to_role(inter)
 
     @config_select_2_role_slash_group.sub_command(
         name="add",
-        description="This option add a new select to role!",
+        description="Adds a new select to role",
     )
     async def config_select_2_role_add_slash_command(
         self,
@@ -1333,11 +1648,25 @@ class Moderation(Cog, name="moderation.config"):
         role: Role,
         description: str,
     ):
+        """
+        This slash command adds a new select to role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        title: :class:`str`
+            The title of the choice
+        role: :class:`disnake.Role`
+            The role that is attached to the title
+        description: :class:`str`
+            The description of the role/title
+        """
         await self.handle_select_to_role(inter, "add", title, role, description)
 
     @config_select_2_role_slash_group.sub_command(
         name="update",
-        description="This option update a select to role!",
+        description="Updates a select to role",
     )
     async def config_select_2_role_update_slash_command(
         self,
@@ -1346,37 +1675,77 @@ class Moderation(Cog, name="moderation.config"):
         role: Role = None,
         description: str = "",
     ):
-        await self.handle_select_to_role(inter, "add", title, role, description)
+        """
+        This slash command updates a select to role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        title: :class:`str`
+            The title of the choice
+        role: :class:`disnake.Role` optional
+            The new role that is attached to the title (if empty nothing's changed)
+        description: :class:`str` optional
+            The new description of the role/title (if empty nothing's changed)
+        """
+        await self.handle_select_to_role(inter, "update", title, role, description)
 
     @config_select_2_role_slash_group.sub_command(
         name="resolve",
-        description="This option resolve the select to role feature!",
+        description="Resolves the select to role feature",
     )
     async def config_select_2_role_resolve_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command resolves the select to role feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_select_to_role(inter, "resolve")
 
     @config_select_2_role_slash_group.sub_command(
         name="remove",
-        description="This option remove a select to role!",
+        description="Removes a select to role",
     )
     async def config_select_2_role_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         title: str,
     ):
+        """
+        This slash command removes a select to role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        title: :class:`str`
+            The title of the choice to remove
+        """
         await self.handle_select_to_role(inter, "remove", title)
 
     @config_select_2_role_slash_group.sub_command(
         name="purge",
-        description="This option purge the select to role feature!",
+        description="Purges the select to role feature",
     )
     async def config_select_2_role_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the select to role feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_select_to_role(inter, "purge")
 
     async def handle_select_to_role(
@@ -1502,16 +1871,16 @@ class Moderation(Cog, name="moderation.config"):
 
                         members = set(source.guild.members)
                         if source.channel.permissions_for(source.guild.me).manage_roles:
-                            # async with self.bot.limiter:
-                            for member in members:
-                                if member.bot or role not in member.roles:
-                                    continue
+                            async with self.bot.limiter:
+                                for member in members:
+                                    if member.bot or role not in member.roles:
+                                        continue
 
-                                try:
-                                    await member.remove_roles(role)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
-                                    raise
+                                    try:
+                                        await member.remove_roles(role)
+                                    except Forbidden as f:
+                                        f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
+                                        raise
                         else:
                             await self.bot.utils_class.send_message_to_mods(
                                 f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old select to role role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -1563,16 +1932,16 @@ class Moderation(Cog, name="moderation.config"):
                     members = set(source.guild.members)
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
-                        # async with self.bot.limiter:
-                        for member in members:
-                            if member.bot or not roles & set(member.roles):
-                                continue
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or not roles & set(member.roles):
+                                    continue
 
-                            try:
-                                await member.remove_roles(*roles)
-                            except Forbidden as f:
-                                f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
-                                raise
+                                try:
+                                    await member.remove_roles(*roles)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
+                                    raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -1758,7 +2127,7 @@ class Moderation(Cog, name="moderation.config"):
         name="muted_role",
         aliases=["mute_role"],
         brief="🤐",
-        description="This option manage the server's muted role",
+        description="Manages the server's muted role",
         usage="(set|remove @role)",
     )
     async def config_muted_role_command(
@@ -1767,47 +2136,93 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         muted: Role = None,
     ):
+        """
+        This command manages the server's muted role
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> set or remove
+        muted: :class:`disnake.Role` optional
+            The muted role
+        """
         await self.handle_muted_role(ctx, option, muted)
 
     @slash_command(
         name="muted_role",
-        description="This option manage the server's muted role",
+        description="Manages the server's muted role",
     )
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
     async def config_muted_role_slash_group(self, inter: ApplicationCommandInteraction):
+        """
+        This slash command group manages the server's muted role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_muted_role_slash_group.sub_command(
         name="display",
-        description="This option display the server's muted role",
+        description="Displays the server's muted role",
     )
     async def config_muted_role_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's muted role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_muted_role(inter)
 
     @config_muted_role_slash_group.sub_command(
         name="set",
-        description="This option set the server's muted role",
+        description="Sets the server's muted role",
     )
     async def config_muted_role_set_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         role: Role,
     ):
+        """
+        This slash command sets the server's muted role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        role: :class:`disnake.Role`
+            The muted role
+        """
         await self.handle_muted_role(inter, "set", role)
 
     @config_muted_role_slash_group.sub_command(
         name="remove",
-        description="This option remove the server's muted role",
+        description="Removes the server's muted role",
     )
     async def config_muted_role_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command removes the server's muted role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_muted_role(inter, "remove")
 
     async def handle_muted_role(
@@ -1847,30 +2262,31 @@ class Moderation(Cog, name="moderation.config"):
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         db_users = self.bot.user_repo.get_users(source.guild.id)
 
-                        for db_user in db_users.values():
-                            if db_user["muted"]:
-                                try:
-                                    member = source.guild.get_member(
-                                        int(db_user["id"])
-                                    ) or await source.guild.fetch_member(
-                                        int(db_user["id"])
-                                    )
-                                except NotFound:
-                                    continue
-
-                                if old_role:
+                        async with self.bot.limiter:
+                            for db_user in db_users.values():
+                                if db_user["muted"]:
                                     try:
-                                        if old_role in member.roles:
-                                            await member.remove_roles(old_role)
-                                    except Forbidden as f:
-                                        f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
-                                        raise
+                                        member = source.guild.get_member(
+                                            int(db_user["id"])
+                                        ) or await source.guild.fetch_member(
+                                            int(db_user["id"])
+                                        )
+                                    except NotFound:
+                                        continue
 
-                                try:
-                                    await member.add_roles(muted)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to add the role `{muted}` to {member} (maybe the role is above mine)"
-                                    raise
+                                    if old_role:
+                                        try:
+                                            if old_role in member.roles:
+                                                await member.remove_roles(old_role)
+                                        except Forbidden as f:
+                                            f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
+                                            raise
+
+                                    try:
+                                        await member.add_roles(muted)
+                                    except Forbidden as f:
+                                        f.text = f"⚠️ - I don't have the right permissions to add the role `{muted}` to {member} (maybe the role is above mine)"
+                                        raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {f'`@{old_role.name}` ' if old_role else ''}`@{muted.name}` (i tried to replace the old muted role with the new one from muted members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -1901,23 +2317,24 @@ class Moderation(Cog, name="moderation.config"):
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         db_users = self.bot.user_repo.get_users(source.guild.id)
 
-                        for db_user in db_users.values():
-                            if db_user["muted"]:
-                                try:
-                                    member = source.guild.get_member(
-                                        int(db_user["id"])
-                                    ) or await source.guild.fetch_member(
-                                        int(db_user["id"])
-                                    )
-                                except NotFound:
-                                    continue
+                        async with self.bot.limiter:
+                            for db_user in db_users.values():
+                                if db_user["muted"]:
+                                    try:
+                                        member = source.guild.get_member(
+                                            int(db_user["id"])
+                                        ) or await source.guild.fetch_member(
+                                            int(db_user["id"])
+                                        )
+                                    except NotFound:
+                                        continue
 
-                                try:
-                                    if old_role in member.roles:
-                                        await member.remove_roles(*old_role)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
-                                    raise
+                                    try:
+                                        if old_role in member.roles:
+                                            await member.remove_roles(*old_role)
+                                    except Forbidden as f:
+                                        f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
+                                        raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old muted role from muted members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -1962,7 +2379,7 @@ class Moderation(Cog, name="moderation.config"):
         name="prevent_invites",
         aliases=["prev_i"],
         brief="✉️",
-        description="This option manage if users are allowed to send other servers invites or not (specify a channel to be notified when someone tries to send an invitation link)!",
+        description="Manages if users are allowed to send other servers invites or not (specify a channel to be notified when someone tries to send an invitation link)",
         usage="(on|update|off) (#channel)",
     )
     async def config_security_prevent_invites_command(
@@ -1971,58 +2388,114 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         notify_channel: TextChannel = None,
     ):
+        """
+        This command manages if users are allowed to send other servers invites or not (specify a channel to be notified when someone tries to send an invitation link)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> on or update or off
+        notify_channel: :class:`disnake.TextChannel` optional
+            The channel where the events will be sent
+        """
         await self.handle_prevent_invites(ctx, option, notify_channel)
 
     @config_security_slash_group.sub_command_group(
         name="prevent_invites",
-        description="This option manage if users are allowed to send other servers invites or not (specify a channel to be notified when someone tries to send an invitation link)!",
+        description="Manages the server's prevent invites feature",
     )
     async def config_security_prevent_invites_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's prevent invites feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_security_prevent_invites_slash_group.sub_command(
         name="display",
-        description="This option display the state of the prevent invites feature in the server!",
+        description="Displays the state of the server's prevent invites feature",
     )
     async def config_security_prevent_invites_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the state of the server's prevent invites feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prevent_invites(inter)
 
     @config_security_prevent_invites_slash_group.sub_command(
         name="on",
-        description="This option turn on prevent invites feature in the server!",
+        description="Turns the server's prevent invites feature on",
     )
     async def config_security_prevent_invites_on_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         notify_channel: TextChannel = None,
     ):
+        """
+        This slash command turns the server's prevent invites feature on
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        notify_channel: :class:`disnake.TextChannel` optional
+            The channel where the events will be sent
+        """
         await self.handle_prevent_invites(inter, "on", notify_channel)
 
     @config_security_prevent_invites_slash_group.sub_command(
         name="update",
-        description="This option updates the prevent invites feature in the server!",
+        description="Updates the server's prevent invites feature",
     )
     async def config_security_prevent_invites_update_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         notify_channel: TextChannel,
     ):
+        """
+        This slash command updates the server's prevent invites feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        notify_channel: :class:`disnake.TextChannel`
+            The channel where the events will be sent
+        """
         await self.handle_prevent_invites(inter, "update", notify_channel)
 
     @config_security_prevent_invites_slash_group.sub_command(
         name="off",
-        description="This option turn off the prevent invites feature in the server!",
+        description="Turns the server's prevent invites feature off",
     )
     async def config_security_prevent_invites_off_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command turns the server's prevent invites feature off
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prevent_invites(inter, "off")
 
     async def handle_prevent_invites(
@@ -2124,7 +2597,7 @@ class Moderation(Cog, name="moderation.config"):
         name="mute_on_join",
         aliases=["m_on_j"],
         brief="🔇",
-        description="This option manage if users are muted during a certain amount of time when joining the server and then notify it at the end if a channel is specified! (default duration = 10 min) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
+        description="Manages if users are muted during a certain amount of time when joining the server and then notify it at the end if a channel is specified! (default duration = 10 min) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>",
         usage="(on|update|off) (<duration_value> <duration_type> #channel)",
     )
     async def config_security_mute_on_join_command(
@@ -2135,48 +2608,94 @@ class Moderation(Cog, name="moderation.config"):
         duration_type: str = None,
         notify_channel: TextChannel = None,
     ):
+        """
+        This command manages if users are muted during a certain amount of time when joining the server and then notify it at the end if a channel is specified! (default duration = 10 min) (duration format -> <duration value (more than 0)> <duration type (d, h, m, s)>
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> on or update or off
+        duration: :class:`int` optional
+            The mute's duration value
+        duration_type: :class:`Utils.to_lower` optional
+            The mute's duration type (d == days, h == hours, m == minutes, s == seconds)
+        notify_channel: :class:`disnake.TextChannel` optional
+            The channel where the events will be sent
+        """
         await self.handle_mute_on_join(
             ctx, option, duration, duration_type, notify_channel
         )
 
     @config_security_slash_group.sub_command_group(
         name="mute_on_join",
-        description="This option manage if users are muted during a certain amount of time when joining the server and then notify it at the end if a channel is specified! (default duration = 10 min)",
+        description="Manages the server's mute_on_join feature",
     )
     async def config_security_mute_on_join_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's mute_on_join feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_security_mute_on_join_slash_group.sub_command(
         name="display",
-        description="This option display the state of the mute on join feature!",
+        description="Displays the state of the mute on join feature",
     )
     async def config_security_mute_on_join_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the state of the mute on join feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_mute_on_join(inter)
 
     @config_security_mute_on_join_slash_group.sub_command(
         name="on",
-        description="This option turn on the mute on join feature! (default duration = 10 min)",
+        description="Turns the mute on join feature on (default duration = 10 min)",
     )
     async def config_security_mute_on_join_on_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        duration: int = None,
-        duration_type: DurationType = None,
+        duration: int = 10,
+        duration_type: DurationType = "m",
         notify_channel: TextChannel = None,
     ):
+        """
+        This slash command turns the mute on join feature on (default duration = 10 min)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        duration: :class:`int` optional
+            The mute's duration value (default: 10)
+        duration_type: :class:`Utils.DurationType` optional
+            The mute's duration type (d == days, h == hours, m == minutes, s == seconds) (default: "m")
+        notify_channel: :class:`disnake.TextChannel` optional
+            The channel where the events will be sent
+        """
         await self.handle_mute_on_join(
             inter, "on", duration, duration_type, notify_channel
         )
 
     @config_security_mute_on_join_slash_group.sub_command(
         name="update",
-        description="This option updates the mute on join feature!",
+        description="Updates the mute on join feature",
     )
     async def config_security_mute_on_join_update_slash_command(
         self,
@@ -2185,18 +2704,40 @@ class Moderation(Cog, name="moderation.config"):
         duration_type: DurationType = None,
         notify_channel: TextChannel = None,
     ):
+        """
+        This slash command updates the mute on join feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        duration: :class:`int` optional
+            The mute's duration value
+        duration_type: :class:`Utils.DurationType` optional
+            The mute's duration type (d == days, h == hours, m == minutes, s == seconds)
+        notify_channel: :class:`disnake.TextChannel` optional
+            The channel where the events will be sent
+        """
         await self.handle_mute_on_join(
             inter, "update", duration, duration_type, notify_channel
         )
 
     @config_security_mute_on_join_slash_group.sub_command(
         name="off",
-        description="This option turn off the mute on join feature! (default duration = 10 min)",
+        description="Turns the mute on join feature off",
     )
     async def config_security_mute_on_join_off_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command turns the mute on join feature off
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_mute_on_join(inter, "off")
 
     async def handle_mute_on_join(
@@ -2349,21 +2890,41 @@ class Moderation(Cog, name="moderation.config"):
         pass_context=True,
         name="state",
         brief="➕",
-        description="This option turn the server's experience feature on or off",
+        description="Turns the server's experience feature on or off",
         usage="(on|off)",
     )
     async def config_xp_switch_command(
         self, ctx: Context, option: Utils.to_lower = None
     ):
+        """
+        This command turns the server's experience feature on or off
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> on or off
+        """
         await self.handle_switch(ctx, option)
 
     @config_xp_slash_group.sub_command(
         name="state",
-        description="This option turn the server's experience feature on or off",
+        description="Manages the server's experience feature",
     )
     async def config_xp_state_slash_command(
         self, inter: ApplicationCommandInteraction, option: Literal["on", "off"] = None
     ):
+        """
+        This slash command manages the server's experience feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        option: :class:`typing.Literal` optional
+            Turns the feature on or off (if nothing's precised then it shows the feature's state )
+        """
         await self.handle_switch(inter, option)
 
     async def handle_switch(
@@ -2429,7 +2990,7 @@ class Moderation(Cog, name="moderation.config"):
         name="boost",
         aliases=["boosts", "boosted", "boosteds"],
         brief="🔋",
-        description="This option manage the server's boosted roles | members, you can precise what xp bonus they'll get (default = 20%)",
+        description="Manages the server's boosted roles | members, you can precise what xp bonus they'll get (default = 20%)",
         usage="(add|update|remove|purge @role|@member (<bonus>))",
     )
     async def config_xp_boost_command(
@@ -2439,31 +3000,61 @@ class Moderation(Cog, name="moderation.config"):
         boosted: Snowflake = None,
         bonus: int = 20,
     ):
+        """
+        This command manages the server's boosted roles | members, you can precise what xp bonus they'll get (default = 20%)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`typing.Literal` optional
+            The options -> add or update or remove or purge
+        boosted: :class:`disnake.Snowflake` optional
+            The role / member that is boosted
+        bonus: :class:`int` optional
+            The xp amount boosted (%) (default: 20)
+        """
         await self.handle_boost(ctx, option, boosted, bonus)
 
     @config_xp_slash_group.sub_command_group(
         name="boost",
-        description="This option manage the server's boosted roles | members, you can precise what xp bonus they'll get (default = 20%)",
+        description="Manages the server's boosted roles | members",
     )
     async def config_xp_boost_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command manages the server's boosted roles | members
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_xp_boost_slash_group.sub_command(
         name="display",
-        description="This option display the state of the server's boosted roles | members feature!",
+        description="Displays the state of the server's boosted roles | members feature",
     )
     async def config_xp_boost_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the state of the server's boosted roles | members feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_boost(inter)
 
     @config_xp_boost_slash_group.sub_command(
         name="add",
-        description="This option add a boosted role/member to server's boosted roles|members list! (default bonus = 20%)",
+        description="Adds a boosted role / member to server's boosted roles|members list! (default bonus = 20%)",
     )
     async def config_xp_boost_add_slash_command(
         self,
@@ -2471,11 +3062,23 @@ class Moderation(Cog, name="moderation.config"):
         boosted: Snowflake,
         bonus: int = 20,
     ):
+        """
+        This slash command adds a boosted role / member to server's boosted roles|members list! (default bonus = 20%)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        boosted: :class:`disnake.Snowflake`
+             The role / member that will be boosted
+        bonus: :class:`int` optional
+            The xp amount boosted (%) (default: 20)
+        """
         await self.handle_boost(inter, "add", boosted, bonus)
 
     @config_xp_boost_slash_group.sub_command(
         name="update",
-        description="This option updates a boosted role/member from the server's boosted roles|members list!",
+        description="Updates a boosted role/member from the server's boosted roles | members list",
     )
     async def config_xp_boost_update_slash_command(
         self,
@@ -2483,27 +3086,57 @@ class Moderation(Cog, name="moderation.config"):
         boosted: Snowflake,
         bonus: int,
     ):
+        """
+        This slash command updates a boosted role/member from the server's boosted roles | members list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        boosted: :class:`disnake.Snowflake`
+             The role / member that is boosted
+        bonus: :class:`int`
+            The xp amount boosted (%) (default: 20)
+        """
         await self.handle_boost(inter, "update", boosted, bonus)
 
     @config_xp_boost_slash_group.sub_command(
         name="remove",
-        description="This option removes a boosted role/member from the server's boosted roles|members list!",
+        description="Removes a boosted role / member from the server's boosted roles | members list",
     )
     async def config_xp_boost_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         boosted: Snowflake,
     ):
+        """
+        This slash command removes a boosted role / member from the server's boosted roles | members list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        boosted: :class:`disnake.Snowflake`
+             The role / member that is boosted
+        """
         await self.handle_boost(inter, "remove", boosted)
 
     @config_xp_boost_slash_group.sub_command(
         name="purge",
-        description="This option purge the server's boosted roles|members list!",
+        description="Purges the server's boosted roles | members list",
     )
     async def config_xp_boost_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's boosted roles | members list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_boost(inter, "purge")
 
     async def handle_boost(
@@ -2736,19 +3369,39 @@ class Moderation(Cog, name="moderation.config"):
         name="max_lvl",
         aliases=["mx_lvl"],
         brief="🛑",
-        description="This option manage the server's max level",
+        description="Manages the server's max level",
         usage="(<number of levels>)",
     )
     async def config_xp_max_lvl_command(self, ctx: Context, max_lvl: int = None):
+        """
+        This slash manages the server's max level
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        max_lvl: :class:`int` optional
+            The maximum level value
+        """
         await self.handle_max_lvl(ctx, max_lvl)
 
     @config_xp_slash_group.sub_command(
         name="max_lvl",
-        description="This option manage the server's max level",
+        description="Manages the server's max level",
     )
     async def config_xp_max_lvl_slash_command(
         self, inter: ApplicationCommandInteraction, max_lvl: int = None
     ):
+        """
+        This slash command manages the server's max level
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        max_lvl: :class:`int` optional
+            The maximum level value
+        """
         await self.handle_max_lvl(inter, max_lvl)
 
     async def handle_max_lvl(
@@ -2822,7 +3475,7 @@ class Moderation(Cog, name="moderation.config"):
         name="level_to_role",
         aliases=["level_2_role", "lvl_to_role", "lvl_2_role", "l_2_r"],
         brief="🎭",
-        description="This option manage the server's level to role",
+        description="Manages the server's level to role",
         usage="(add|update|remove|purge <level value> @role)",
     )
     async def config_xp_lvl2role_command(
@@ -2832,31 +3485,61 @@ class Moderation(Cog, name="moderation.config"):
         lvl: int = None,
         role: Role = None,
     ):
+        """
+        This command manages the server's level to role
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> add or update or remove or purge
+        lvl: :class:`int` optional
+            The level that will have the role linked to it
+        role: :class:`disnake.Role` optional
+            The role linked to the level
+        """
         await self.handle_select_to_role(ctx, option, lvl, role)
 
     @config_xp_slash_group.sub_command_group(
         name="level_to_role",
-        description="This option manage the server's level to role feature",
+        description="Manages the server's level to role feature",
     )
     async def config_xp_lvl2role_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's level to role
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_xp_lvl2role_slash_group.sub_command(
         name="display",
-        description="This option display the state of the server's level to role feature",
+        description="Displays the state of the server's level to role feature",
     )
     async def config_xp_lvl2role_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the state of the server's level to role feature
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_level_to_role(inter)
 
     @config_xp_lvl2role_slash_group.sub_command(
         name="add",
-        description="This option add a level to role to the server's level to role list",
+        description="Adds a level to role to the server's level to role list",
     )
     async def config_xp_lvl2role_add_slash_command(
         self,
@@ -2864,11 +3547,23 @@ class Moderation(Cog, name="moderation.config"):
         lvl: int,
         role: Role,
     ):
+        """
+        This slash command adds a level to role to the server's level to role list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        lvl: :class:`int`
+            The level that will have the role linked to it
+        role: :class:`disnake.Role`
+            The role linked to the level
+        """
         await self.handle_level_to_role(inter, "add", lvl, role)
 
     @config_xp_lvl2role_slash_group.sub_command(
         name="update",
-        description="This option update a level to role from the server's level to role list",
+        description="Updates a level to role from the server's level to role list",
     )
     async def config_xp_lvl2role_update_slash_command(
         self,
@@ -2876,27 +3571,57 @@ class Moderation(Cog, name="moderation.config"):
         lvl: int,
         role: Role,
     ):
+        """
+        This slash command updates a level to role from the server's level to role list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        lvl: :class:`int`
+            The level that have a role linked to it
+        role: :class:`disnake.Role`
+            The new role linked to the level
+        """
         await self.handle_level_to_role(inter, "update", lvl, role)
 
     @config_xp_lvl2role_slash_group.sub_command(
         name="remove",
-        description="This option remove a level to role from the server's level to role list",
+        description="Removes a level to role from the server's level to role list",
     )
     async def config_xp_lvl2role_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         lvl: int,
     ):
+        """
+        This slash command removes a level to role from the server's level to role list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        lvl: :class:`int`
+            The level that have a role linked to it
+        """
         await self.handle_level_to_role(inter, "remove", lvl)
 
     @config_xp_lvl2role_slash_group.sub_command(
         name="purge",
-        description="This option remove a level to role from the server's level to role list",
+        description="Purges the server's level to role list",
     )
     async def config_xp_lvl2role_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's level to role list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_level_to_role(inter, "purge")
 
     async def handle_level_to_role(
@@ -2972,16 +3697,16 @@ class Moderation(Cog, name="moderation.config"):
 
                         db_users = self.bot.user_repo.get_users(source.guild.id)
                         members = set(source.guild.members)
-                        # async with self.bot.limiter:
-                        for member in members:
-                            if member.bot:
-                                continue
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot:
+                                    continue
 
-                            await self.xp_class.manage_levels(
-                                member,
-                                db_users[str(member.id)]["level"],
-                                "new_r_2_l",
-                            )
+                                await self.xp_class.manage_levels(
+                                    member,
+                                    db_users[str(member.id)]["level"],
+                                    "new_r_2_l",
+                                )
                     elif option == "remove":
                         if "lvl2role" not in self.bot.configs[source.guild.id][
                             "xp"
@@ -3018,16 +3743,16 @@ class Moderation(Cog, name="moderation.config"):
 
                         if source.channel.permissions_for(source.guild.me).manage_roles:
                             members = set(source.guild.members)
-                            # async with self.bot.limiter:
-                            for member in members:
-                                if member.bot or role not in member.roles:
-                                    continue
+                            async with self.bot.limiter:
+                                for member in members:
+                                    if member.bot or role not in member.roles:
+                                        continue
 
-                                try:
-                                    await member.remove_roles(role)
-                                except Forbidden as f:
-                                    f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
-                                    raise
+                                    try:
+                                        await member.remove_roles(role)
+                                    except Forbidden as f:
+                                        f.text = f"⚠️ - I don't have the right permissions to remove this role `@{role.name}` from {member} (maybe the role is above mine)"
+                                        raise
                         else:
                             await self.bot.utils_class.send_message_to_mods(
                                 f"⚠️ - I don't have the right permissions to manage this role `@{role.name}` (i tried to remove the old level role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3063,16 +3788,16 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        # async with self.bot.limiter:
-                        for member in members:
-                            if member.bot or not roles & set(member.roles):
-                                continue
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or not roles & set(member.roles):
+                                    continue
 
-                            try:
-                                await member.remove_roles(*roles)
-                            except Forbidden as f:
-                                f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
-                                raise
+                                try:
+                                    await member.remove_roles(*roles)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in roles])} from {member} (maybe one of them is above mine)"
+                                    raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in roles])} (i tried to remove the old level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3133,7 +3858,7 @@ class Moderation(Cog, name="moderation.config"):
         name="prestiges",
         aliases=["prestg", "prestige"],
         brief="💫",
-        description="This option manage the server's prestiges",
+        description="Manages the server's prestiges",
         usage="(add|update|remove|purge @role <prestige_value>)",
     )
     async def config_xp_prestiges_command(
@@ -3143,43 +3868,82 @@ class Moderation(Cog, name="moderation.config"):
         role: Role = None,
         prestige: int = None,
     ):
+        """
+        This command manages the server's prestiges
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            the option -> add or update or remove or purge
+        role: :class:`disnake.Role` optional
+            The role that have or will have a prestige linked to it
+        prestige: :class:`int` optional
+            The (new) prestige linked to the role
+        """
         await self.handle_prestiges(ctx, option, role, prestige)
 
     @config_xp_slash_group.sub_command_group(
         name="prestiges",
-        description="This option manage the server's prestiges",
+        description="Manages the server's prestiges",
     )
     async def config_xp_prestiges_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's prestiges
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_xp_slash_group.sub_command_group(
         name="display",
-        description="This option display the server's prestiges",
+        description="Displays the server's prestiges",
     )
     async def config_xp_prestiges_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's prestiges
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prestiges(inter)
 
     @config_xp_slash_group.sub_command_group(
         name="add",
-        description="This option add a new prestige to the server's prestiges list",
+        description="Adds a new prestige to the server's prestiges list",
     )
     async def config_xp_prestiges_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         role: Role,
-        prestige: int,
     ):
-        await self.handle_prestiges(inter, "add", role, prestige)
+        """
+        This slash command adds a new prestige to the server's prestiges list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        role: :class:`disnake.Role`
+            The role that will be linked to the new prestige
+        """
+        await self.handle_prestiges(inter, "add", role)
 
     @config_xp_slash_group.sub_command_group(
         name="update",
-        description="This option update a prestige from the server's prestiges list",
+        description="Updates a prestige from the server's prestiges list",
     )
     async def config_xp_prestiges_update_slash_command(
         self,
@@ -3187,26 +3951,54 @@ class Moderation(Cog, name="moderation.config"):
         role: Role,
         prestige: int,
     ):
+        """
+        This slash command updates a prestige from the server's prestiges list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        role: :class:`disnake.Role`
+            The role that have a prestige linked to it
+        prestige: :class:`int`
+            The prestige value
+        """
         await self.handle_prestiges(inter, "update", role, prestige)
 
     @config_xp_slash_group.sub_command_group(
         name="remove",
-        description="This option remove the last prestige from the server's prestiges list",
+        description="Removes the last prestige from the server's prestiges list",
     )
     async def config_xp_prestiges_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command removes the last prestige from the server's prestiges list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prestiges(inter, "remove")
 
     @config_xp_slash_group.sub_command_group(
         name="purge",
-        description="This option purge the server's prestiges list",
+        description="Purges the server's prestiges list",
     )
     async def config_xp_prestiges_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's prestiges list
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_prestiges(inter, "purge")
 
     async def handle_prestiges(
@@ -3324,22 +4116,22 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        # async with self.bot.limiter:
-                        for member in members:
-                            if member.bot or old_role not in member.roles:
-                                continue
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or old_role not in member.roles:
+                                    continue
 
-                            try:
-                                await member.remove_roles(old_role)
-                            except Forbidden as f:
-                                f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
-                                raise
+                                try:
+                                    await member.remove_roles(old_role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)"
+                                    raise
 
-                            try:
-                                await member.add_roles(role)
-                            except Forbidden as f:
-                                f.text = f"⚠️ - I don't have the right permissions to add the role `{role}` to {member} (maybe the role is above mine)"
-                                raise
+                                try:
+                                    await member.add_roles(role)
+                                except Forbidden as f:
+                                    f.text = f"⚠️ - I don't have the right permissions to add the role `{role}` to {member} (maybe the role is above mine)"
+                                    raise
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles `@{old_role.name}`, `@{role.name}` (i tried to replace the old prestige role with the new one from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3376,22 +4168,22 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        # async with self.bot.limiter:
-                        for member in members:
-                            if member.bot or old_role not in member.roles:
-                                continue
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or old_role not in member.roles:
+                                    continue
 
-                            try:
-                                await member.remove_roles(old_role)
-                            except Forbidden:
-                                await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)",
-                                    source.guild.id,
+                                try:
+                                    await member.remove_roles(old_role)
+                                except Forbidden:
+                                    await self.bot.utils_class.send_message_to_mods(
+                                        f"⚠️ - I don't have the right permissions to remove the role `{old_role}` from {member} (maybe the role is above mine)",
+                                        source.guild.id,
+                                    )
+
+                                await self.xp_class.manage_prestige(
+                                    member, "removed_prestige"
                                 )
-
-                            await self.xp_class.manage_prestige(
-                                member, "removed_prestige"
-                            )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage this role `@{old_role.name}` (i tried to remove the old prestige role from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3427,22 +4219,22 @@ class Moderation(Cog, name="moderation.config"):
 
                     if source.channel.permissions_for(source.guild.me).manage_roles:
                         members = set(source.guild.members)
-                        # async with self.bot.limiter:
-                        for member in members:
-                            if member.bot or not set(member.roles) & set(old_roles):
-                                continue
+                        async with self.bot.limiter:
+                            for member in members:
+                                if member.bot or not set(member.roles) & set(old_roles):
+                                    continue
 
-                            try:
-                                await member.remove_roles(*old_roles)
-                            except Forbidden:
-                                await self.bot.utils_class.send_message_to_mods(
-                                    f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in old_roles])} from {member} (maybe one of these roles is above mine)",
-                                    source.guild.id,
+                                try:
+                                    await member.remove_roles(*old_roles)
+                                except Forbidden:
+                                    await self.bot.utils_class.send_message_to_mods(
+                                        f"⚠️ - I don't have the right permissions to remove one of these roles {', '.join([f'`@{role.name}`' for role in old_roles])} from {member} (maybe one of these roles is above mine)",
+                                        source.guild.id,
+                                    )
+
+                                await self.xp_class.manage_prestige(
+                                    member, "purged_prestiges"
                                 )
-
-                            await self.xp_class.manage_prestige(
-                                member, "purged_prestiges"
-                            )
                     else:
                         await self.bot.utils_class.send_message_to_mods(
                             f"⚠️ - I don't have the right permissions to manage these roles {', '.join([f'`@{role.name}`' for role in old_roles])} (i tried to remove the prestige level roles from members)! Required perms: `{', '.join(['MANAGE_ROLES'])}`",
@@ -3503,7 +4295,7 @@ class Moderation(Cog, name="moderation.config"):
         name="commands_channels",
         aliases=["command_channels", "command_channel", "cmds_chans"],
         brief="🕹️",
-        description="This option manage the server's commands channels  (if there is no commands channel then commands can be used everywhere) (can add/remove multiple at a time)",
+        description="Manages the server's commands channels (if there is no commands channel then commands can be used everywhere) (can add/remove multiple at a time)",
         usage="(add|remove|purge (#channels))",
     )
     async def config_channels_commands_channels_command(
@@ -3512,6 +4304,18 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         *channels: TextChannel,
     ):
+        """
+        This command manages the server's commands channels (if there is no commands channel then commands can be used everywhere) (can add/remove multiple at a time)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> add or remove or purge
+        channels: :class:`disnake.TextChannel` optional
+            The channels that will be added to the server's commands channels (mentions or IDs)
+        """
         if channels:
             await self.handle_commands_channels(ctx, option, *channels)
         else:
@@ -3519,60 +4323,100 @@ class Moderation(Cog, name="moderation.config"):
 
     @config_channels_slash_group.sub_command_group(
         name="commands_channels",
-        description="This option manage the server's commands channels  (if there is no commands channel then commands can be used everywhere)",
+        description="Manages the server's commands channels (if there is no commands channel then commands can be used everywhere)",
     )
     async def config_channels_commands_channels_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's commands channels (if there is no commands channel then commands can be used everywhere)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_channels_commands_channels_slash_group.sub_command(
         name="display",
-        description="This option display the server's commands channels",
+        description="Displays the server's commands channels",
     )
     async def config_channels_commands_channels_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's commands channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_commands_channels(inter)
 
     @config_channels_commands_channels_slash_group.sub_command(
         name="add",
-        description="This option add channels to the server's commands channels (can add multiple at a time)",
+        description="Adds channels to the server's commands channels (can add multiple at a time)",
     )
     async def config_channels_commands_channels_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[TextChannel] = Param(
-            default=None, converter=Utils.channel_converter
-        ),
+        channels: List[TextChannel] = Param(None, converter=Utils.channel_converter),
     ):
+        """
+        This slash command adds channels to the server's commands channels (can add multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channels: :class:`typing.List[disnake.TextChannel]` optional
+            The channels that will be added to the server's commands channels (mentions or IDs)
+        """
         if channels:
             await self.handle_commands_channels(inter, "add", *channels)
 
     @config_channels_commands_channels_slash_group.sub_command(
         name="remove",
-        description="This option remove channels from the server's commands channels (can remove multiple at a time)",
+        description="Removes channels from the server's commands channels (can remove multiple at a time)",
     )
     async def config_channels_commands_channels_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[TextChannel] = Param(
-            default=None, converter=Utils.channel_converter
-        ),
+        channels: List[TextChannel] = Param(None, converter=Utils.channel_converter),
     ):
+        """
+        This slash command removes channels from the server's commands channels (can remove multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channels: :class:`typing.List[disnake.TextChannel]` optional
+            The channels that will be removed from the server's commands channels (mentions or IDs)
+        """
         if channels:
             await self.handle_commands_channels(inter, "remove", *channels)
 
     @config_channels_commands_channels_slash_group.sub_command(
         name="purge",
-        description="This option purge the server's commands channels",
+        description="Purges the server's commands channels",
     )
     async def config_channels_commands_channels_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's commands channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_commands_channels(inter, "purge")
 
     async def handle_commands_channels(
@@ -3741,12 +4585,24 @@ class Moderation(Cog, name="moderation.config"):
         name="music_channels",
         aliases=["music_channel", "music_chans"],
         brief="🎶",
-        description="This option manage the server's music channels (if there is no music channel then music can be listened everywhere) (can add/remove multiple at a time)",
+        description="Manages the server's music channels (if there is no music channel then music can be listened everywhere) (can add/remove multiple at a time)",
         usage="(add|remove|purge (#voice_channels))",
     )
     async def config_channels_music_channels_command(
         self, ctx: Context, option: Utils.to_lower = None, *channels: VoiceChannel
     ):
+        """
+        This command manages the server's music channels (if there is no music channel then music can be listened everywhere) (can add/remove multiple at a time)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> add or remove or purge
+        channels: :class:`disnake.VoiceCHannel` optional
+            The channels that will be added / removed to / from the server's music channels list (mentions or IDs)
+        """
         if channels:
             await self.handle_music_channels(ctx, option, *channels)
         else:
@@ -3754,60 +4610,100 @@ class Moderation(Cog, name="moderation.config"):
 
     @config_channels_slash_group.sub_command_group(
         name="music_channels",
-        description="This option manage the server's music channels (if there is no music channel then music can be listened everywhere)",
+        description="Manages the server's music channels (if there is no music channel then music can be listened everywhere)",
     )
     async def config_channels_music_channels_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's music channels (if there is no music channel then music can be listened everywhere)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_channels_music_channels_slash_group.sub_command(
         name="display",
-        description="This option display the server's music channels",
+        description="Displays the server's music channels",
     )
     async def config_channels_music_channels_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's music channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_music_channels(inter)
 
     @config_channels_music_channels_slash_group.sub_command(
         name="add",
-        description="This option add channels to the server's music channels (can add multiple at a time)",
+        description="Adds channels to the server's music channels (can add multiple at a time)",
     )
     async def config_channels_music_channels_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[VoiceChannel] = Param(
-            default=None, converter=Utils.channel_converter
-        ),
+        channels: List[VoiceChannel] = Param(None, converter=Utils.channel_converter),
     ):
+        """
+        This slash command adds channels to the server's music channels (can add multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channels: :class:`typing.List[disnake.VoiceChannel]` optional
+            The channels that will be added to the server's music channels list (mentions or IDs)
+        """
         if channels:
             await self.handle_music_channels(inter, "add", *channels)
 
     @config_channels_music_channels_slash_group.sub_command(
         name="remove",
-        description="This option remove channels from the server's music channels (can remove multiple at a time)",
+        description="Removes channels from the server's music channels (can remove multiple at a time)",
     )
     async def config_channels_music_channels_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        channels: List[VoiceChannel] = Param(
-            default=None, converter=Utils.channel_converter
-        ),
+        channels: List[VoiceChannel] = Param(None, converter=Utils.channel_converter),
     ):
+        """
+        This slash command removes channels from the server's music channels (can remove multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channels: :class:`typing.List[disnake.VoiceChannel]` optional
+            The channels that will be removed from the server's music channels list (mentions or IDs)
+        """
         if channels:
             await self.handle_music_channels(inter, "remove", *channels)
 
     @config_channels_music_channels_slash_group.sub_command(
         name="purge",
-        description="This option purge the server's music channels",
+        description="Purges the server's music channels",
     )
     async def config_channels_music_channels_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's music channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_music_channels(inter, "purge")
 
     async def handle_music_channels(
@@ -3996,7 +4892,7 @@ class Moderation(Cog, name="moderation.config"):
         name="xp_gain_channels",
         aliases=["xp_gain_channel"],
         brief="🌌",
-        description="This option manage the server's xp gain channels (voice & text)  (if there is no xp gain channels then xp can be gained everywhere) (can add/remove multiple at a time)",
+        description="Manages the server's xp gain channels (voice & text) (if there is no xp gain channels then xp can be gained everywhere) (can add/remove multiple at a time)",
         usage="(add|remove|purge (#voice_channels|#text_channels))",
     )
     async def config_channels_xp_gain_channels_command(
@@ -4005,6 +4901,18 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         *channels: Union[VoiceChannel, TextChannel],
     ):
+        """
+        This command manages the server's xp gain channels (voice & text) (if there is no xp gain channels then xp can be gained everywhere) (can add/remove multiple at a time)
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> add or remove or purge
+        channels: :class:`typing.Union[disnake.VoiceChannel, disnake.TextChannel]` optional
+            The channels that will be added / removed to / from the server's xp gain channels list (mentions or IDs)
+        """
         if channels:
             await self.handle_xp_gain_channels(ctx, option, *channels)
         else:
@@ -4012,60 +4920,104 @@ class Moderation(Cog, name="moderation.config"):
 
     @config_channels_slash_group.sub_command_group(
         name="xp_gain_channels",
-        description="This option manage the server's xp gain channels (voice & text) (if there is no xp gain channels then xp can be gained everywhere)",
+        description="Manages the server's xp gain channels (voice & text) (if there is no xp gain channels then xp can be gained everywhere)",
     )
     async def config_channels_xp_gain_channels_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This command manages the server's xp gain channels (voice & text) (if there is no xp gain channels then xp can be gained everywhere)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_channels_xp_gain_channels_slash_group.sub_command(
         name="display",
-        description="This option display the server's xp gain channels",
+        description="Displays the server's xp gain channels",
     )
     async def config_channels_xp_gain_channels_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This command displays the server's xp gain channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_xp_gain_channels(inter)
 
     @config_channels_xp_gain_channels_slash_group.sub_command(
         name="add",
-        description="This option add channels to the server's xp gain channels (can add multiple at a time)",
+        description="Adds channels to the server's xp gain channels (can add multiple at a time)",
     )
     async def config_channels_xp_gain_channels_add_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
-            default=None, converter=Utils.channel_converter
+            None, converter=Utils.channel_converter
         ),
     ):
+        """
+        This slash command adds channels to the server's xp gain channels (can add multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channels: :class:`typing.List[typing.Union[disnake.TextChannel, disnake.VoiceChannel]]` optional
+            The channels that will be added to the server's xp gain channels list (mentions or IDs)
+        """
         if channels:
             await self.handle_xp_gain_channels(inter, "add", *channels)
 
     @config_channels_xp_gain_channels_slash_group.sub_command(
         name="remove",
-        description="This option remove channels from the server's xp gain channels (can remove multiple at a time)",
+        description="Removes channels from the server's xp gain channels (can remove multiple at a time)",
     )
     async def config_channels_xp_gain_channels_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
-            default=None, converter=Utils.channel_converter
+            None, converter=Utils.channel_converter
         ),
     ):
+        """
+        This slash command removes channels from the server's xp gain channels (can remove multiple at a time)
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channels: :class:`typing.List[typing.Union[disnake.TextChannel, disnake.VoiceChannel]]` optional
+            The channels that will be removed from the server's xp gain channels list (mentions or IDs)
+        """
         if channels:
             await self.handle_xp_gain_channels(inter, "remove", *channels)
 
     @config_channels_xp_gain_channels_slash_group.sub_command(
         name="purge",
-        description="This option purge the server's xp gain channels",
+        description="Purges the server's xp gain channels",
     )
     async def config_channels_xp_gain_channels_purge_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command purges the server's xp gain channels
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_xp_gain_channels(inter, "purge")
 
     async def handle_xp_gain_channels(
@@ -4322,7 +5274,7 @@ class Moderation(Cog, name="moderation.config"):
         name="xp_channel",
         aliases=["xp_chan"],
         brief="🌠",
-        description="This option manage the server's xp channels where every xp event is sent",
+        description="Manages the server's xp channels where every xp event is sent",
         usage="(set|remove #channel)",
     )
     async def config_channels_xp_channel_command(
@@ -4331,47 +5283,93 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         xp_channel: TextChannel = None,
     ):
+        """
+        This command manages the server's xp channels where every xp event is sent
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> set or remove
+        xp_channel: :class:`disnake.TextChannel` optional
+            The channel that will be the xp channel
+        """
         await self.handle_xp_channel(ctx, option, xp_channel)
 
     @config_channels_slash_group.sub_command_group(
         name="xp_channel",
-        description="This option manage the server's xp channel where every xp event is sent",
+        description="Manages the server's xp channel where every xp event is sent",
     )
     async def config_channels_xp_channel_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's xp channel where every xp event is sent
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_channels_xp_channel_slash_group.sub_command(
         name="display",
-        description="This option display the server's xp channel!",
+        description="Displays the server's xp channel",
     )
     async def config_channels_xp_channel_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's xp channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_xp_channel(inter)
 
     @config_channels_xp_channel_slash_group.sub_command(
         name="set",
-        description="This option set the server's xp channel!",
+        description="Sets the server's xp channel",
     )
     async def config_channels_xp_channel_set_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
+        """
+        This slash command sets the server's xp channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channel: :class:`disnake.TextChannel`
+            The channel that will be the xp channel
+        """
         await self.handle_xp_channel(inter, "set", channel)
 
     @config_channels_xp_channel_slash_group.sub_command(
         name="remove",
-        description="This option remove the server's xp channel!",
+        description="Removes the server's xp channel",
     )
     async def config_channels_xp_channel_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command removes the server's xp channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_xp_channel(inter, "remove")
 
     async def handle_xp_channel(
@@ -4488,7 +5486,7 @@ class Moderation(Cog, name="moderation.config"):
         name="polls_channel",
         aliases=["polls_chan"],
         brief="📊",
-        description="This option manage the server's polls channel where every polls created will be sent",
+        description="Manages the server's polls channel where every polls created will be sent",
         usage="(set|remove #channel)",
     )
     async def config_channels_polls_command(
@@ -4497,47 +5495,93 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         polls_channel: TextChannel = None,
     ):
+        """
+        This command manages the server's polls channel where every polls created will be sent
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> set or remove
+        polls_channel: :class:`disnake.TextChannel` optional
+            The channel that will be the polls channel
+        """
         await self.handle_polls_channel(ctx, option, polls_channel)
 
     @config_channels_slash_group.sub_command_group(
         name="polls_channel",
-        description="This option manage the server's polls channel where every polls created will be sent",
+        description="Manages the server's polls channel where every polls created will be sent",
     )
     async def config_channels_polls_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's polls channel where every polls created will be sent
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_channels_polls_slash_group.sub_command(
         name="display",
-        description="This option display the server's poll channel!",
+        description="Displays the server's poll channel",
     )
     async def config_channels_polls_channel_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's poll channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_polls_channel(inter)
 
     @config_channels_polls_slash_group.sub_command(
         name="set",
-        description="This option set the server's poll channel!",
+        description="Sets the server's poll channel",
     )
     async def config_channels_polls_channel_set_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
+        """
+        This slash command sets the server's poll channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channel: :class:`disnake.TextChannel`
+            The channel that will be the polls channel
+        """
         await self.handle_polls_channel(inter, "set", channel)
 
     @config_channels_polls_slash_group.sub_command(
         name="remove",
-        description="This option remove the server's poll channel!",
+        description="Removes the server's poll channel",
     )
     async def config_channels_polls_channel_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command removes the server's poll channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_polls_channel(inter, "remove")
 
     async def handle_polls_channel(
@@ -4765,7 +5809,7 @@ class Moderation(Cog, name="moderation.config"):
         name="select_to_role_channel",
         aliases=["select2role_channel"],
         brief="🤠",
-        description="This option manage the server's select 2 role channels where the select to role message is sent",
+        description="Manages the server's select 2 role channels where the select to role message is sent",
         usage="(set|remove #channel)",
     )
     async def config_channels_select2role_channel_command(
@@ -4774,47 +5818,93 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         select2role_channel: TextChannel = None,
     ):
+        """
+        This command manages the server's select 2 role channels where the select to role message is sent
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> set or remove
+        select2role_channel: :class:`disnake.TextChannel` optional
+            The channel that will be the select to role channel
+        """
         await self.handle_select_to_role_channel(ctx, option, select2role_channel)
 
     @config_channels_slash_group.sub_command_group(
         name="select_to_role_channel",
-        description="This option manage the server's select 2 role channel where the select to role message is sent",
+        description="Manages the server's select 2 role channel where the select to role message is sent",
     )
     async def config_channels_select2role_channel_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's select 2 role channels where the select to role message is sent
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_channels_select2role_channel_slash_group.sub_command(
         name="display",
-        description="This option display the server's select 2 role channel!",
+        description="Displays the server's select 2 role channel",
     )
     async def config_channels_select2role_channel_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's select 2 role channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_select_to_role_channel(inter)
 
     @config_channels_select2role_channel_slash_group.sub_command(
         name="set",
-        description="This option set the server's select 2 role channel!",
+        description="Sets the server's select 2 role channel",
     )
     async def config_channels_select2role_channel_set_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
+        """
+        This slash command sets the server's select 2 role channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channel: :class:`disnake.TextChannel`
+            The channel that will be the select 2 role channel
+        """
         await self.handle_select_to_role_channel(inter, "set", channel)
 
     @config_channels_select2role_channel_slash_group.sub_command(
         name="remove",
-        description="This option remove the server's select 2 role channel!",
+        description="Removes the server's select 2 role channel",
     )
     async def config_channels_select2role_channel_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command removes the server's select 2 role channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_select_to_role_channel(inter, "remove")
 
     async def handle_select_to_role_channel(
@@ -5055,7 +6145,7 @@ class Moderation(Cog, name="moderation.config"):
         name="mods_channel",
         aliases=["mod_channel"],
         brief="🔱",
-        description="This option manage the server's mods channel where all the error messages and other information are sent",
+        description="Manages the server's mods channel where all the error messages and other information are sent",
         usage="(set|remove #channel)",
     )
     async def config_channels_mods_channel_command(
@@ -5064,47 +6154,93 @@ class Moderation(Cog, name="moderation.config"):
         option: Utils.to_lower = None,
         mods_channel: TextChannel = None,
     ):
+        """
+        This command manages the server's mods channel where all the error messages and other information are sent
+
+        Parameters
+        ----------
+        ctx: :class:`disnake.ext.commands.Context`
+            The command context
+        option: :class:`Utils.to_lower` optional
+            The option -> set or remove
+        mods_channel: :class:`disnake.TextChannel` optional
+            The channel that will be the mods channel
+        """
         await self.handle_mods_channel(ctx, option, mods_channel)
 
     @config_channels_slash_group.sub_command_group(
         name="mods_channel",
-        description="This option manage the server's mods channel where all the error messages and other information are sent",
+        description="Manages the server's mods channel where all the error messages and other information are sent",
     )
     async def config_channels_mods_channel_slash_group(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command group manages the server's mods channel where all the error messages and other information are sent
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         pass
 
     @config_channels_mods_channel_slash_group.sub_command(
         name="display",
-        description="This option display the server's mods channel!",
+        description="Displays the server's mods channel",
     )
     async def config_channels_mods_channel_display_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash command displays the server's mods channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_mods_channel(inter)
 
     @config_channels_mods_channel_slash_group.sub_command(
         name="set",
-        description="This option set the server's mods channel!",
+        description="Sets the server's mods channel",
     )
     async def config_channels_mods_channel_set_slash_command(
         self,
         inter: ApplicationCommandInteraction,
         channel: TextChannel,
     ):
+        """
+        This slash command sets the server's mods channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        channel: :class:`disnake.TextChannel` optional
+            The channel that will be the mods channel
+        """
         await self.handle_mods_channel(inter, "set", channel)
 
     @config_channels_mods_channel_slash_group.sub_command(
         name="remove",
-        description="This option remove the server's mods channel!",
+        description="Removes the server's mods channel",
     )
     async def config_channels_mods_channel_remove_slash_command(
         self,
         inter: ApplicationCommandInteraction,
     ):
+        """
+        This slash removes the server's mods channel
+
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
         await self.handle_mods_channel(inter, "remove")
 
     async def handle_mods_channel(
