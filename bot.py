@@ -115,9 +115,7 @@ class Omnitron(Bot):
         self._extensions = [f for f in dirs]
         self.load_extensions()
         self.session = ClientSession(loop=self.loop)
-        self.limiter = RateLimiter(
-            max_calls=50, period=1, callback=limited
-        )
+        self.limiter = RateLimiter(max_calls=50, period=1, callback=limited)
 
         self.starting = True
         self.model = Model.setup()

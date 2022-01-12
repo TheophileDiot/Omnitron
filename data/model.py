@@ -1,68 +1,53 @@
 from collections import OrderedDict
-from disnake.ext.tasks import loop
 from os import getenv
-from pyrebase import initialize_app
+from firebase_admin import credentials, db, initialize_app
 
-from data.constants import (
-    FIREBASE_APIKEY,
-    FIREBASE_AUTHDOMAIN,
-    FIREBASE_DATABASEURL,
-    FIREBASE_STORAGEBUCKET,
-    FIREBASE_USER_EMAIL,
-    FIREBASE_USER_PASSWORD,
-)
+from data.constants import FIREBASE_DATABASEURL
 
 
 class Model:
+    ref = None
+
     @classmethod
     def setup(self):
-        config = {
-            "apiKey": FIREBASE_APIKEY or getenv("FIREBASE_APIKEY"),
-            "authDomain": FIREBASE_AUTHDOMAIN or getenv("FIREBASE_AUTHDOMAIN"),
-            "databaseURL": FIREBASE_DATABASEURL or getenv("FIREBASE_DATABASEURL"),
-            "storageBucket": FIREBASE_STORAGEBUCKET or getenv("FIREBASE_STORAGEBUCKET"),
-        }
-
-        firebase = initialize_app(config)
-
-        # Get a reference to the auth service
-        self.auth = firebase.auth()
-
-        # Log the user in
-        self.user = self.auth.sign_in_with_email_and_password(
-            FIREBASE_USER_EMAIL or getenv("FIREBASE_USER_EMAIL"),
-            FIREBASE_USER_PASSWORD or getenv("FIREBASE_USER_PASSWORD"),
+        cred = credentials.Certificate(
+            {
+                "type": getenv("type"),
+                "project_id": getenv("project_id"),
+                "private_key_id": getenv("private_key_id"),
+                "private_key": getenv("private_key"),
+                "client_email": getenv("client_email"),
+                "client_id": getenv("client_id"),
+                "auth_uri": getenv("auth_uri"),
+                "token_uri": getenv("token_uri"),
+                "auth_provider_x509_cert_url": getenv("auth_provider_x509_cert_url"),
+                "client_x509_cert_url": getenv("client_x509_cert_url"),
+            }
+        )
+        initialize_app(
+            cred,
+            {"databaseURL": FIREBASE_DATABASEURL or getenv("FIREBASE_DATABASEURL")},
         )
 
         # Get a reference to the database service
-        self.db = firebase.database()
-        self.refrech_token.start(self)
+        self.ref = db.reference("dev/" if getenv("ENV") == "DEVELOPMENT" else "/")
         return self
 
     @classmethod
     def create(self, path: str, event: str = "set", *, args: dict = "") -> None:
         if event == "push":
-            self.db.child(f"dev/{path}").push(args, token=self.user["idToken"])
+            self.ref.child(path).push(args)
         elif event == "set":
-            self.db.child(f"dev/{path}").set(args, token=self.user["idToken"])
+            self.ref.child(path).set(args)
 
     @classmethod
     def update(self, path: str, *, args: dict) -> None:
-        return self.db.child(f"dev/{path}").update(args, token=self.user["idToken"])
+        return self.ref.child(path).update(args)
 
     @classmethod
     def delete(self, path: str) -> None:
-        return self.db.child(f"dev/{path}").remove(token=self.user["idToken"])
+        return self.ref.child(path).remove()
 
     @classmethod
     def get(self, path: str) -> OrderedDict:
-        return (
-            self.db.child(f"dev/{path}").get(token=self.user["idToken"]).val()
-            or OrderedDict()
-        )
-
-    """ LOOPS """
-
-    @loop(minutes=58)
-    async def refrech_token(self):
-        self.user = self.auth.refresh(self.user["refreshToken"])
+        return self.ref.child(path).get() or OrderedDict()
