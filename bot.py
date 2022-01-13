@@ -12,9 +12,9 @@ from itertools import chain
 from logging import basicConfig, DEBUG, error, info
 from multiprocessing import Process
 from os import getenv, listdir, makedirs, name, path, system, remove
+from socket import socket, AF_INET, SOCK_STREAM
 from subprocess import PIPE, call
 from sys import exc_info
-from time import time
 from traceback import format_exc
 from typing import Union
 
@@ -43,13 +43,6 @@ from disnake.ext.commands.errors import (
     NotOwner,
 )
 from dotenv import load_dotenv
-from ratelimiter import RateLimiter
-
-
-def limited(until):
-    duration = int(round(until - time()))
-    print(f"Rate limited, sleeping for {duration:d} seconds")
-    info(f"Rate limited, sleeping for {duration:d} seconds")
 
 
 def get_qualified_name_from_interaction(inter: ApplicationCommandInteraction) -> str:
@@ -115,7 +108,6 @@ class Omnitron(Bot):
         self._extensions = [f for f in dirs]
         self.load_extensions()
         self.session = ClientSession(loop=self.loop)
-        self.limiter = RateLimiter(max_calls=50, period=1, callback=limited)
 
         self.starting = True
         self.model = Model.setup()
@@ -127,6 +119,7 @@ class Omnitron(Bot):
         self.poll_repo = Poll(self.model)
         self.ticket_repo = Ticket(self.model)
         self.user_repo = User(self.model, self)
+        self.games_repo = Games(self.model, self)
         print("Database successfully initialized.")
         info("Database loaded")
 
@@ -136,10 +129,26 @@ class Omnitron(Bot):
         self.playlists = {}
         self.tasks = {}
 
-        process = Process(target=self.start_lavalink)
-        process.start()  # start the process
-        print("Lavalink successfully initialized.")
-        info("Lavalink started")
+        lavalink = False
+
+        if getenv("internal_lavalink") == "true":
+            process = Process(target=self.start_lavalink)
+            process.start()  # start the process
+            lavalink = True
+        else:
+            a_socket = socket(AF_INET, SOCK_STREAM)
+            location = ("127.0.0.1", 2333) # check the lavalink default port
+            result_of_check = a_socket.connect_ex(location)
+
+            if result_of_check != 0:
+                print("Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!")
+                error("Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!")
+            else:
+                lavalink = True
+
+        if lavalink:
+            print("Lavalink successfully initialized.")
+            info("Lavalink started")
 
         self.color = Colour(BOT_COLOR) or self.user.color
 
@@ -368,7 +377,12 @@ class Omnitron(Bot):
         """Setup the bot with a token from data.constants or the .env file"""
         bot = self()
         try:
-            await bot.start(BOT_TOKEN or getenv("BOT_TOKEN"), **kwargs)
+            await bot.start(
+                getenv("BOT_TOKEN_DEV")
+                if getenv("ENV") == "DEVELOPMENT"
+                else BOT_TOKEN or getenv("BOT_TOKEN"),
+                **kwargs,
+            )
         except KeyboardInterrupt:
             await bot.close()
 
@@ -382,7 +396,7 @@ if __name__ == "__main__":
         BOT_COLOR,
         OWNER_ID,
     )
-    from data.Database import Main, Config, Poll, Ticket, User
+    from data.Database import Main, Config, Games, Poll, Ticket, User
 
     load_dotenv(path.join(".", ".env"))  # Load data from the .env file
 

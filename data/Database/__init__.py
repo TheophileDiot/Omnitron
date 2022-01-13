@@ -3,3 +3,4 @@ from .main import Main
 from .poll import Poll
 from .ticket import Ticket
 from .user import User
+from .games import Games
