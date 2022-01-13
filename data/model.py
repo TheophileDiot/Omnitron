@@ -46,7 +46,7 @@ class Model:
 
     @classmethod
     def delete(self, path: str) -> None:
-        return self.ref.child(path).remove()
+        return self.ref.child(path).delete()
 
     @classmethod
     def get(self, path: str) -> OrderedDict:
