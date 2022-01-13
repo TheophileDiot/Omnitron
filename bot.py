@@ -137,12 +137,16 @@ class Omnitron(Bot):
             lavalink = True
         else:
             a_socket = socket(AF_INET, SOCK_STREAM)
-            location = ("127.0.0.1", 2333) # check the lavalink default port
+            location = ("127.0.0.1", 2333)  # check the lavalink default port
             result_of_check = a_socket.connect_ex(location)
 
             if result_of_check != 0:
-                print("Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!")
-                error("Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!")
+                print(
+                    "Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!"
+                )
+                error(
+                    "Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!"
+                )
             else:
                 lavalink = True
 
