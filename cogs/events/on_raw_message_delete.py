@@ -1,4 +1,5 @@
 from asyncio import sleep
+
 from disnake import RawMessageDeleteEvent
 from disnake.ext.commands import Cog
 
@@ -11,7 +12,7 @@ class Events(Cog, name="events.on_raw_message_delete"):
 
     @Cog.listener()
     async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
-        await sleep(3)
+        await sleep(1.5)
 
         if (
             "tickets" in self.bot.configs[payload.guild_id]
@@ -52,7 +53,6 @@ class Events(Cog, name="events.on_raw_message_delete"):
             self.bot.configs[payload.guild_id]["polls"][payload.message_id].cancel()
             del self.bot.configs[payload.guild_id]["polls"][payload.message_id]
             self.bot.poll_repo.erase_poll(payload.guild_id, payload.message_id)
-
 
 def setup(bot: Omnitron):
     bot.add_cog(Events(bot))

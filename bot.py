@@ -119,7 +119,6 @@ class Omnitron(Bot):
         self.poll_repo = Poll(self.model)
         self.ticket_repo = Ticket(self.model)
         self.user_repo = User(self.model, self)
-        self.games_repo = Games(self.model, self)
         print("Database successfully initialized.")
         info("Database loaded")
 
@@ -400,7 +399,7 @@ if __name__ == "__main__":
         BOT_COLOR,
         OWNER_ID,
     )
-    from data.Database import Main, Config, Games, Poll, Ticket, User
+    from data.Database import Main, Config, Poll, Ticket, User
 
     load_dotenv(path.join(".", ".env"))  # Load data from the .env file
 
