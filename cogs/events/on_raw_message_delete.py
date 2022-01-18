@@ -1,4 +1,5 @@
 from asyncio import sleep
+
 from disnake import RawMessageDeleteEvent
 from disnake.ext.commands import Cog
 
@@ -11,7 +12,7 @@ class Events(Cog, name="events.on_raw_message_delete"):
 
     @Cog.listener()
     async def on_raw_message_delete(self, payload: RawMessageDeleteEvent):
-        await sleep(3)
+        await sleep(1.5)
 
         if (
             "tickets" in self.bot.configs[payload.guild_id]

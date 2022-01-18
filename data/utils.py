@@ -862,39 +862,6 @@ class Utils:
         if mods_channel:
             bot.configs[guild.id]["mods_channel"] = guild.get_channel(int(mods_channel))
 
-        """ GAMES CATEGORY """
-
-        games_category = bot.config_repo.get_games_category(guild.id)
-        if games_category:
-            bot.configs[guild.id]["games_category"] = guild.get_channel(
-                int(games_category)
-            )
-
-        """ GAMES """
-
-        game_channels = bot.games_repo.get_game_channels(guild.id)
-        if game_channels:
-            bot.configs[guild.id]["games"] = {}
-            games_channels = {}
-
-            if (
-                "games_category" in bot.configs[guild.id]
-                and bot.configs[guild.id]["games_category"]
-            ):
-                games_channels = {
-                    c.id for c in bot.configs[guild.id]["games_category"].channels
-                }
-
-            for channel_id, value in game_channels.items():
-                if int(channel_id) in games_channels:
-                    bot.configs[guild.id]["games"][channel_id] = {
-                        k: v for k, v in value.items()
-                    }
-                else:
-                    bot.games_repo.remove_game(guild.id, channel_id)
-
-            print(bot.configs[guild.id]["games"])
-
     @classmethod
     def check_moderator(cls):
         def predicate(source: Union[Context, ApplicationCommandInteraction]):
