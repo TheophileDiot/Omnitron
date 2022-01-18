@@ -54,5 +54,6 @@ class Events(Cog, name="events.on_raw_message_delete"):
             del self.bot.configs[payload.guild_id]["polls"][payload.message_id]
             self.bot.poll_repo.erase_poll(payload.guild_id, payload.message_id)
 
+
 def setup(bot: Omnitron):
     bot.add_cog(Events(bot))
