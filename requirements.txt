@@ -8,8 +8,8 @@ cachetools==5.0.0
 certifi==2021.10.8
 cffi==1.15.0
 charset-normalizer==2.0.12
-click==8.0.3
-disnake @ git+https://github.com/DisnakeDev/disnake.git@86a94449b101f9013228ca934714a7f1a5a10086
+click==8.0.4
+disnake @ git+https://github.com/DisnakeDev/disnake.git@214d348e0e7018edced8eb799742a41606bf1520
 firebase-admin==5.2.0
 frozenlist==1.3.0
 google-api-core==2.5.0
@@ -22,8 +22,8 @@ google-cloud-storage==2.1.0
 google-crc32c==1.3.0
 google-resumable-media==2.2.1
 googleapis-common-protos==1.54.0
-grpcio==1.43.0
-grpcio-status==1.43.0
+grpcio==1.44.0
+grpcio-status==1.44.0
 httplib2==0.20.4
 idna==3.3
 lavalink @ git+https://github.com/Devoxin/Lavalink.py.git@a1cbdee367c268cdd2891e6fbc63f265eff8eeb3
@@ -35,8 +35,8 @@ packaging==21.3
 pandas==1.4.1
 pathspec==0.9.0
 pkg_resources==0.0.0
-platformdirs==2.5.0
-proto-plus==1.20.1
+platformdirs==2.5.1
+proto-plus==1.20.3
 protobuf==3.19.4
 psutil==5.9.0
 pyasn1==0.4.8

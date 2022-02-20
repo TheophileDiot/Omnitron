@@ -15,6 +15,7 @@ from disnake.ext.commands import (
     group,
     guild_only,
     max_concurrency,
+    Range,
     slash_command,
 )
 from disnake.ui import Button, View
@@ -89,7 +90,7 @@ class Moderation(Cog, name="moderation.poll"):
         self,
         ctx: Context,
         title: str,
-        duration: int,
+        duration: Range[1, ...],
         type_duration: Utils.to_lower,
         *choices: str,
     ):
@@ -102,7 +103,7 @@ class Moderation(Cog, name="moderation.poll"):
             The command context
         title: :class:`str`
             The poll's title
-        duration: :class:`int`
+        duration: :class:`disnake.ext.commands.Range`
             The poll's duration value
         type_duration: :class:`Utils.to_lower`
             The poll's duration type (d == days, h == hours, m == minutes, s == seconds)
@@ -121,7 +122,7 @@ class Moderation(Cog, name="moderation.poll"):
         inter: ApplicationCommandInteraction,
         title: str,
         choices: str,
-        duration: int = 10,
+        duration: Range[1, ...] = 10,
         type_duration: DurationType = "m",
     ):
         """
@@ -135,7 +136,7 @@ class Moderation(Cog, name="moderation.poll"):
             The poll's title
         choices: :class:`str`
             The choices that will be available in the poll
-        duration: :class:`int`
+        duration: :class:`disnake.ext.commands.Range`
             The poll's duration value (defaults is 10)
         type_duration: :class:`Utils.to_lower`
             The poll's duration type (d == days, h == hours, m == minutes, s == seconds) (defaults is "m")

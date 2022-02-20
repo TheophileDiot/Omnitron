@@ -1,13 +1,13 @@
-from datetime import datetime
-
-from disnake import ApplicationCommandInteraction, Colour, Embed
+from disnake import ApplicationCommandInteraction, TextInputStyle
 from disnake.ext.commands import (
     BucketType,
     Cog,
+    cooldown,
     guild_only,
     message_command,
-    cooldown,
+    user_command,
 )
+from disnake.ui import Modal, TextInput
 
 from bot import Omnitron
 
@@ -30,22 +30,54 @@ class Miscellaneous(Cog, name="misc.report"):
         inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
             The application command interaction
         """
-        em = Embed(
-            title=f"The member {inter.author} reported {inter.target.author}'s message",
-            description=f'Message content: "{inter.target.clean_content}"\n'
-            f"Report date: `{datetime.now().strftime('%d-%m-%Y %H:%M:%S')}`\n"
-            f"URL to the message: {inter.target.jump_url}",
-            colour=Colour.red(),
+        await inter.response.send_modal(
+            modal=Modal(
+                title="Report Reason",
+                components=[
+                    TextInput(
+                        label="The reason for the message report",
+                        custom_id="reason",
+                        style=TextInputStyle.paragraph,
+                        placeholder="I report this message because ...",
+                        required=True,
+                        min_length=10,
+                        max_length=1024,
+                    )
+                ],
+                custom_id=f"report_message_{inter.author.id}_{inter.target.channel.id}_{inter.target.id}",
+                timeout=300,
+            )
         )
 
-        if inter.target.author.avatar:
-            em.set_thumbnail(url=inter.target.author.avatar.url)
+    @user_command(name="🛑 Report")
+    @guild_only()
+    @cooldown(rate=1, per=60, type=BucketType.member)
+    async def report_user_command(self, inter: ApplicationCommandInteraction):
+        """
+        This user command reports a member
 
-        await self.bot.utils_class.send_message_to_mods("", inter.guild.id, em)
-
-        await inter.response.send_message(
-            "ℹ️ - Your report has been successfully sent to the server's moderators!",
-            ephemeral=True,
+        Parameters
+        ----------
+        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+            The application command interaction
+        """
+        await inter.response.send_modal(
+            modal=Modal(
+                title="Report Reason",
+                components=[
+                    TextInput(
+                        label="The reason for the member report",
+                        custom_id="reason",
+                        style=TextInputStyle.paragraph,
+                        placeholder="I report this member because ...",
+                        required=True,
+                        min_length=10,
+                        max_length=1024,
+                    )
+                ],
+                custom_id=f"report_member_{inter.author.id}_{inter.target.id}",
+                timeout=300,
+            )
         )
 
 

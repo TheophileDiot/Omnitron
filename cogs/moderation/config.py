@@ -24,6 +24,7 @@ from disnake.ext.commands import (
     group,
     guild_only,
     Param,
+    Range,
     slash_command,
 )
 from disnake.ext.commands.errors import (
@@ -2600,7 +2601,7 @@ class Moderation(Cog, name="moderation.config"):
         self,
         ctx: Context,
         option: Utils.to_lower = None,
-        duration: int = None,
+        duration: Range[1, ...] = None,
         duration_type: str = None,
         notify_channel: TextChannel = None,
     ):
@@ -2613,7 +2614,7 @@ class Moderation(Cog, name="moderation.config"):
             The command context
         option: :class:`Utils.to_lower` optional
             The option -> on or update or off
-        duration: :class:`int` optional
+        duration: :class:`disnake.ext.commands.Range` optional
             The mute's duration value
         duration_type: :class:`Utils.to_lower` optional
             The mute's duration type (d == days, h == hours, m == minutes, s == seconds)
@@ -2667,7 +2668,7 @@ class Moderation(Cog, name="moderation.config"):
     async def config_security_mute_on_join_on_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        duration: int = 10,
+        duration: Range[1, ...] = 10,
         duration_type: DurationType = "m",
         notify_channel: TextChannel = None,
     ):
@@ -2678,7 +2679,7 @@ class Moderation(Cog, name="moderation.config"):
         ----------
         inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
             The application command interaction
-        duration: :class:`int` optional
+        duration: :class:`disnake.ext.commands.Range` optional
             The mute's duration value (default: 10)
         duration_type: :class:`Utils.DurationType` optional
             The mute's duration type (d == days, h == hours, m == minutes, s == seconds) (default: "m")
@@ -2696,7 +2697,7 @@ class Moderation(Cog, name="moderation.config"):
     async def config_security_mute_on_join_update_slash_command(
         self,
         inter: ApplicationCommandInteraction,
-        duration: int = None,
+        duration: Range[1, ...] = None,
         duration_type: DurationType = None,
         notify_channel: TextChannel = None,
     ):
@@ -2707,7 +2708,7 @@ class Moderation(Cog, name="moderation.config"):
         ----------
         inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
             The application command interaction
-        duration: :class:`int` optional
+        duration: :class:`disnake.ext.commands.Range` optional
             The mute's duration value
         duration_type: :class:`Utils.DurationType` optional
             The mute's duration type (d == days, h == hours, m == minutes, s == seconds)

@@ -9,10 +9,37 @@ from disnake.ext.commands import (
     Context,
     has_permissions,
     max_concurrency,
+    Range,
     slash_command,
 )
 
 from bot import Omnitron
+
+
+async def handle_clear(
+    source: Union[Context, ApplicationCommandInteraction],
+    nbr_msgs: int,
+    member: Member = None,
+):
+    if not isinstance(source, Context):
+        await source.response.defer(ephemeral=True)
+
+    if member:
+        deleted = await source.channel.purge(
+            limit=nbr_msgs, check=(lambda m: m.author == member)
+        )
+    else:
+        deleted = await source.channel.purge(limit=nbr_msgs)
+
+    if isinstance(source, Context):
+        await source.send(
+            f"ℹ️ - `{len(deleted)}` message{'s' if len(deleted) > 1 else ''} deleted {f'from the user {member}' if member else ''}.",
+            delete_after=20,
+        )
+    else:
+        await source.edit_original_message(
+            content=f"ℹ️ - `{len(deleted)}` message{'s' if len(deleted) > 1 else ''} deleted {f'from the user {member}' if member else ''}."
+        )
 
 
 class Moderation(Cog, name="moderation.clear"):
@@ -31,7 +58,7 @@ class Moderation(Cog, name="moderation.clear"):
     )
     @max_concurrency(1, per=BucketType.channel)
     async def clear_command(
-        self, ctx: Context, number_messages: int = 10, member: Member = None
+        self, ctx: Context, number_messages: Range[1, ...] = 10, member: Member = None
     ):
         """
         This command deletes a given number of messages in the channel from everyone or a certain member! (default: 10)
@@ -40,12 +67,12 @@ class Moderation(Cog, name="moderation.clear"):
         ----------
         ctx: :class:`disnake.ext.commands.Context`
             The command context
-        number_messages: :class:`int` optional
+        number_messages: :class:`disnake.ext.commands.Range` optional
             The number of messages to delete (10 by default)
         member: :class:`disnake.Member` optional
             Deletes messages only sent by this member
         """
-        await self.handle_clear(ctx, number_messages, member)
+        await handle_clear(ctx, int(number_messages), member)
 
     @slash_command(
         name="clear",
@@ -57,7 +84,7 @@ class Moderation(Cog, name="moderation.clear"):
     async def clear_command(
         self,
         inter: ApplicationCommandInteraction,
-        number_messages: int = 10,
+        number_messages: Range[1, ...] = 10,
         member: Member = None,
     ):
         """
@@ -67,52 +94,12 @@ class Moderation(Cog, name="moderation.clear"):
         ----------
         inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
             The application command interaction
-        number_messages: :class:`int` optional
+        number_messages: :class:`disnake.ext.commands.Range` optional
             The number of messages to delete (10 by default)
         member: :class:`disnake.Member` optional
             Deletes messages only sent by this member
         """
-        await self.handle_clear(inter, number_messages, member)
-
-    """ METHOD(S) """
-
-    async def handle_clear(
-        self,
-        source: Union[Context, ApplicationCommandInteraction],
-        nbr_msgs: int,
-        member: Member = None,
-    ):
-        if nbr_msgs <= 0:
-            if isinstance(source, Context):
-                return await source.reply(
-                    f"ℹ️ - {source.author.mention} - Please provide a number greater than 0! `${self.bot.utils_class.get_guild_pre(source.message)[0]}help {source.command.name}` for more details.",
-                    delete_after=10,
-                )
-            else:
-                await source.response.send_message(
-                    f"ℹ️ - {source.author.mention} - Please provide a number greater than 0!",
-                    ephemeral=True,
-                )
-
-        if not isinstance(source, Context):
-            await source.response.defer(ephemeral=True)
-
-        if member:
-            deleted = await source.channel.purge(
-                limit=nbr_msgs, check=(lambda m: m.author == member)
-            )
-        else:
-            deleted = await source.channel.purge(limit=nbr_msgs)
-
-        if isinstance(source, Context):
-            await source.send(
-                f"ℹ️ - `{len(deleted)}` message{'s' if len(deleted) > 1 else ''} deleted {f'from the user {member}' if member else ''}.",
-                delete_after=20,
-            )
-        else:
-            await source.edit_original_message(
-                content=f"ℹ️ - `{len(deleted)}` message{'s' if len(deleted) > 1 else ''} deleted {f'from the user {member}' if member else ''}."
-            )
+        await handle_clear(inter, number_messages, member)
 
 
 def setup(bot):

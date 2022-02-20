@@ -19,6 +19,7 @@ from disnake.ext.commands import (
     guild_only,
     has_guild_permissions,
     max_concurrency,
+    Range,
     slash_command,
 )
 
@@ -683,7 +684,7 @@ class Moderation(Cog, name="moderation.sanction"):
         inter: ApplicationCommandInteraction,
         member: Member,
         reason: str = None,
-        duration: int = 10,
+        duration: Range[1, ...] = 10,
         type_duration: DurationType = "m",
     ):
         """
@@ -697,7 +698,7 @@ class Moderation(Cog, name="moderation.sanction"):
             The member you want to mute
         reason: :class:`str` optional
             The reason attached to the mute
-        duration: :class:`int` optional
+        duration: :class:`disnake.ext.commands.Range` optional
             The mute's duration value (defaults to 10)
         type_duration: :class:`Utils.DurationType` optional
             the mute's duration type (defaults to "m")
@@ -1054,7 +1055,7 @@ class Moderation(Cog, name="moderation.sanction"):
         inter: ApplicationCommandInteraction,
         member: Member,
         reason: str = None,
-        duration: int = 1,
+        duration: Range[1, ...] = 1,
         type_duration: DurationType = "d",
     ):
         """
@@ -1068,7 +1069,7 @@ class Moderation(Cog, name="moderation.sanction"):
             The member you want to ban
         reason: :class:`str` optional
             The reason attached to the ban
-        duration: :class:`int` optional
+        duration: :class:`disnake.ext.commands.Range` optional
             The ban's duration value (defaults to 1)
         type_duration: :class:`Utils.DurationType` optional
             the ban's duration type (defaults to "d")
