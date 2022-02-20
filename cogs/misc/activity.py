@@ -3,8 +3,8 @@ from typing import Union, Optional
 from disnake import (
     ApplicationCommandInteraction,
     Embed,
-    Enum,
     HTTPException,
+    PartyType,
     VoiceChannel,
 )
 from disnake.ext.commands import (
@@ -20,22 +20,6 @@ from disnake.http import Route
 
 from bot import Omnitron
 from data import Utils
-
-
-class PartyType(Enum):
-    awkword = "879863881349087252"
-    betrayal = "773336526917861400"
-    checkers = "832013003968348200"
-    chess = "832012774040141894"
-    doodle_crew = "878067389634314250"
-    fishing = "814288819477020702"
-    letter_tile = "879863686565621790"
-    poker = "755827207812677713"
-    sketchy_artist = "879864070101172255"
-    spellcast = "852509694341283871"
-    watch_together = "880218394199220334"
-    word_snack = "879863976006127627"
-    youtube = "755600276941176913"
 
 
 class Miscellaneous(Cog, name="misc.activity"):
@@ -85,7 +69,7 @@ class Miscellaneous(Cog, name="misc.activity"):
             The application command interaction
         channel: :class:`disnake.VoiceChannel`
             The voice channel where the activity will take place
-        activity: :class:`PartyType` optional
+        activity: :class:`disnake.PartyType` optional
             Choose one of the default activities available
         custom_activity: :class:`int` optional
             If you know an activity that is not shown in the activity section then enter it's ID here!

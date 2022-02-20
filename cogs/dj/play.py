@@ -339,17 +339,17 @@ class Dj(Cog, name="dj.play"):
             # Check if the user input might be a URL. If it isn't, we can Lavalink do a SoundCloud search for it instead.
             if not self.url_rx.match(query):
                 query = f"scsearch:{query}"
-            elif self.yt_rx.match(query):
-                if isinstance(source, Context):
-                    return await source.reply(
-                        f"⚠️ - {source.author.mention} - YouTube links have been disabled due to violation of YouTube terms of service!",
-                        delete_after=20,
-                    )
-                else:
-                    return await source.response.send_message(
-                        f"⚠️ - {source.author.mention} - YouTube links have been disabled due to violation of YouTube terms of service!",
-                        ephemeral=True,
-                    )
+            # elif self.yt_rx.match(query):
+            #     if isinstance(source, Context):
+            #         return await source.reply(
+            #             f"⚠️ - {source.author.mention} - YouTube links have been disabled due to violation of YouTube terms of service!",
+            #             delete_after=20,
+            #         )
+            #     else:
+            #         return await source.response.send_message(
+            #             f"⚠️ - {source.author.mention} - YouTube links have been disabled due to violation of YouTube terms of service!",
+            #             ephemeral=True,
+            #         )
         elif (
             isinstance(source, Context)
             and source.message.attachments

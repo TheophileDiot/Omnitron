@@ -76,6 +76,7 @@ class Omnitron(Bot):
             strip_after_prefix=True,
             self_bot=False,
             sync_commands_debug=True,
+            asyncio_debug=True,
             test_guilds=[872500404540280893, 874311358018105385]
             if getenv("ENV") == "DEVELOPMENT"
             else None,
