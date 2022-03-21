@@ -1,5 +1,6 @@
 from functools import wraps
 from inspect import Parameter
+from os import getenv
 from re import compile as re_compile
 from typing import Union
 
@@ -21,7 +22,6 @@ from disnake.ext.commands import (
     Context,
     guild_only,
     max_concurrency,
-    Param,
     slash_command,
 )
 from disnake.ext.commands.errors import MissingRequiredArgument
@@ -158,9 +158,7 @@ class Dj(Cog, name="dj.play"):
         async def check(
             self,
             source,
-            *,
             query: str = None,
-            **kwargs,
         ):
             """This check ensures that the bot and command author are in the same voicechannel."""
             try:
@@ -251,7 +249,7 @@ class Dj(Cog, name="dj.play"):
                             ephemeral=True,
                         )
 
-            return await function(self, source, query, **kwargs)
+            return await function(self, source, query)
 
         return check
 
@@ -261,7 +259,7 @@ class Dj(Cog, name="dj.play"):
         name="play",
         aliases=["sc_p"],
         usage="<link>|<Title>",
-        description="Plays a link or title from a SoundCloud song! It can also play attachments! (supports playlists!)",
+        description="Plays a link or title from a SoundCloud/YouTube song! It can also play attachments! (supports playlists!)",
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
@@ -269,22 +267,22 @@ class Dj(Cog, name="dj.play"):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @__ensure_voice
     @max_concurrency(1, per=BucketType.guild)
-    async def play_command(self, ctx: Context, query: str = None):
+    async def play_command(self, source: Context, query: str = None):
         """
-        This command plays a link or title from a SoundCloud song! (supports playlists!)
+        This command plays a link or title from a SoundCloud/YouTube song! (supports playlists!)
 
         Parameters
         ----------
-        ctx: :class:`disnake.ext.commands.Context`
+        source: :class:`disnake.ext.commands.Context`
             The command context
         query: :class:`str` optional
-            The SoundCloud link or title
+            The SoundCloud/YouTube link or title
         """
-        await self.handle_play(ctx, query)
+        await self.handle_play(source, query)
 
     @slash_command(
         name="play",
-        description="Plays a link or title from a SoundCloud song! (supports playlists!)",
+        description="Plays a link or title from a SoundCloud/YouTube song! (supports playlists!)",
     )
     @guild_only()
     @Utils.check_bot_starting()
@@ -295,20 +293,20 @@ class Dj(Cog, name="dj.play"):
     @max_concurrency(1, per=BucketType.guild)
     async def play_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        source: ApplicationCommandInteraction,
         query: str = None,
     ):
         """
-        This slash command plays a link or title from a SoundCloud song! (supports playlists!)
+        This slash command plays a link or title from a SoundCloud/YouTube song! (supports playlists!)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        source: :class:`disnake.ext.commands.ApplicationCommandInteraction`
             The application command interaction
         query: :class:`str` optional
-            The SoundCloud link or title
+            The link or title
         """
-        await self.handle_play(inter, query)
+        await self.handle_play(source, query)
 
     """ METHOD(S) """
 
@@ -333,10 +331,13 @@ class Dj(Cog, name="dj.play"):
         elif query and (
             not isinstance(source, Context) or not source.message.attachments
         ):
+            if isinstance(source, ApplicationCommandInteraction):
+                await source.response.defer()
+
             # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
             query = query.strip("<>")
 
-            # Check if the user input might be a URL. If it isn't, we can Lavalink do a SoundCloud search for it instead.
+            # Check if the user input might be a URL. If it isn't, we can Lavalink do a search for it instead.
             if not self.url_rx.match(query):
                 query = f"scsearch:{query}"
             # elif self.yt_rx.match(query):
@@ -382,7 +383,7 @@ class Dj(Cog, name="dj.play"):
                     delete_after=20,
                 )
             else:
-                return await source.response.send_message(
+                return await source.followup.send(
                     f"⚠️ - {source.author.mention} - {results['exception']['message']}",
                     ephemeral=True,
                 )
@@ -393,7 +394,7 @@ class Dj(Cog, name="dj.play"):
                     delete_after=20,
                 )
             else:
-                return await source.response.send_message(
+                return await source.followup.send(
                     f"⚠️ - {source.author.mention} - The video or playlist you are looking for does not exist!",
                     ephemeral=True,
                 )
@@ -412,9 +413,7 @@ class Dj(Cog, name="dj.play"):
                 audio_track = AudioTrack(track, source.author.id, recommended=True)
                 player.add(requester=source.author.id, track=audio_track)
 
-            content = (
-                "🎶 - **Adding the Soundcloud playlist to the server playlist:** - 🎶"
-            )
+            content = "🎶 - **Adding the playlist to the server playlist:** - 🎶"
         else:
             track = results["tracks"][0]
 
@@ -458,9 +457,7 @@ class Dj(Cog, name="dj.play"):
                 and source.message.attachments
                 and source.message.attachments[0].content_type
                 else (
-                    "Soundcloud query"
-                    if query.startswith("scsearch")
-                    else "External link"
+                    "Search query" if query.startswith("scsearch") else "External link"
                 ),
                 "title": title,
                 "url": url,
@@ -472,7 +469,7 @@ class Dj(Cog, name="dj.play"):
         if isinstance(source, Context):
             await source.send(content=content, embed=em)
         else:
-            await source.response.send_message(content=content, embed=em)
+            await source.followup.send(content=content, embed=em)
 
         # We don't want to call .play() if the player is playing as that will effectively skip
         # the current track.

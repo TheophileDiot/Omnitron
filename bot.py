@@ -12,9 +12,10 @@ from itertools import chain
 from logging import basicConfig, DEBUG, error, info
 from multiprocessing import Process
 from os import getenv, listdir, makedirs, name, path, system, remove
-from socket import socket, AF_INET, SOCK_STREAM
+from socket import error as socket_error, socket, AF_INET, SOCK_STREAM
 from subprocess import PIPE, call
 from sys import exc_info
+from time import sleep
 from traceback import format_exc
 from typing import Union
 
@@ -135,20 +136,6 @@ class Omnitron(Bot):
             process = Process(target=self.start_lavalink)
             process.start()  # start the process
             lavalink = True
-        else:
-            a_socket = socket(AF_INET, SOCK_STREAM)
-            location = ("127.0.0.1", 2333)  # check the lavalink default port
-            result_of_check = a_socket.connect_ex(location)
-
-            if result_of_check != 0:
-                print(
-                    "Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!"
-                )
-                error(
-                    "Lavalink is not set to be internal and is not started (or another port than 2333 is specified in the configuration)!"
-                )
-            else:
-                lavalink = True
 
         if lavalink:
             print("Lavalink successfully initialized.")
@@ -373,6 +360,7 @@ class Omnitron(Bot):
             guild_reactions=True,
             members=True,
             voice_states=True,
+            message_content=True,
         )
         return intents
 

@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: DockerFile
+    container_name: bot
+    volumes:
+      - ./logs:/bot/logs
+      - ./temp:/bot/temp
+    environment:
+      - LAVALINK_URL=lavalink://127.0.0.1
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - lavalink
+    network_mode: host
+
+  lavalink:
+    build: lavalink
+    container_name: lavalink
+    volumes:
+      - ./lavalink/logs:/opt/Lavalink/logs
+    network_mode: host
