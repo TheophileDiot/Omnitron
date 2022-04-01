@@ -10,7 +10,7 @@ services:
       - ./logs:/bot/logs
       - ./temp:/bot/temp
     environment:
-      - LAVALINK_URL=lavalink://127.0.0.1
+      - LAVALINK_URL=lavalink
       - PYTHONUNBUFFERED=1
     depends_on:
       - lavalink
