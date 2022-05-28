@@ -3,9 +3,9 @@ FROM python:3-alpine
 COPY requirements.txt /bot/
 WORKDIR /bot
 
-RUN apk add --no-cache --virtual deps gcc musl-dev libffi-dev g++ git
-RUN pip3 install pip --no-cache-dir --upgrade && pip3 install setuptools wheel --no-cache-dir --upgrade
-RUN pip3 install -r requirements.txt --upgrade
+RUN apk add --no-cache --virtual deps gcc musl-dev libffi-dev g++ git && \
+  pip3 install pip --no-cache-dir --upgrade && pip3 install setuptools wheel --no-cache-dir --upgrade && \
+  pip3 install -r requirements.txt --upgrade
 
 COPY *.py /bot/
 COPY *.env /bot/
