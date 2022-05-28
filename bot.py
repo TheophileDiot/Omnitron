@@ -9,7 +9,7 @@
 from asyncio import get_event_loop
 from datetime import date
 from itertools import chain
-from logging import basicConfig, DEBUG, error, info
+from logging import basicConfig, DEBUG, error, info, INFO
 from multiprocessing import Process
 from os import getenv, listdir, makedirs, name, path, system, remove
 from subprocess import PIPE
@@ -401,10 +401,10 @@ if __name__ == "__main__":
 
     basicConfig(
         filename=f"logs/{date.today().strftime('%d-%m-%Y_')}app.log",
-        filemode="a",
+        filemode="w" if getenv("ENV") == "DEVELOPMENT" else "a",
         format="%(asctime)s - %(levelname)s - %(message)s",
         datefmt="%d-%m-%y %H:%M:%S",
-        level=DEBUG,
+        level=DEBUG if getenv("ENV") == "DEVELOPMENT" else INFO,
     )  # Configure the logging
 
     system("cls" if name == "nt" else "clear")

@@ -339,7 +339,7 @@ class Dj(Cog, name="dj.play"):
 
             # Check if the user input might be a URL. If it isn't, we can Lavalink do a search for it instead.
             if not self.url_rx.match(query):
-                query = f"scsearch:{query}"
+                query = f"ytsearch:{query}"
             # elif self.yt_rx.match(query):
             #     if isinstance(source, Context):
             #         return await source.reply(
@@ -436,7 +436,7 @@ class Dj(Cog, name="dj.play"):
         )
         url = (
             query
-            if query and not query.startswith("scsearch")
+            if query and not query.startswith("ytsearch")
             else track["info"]["uri"]
         )
         duration = self.bot.utils_class.duration(track["info"]["length"] / 1000)
@@ -457,7 +457,7 @@ class Dj(Cog, name="dj.play"):
                 and source.message.attachments
                 and source.message.attachments[0].content_type
                 else (
-                    "Search query" if query.startswith("scsearch") else "External link"
+                    "Search query" if query.startswith("ytsearch") else "External link"
                 ),
                 "title": title,
                 "url": url,
