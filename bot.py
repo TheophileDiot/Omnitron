@@ -1,7 +1,7 @@
 # -----------------------------------------------------------
 # A discord bot that has every features you want in a discord server !
 #
-# (C) 2021 TheophileDiot
+# (C) 2022 TheophileDiot
 # Released under MIT License (MIT)
 # email theophile.diot900@gmail.com
 # linting: black
@@ -12,10 +12,8 @@ from itertools import chain
 from logging import basicConfig, DEBUG, error, info
 from multiprocessing import Process
 from os import getenv, listdir, makedirs, name, path, system, remove
-from socket import error as socket_error, socket, AF_INET, SOCK_STREAM
-from subprocess import PIPE, call
+from subprocess import PIPE
 from sys import exc_info
-from time import sleep
 from traceback import format_exc
 from typing import Union
 

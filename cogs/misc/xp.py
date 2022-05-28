@@ -6,8 +6,6 @@ from disnake import (
     Embed,
     Member,
     NotFound,
-    Option,
-    OptionType,
 )
 from disnake.ext.commands import (
     bot_has_permissions,
