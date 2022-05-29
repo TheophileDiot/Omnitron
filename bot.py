@@ -12,7 +12,7 @@ from itertools import chain
 from logging import basicConfig, DEBUG, error, info, INFO
 from multiprocessing import Process
 from os import getenv, listdir, makedirs, name, path, system, remove
-from subprocess import PIPE
+from subprocess import PIPE, call
 from sys import exc_info
 from traceback import format_exc
 from typing import Union
