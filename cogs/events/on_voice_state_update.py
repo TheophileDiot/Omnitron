@@ -80,7 +80,7 @@ class Events(Cog, name="events.on_voice_state_update"):
             if _id in self.voice_intervals:
                 self.voice_intervals.pop(_id).cancel()
 
-        if not member.bot and after.channel is None:
+        if after.channel != before.channel:
             if not [m for m in before.channel.members if not m.bot]:
                 if member.guild.voice_client:
                     await member.guild.voice_client.disconnect(force=True)

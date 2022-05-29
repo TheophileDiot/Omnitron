@@ -6,7 +6,7 @@
 # email theophile.diot900@gmail.com
 # linting: black
 # -----------------------------------------------------------
-from asyncio import get_event_loop
+from asyncio import new_event_loop
 from datetime import date
 from itertools import chain
 from logging import basicConfig, DEBUG, error, info, INFO
@@ -407,9 +407,9 @@ if __name__ == "__main__":
         level=DEBUG if getenv("ENV") == "DEVELOPMENT" else INFO,
     )  # Configure the logging
 
-    system("cls" if name == "nt" else "clear")
+    # system("cls" if name == "nt" else "clear")
     print("Omnitron is starting...")
-    loop = get_event_loop()
+    loop = new_event_loop()
     try:
         loop.run_until_complete(Omnitron.setup())  # Starts the bot
     except KeyboardInterrupt:

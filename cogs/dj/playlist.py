@@ -122,6 +122,11 @@ class Dj(Cog, name="dj.playlist"):
             em.title = self.bot.playlists[source.guild.id][position]["title"]
             em.url = self.bot.playlists[source.guild.id][position]["url"]
 
+            if self.bot.playlists[source.guild.id][position].get("thumbnail"):
+                em.set_thumbnail(
+                    url=self.bot.playlists[source.guild.id][position]["thumbnail"]
+                )
+
             em.set_author(
                 name=f"Author: {self.bot.playlists[source.guild.id][position]['author']}"
             )
