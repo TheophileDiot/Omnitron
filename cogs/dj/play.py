@@ -108,6 +108,11 @@ class LavalinkVoiceClient(VoiceClient):
 
         # Clear the queue to ensure old tracks don't start playing
         player.queue.clear()
+
+        if player.is_playing:
+            # Stop the current track so Lavalink consumes less resources.
+            await player.stop()
+
         # update the channel_id of the player to None
         player.channel_id = None
         self.cleanup()
