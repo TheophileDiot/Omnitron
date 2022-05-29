@@ -1,12 +1,15 @@
+from cmath import atan
 from functools import wraps
 from inspect import Parameter
-from os import getenv
 from re import compile as re_compile
-from typing import Union
+from typing import List, Union
+from youtube_dl import utils, YoutubeDL
 
 from disnake import (
     ApplicationCommandInteraction,
+    Attachment,
     Client as botClient,
+    Colour,
     Embed,
     NotFound,
     VoiceClient,
@@ -103,6 +106,25 @@ class Dj(Cog, name="dj.play"):
         self.yt_rx = re_compile(
             r"http(?:s?):\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?‌​[\w\?‌​=]*)?"
         )
+        utils.bug_reports_message = lambda: ""
+        self.ytdl = YoutubeDL(
+            {
+                "format": "worstaudio/worst",
+                "outtmpl": "temp/musics/%(title)s.%(ext)s",
+                "download_archive": "temp/musics.txt",
+                "restrictfilenames": True,
+                "noplaylist": True,
+                "nocheckcertificate": True,
+                "ignoreerrors": False,
+                "logtostderr": False,
+                "quiet": True,
+                "no_warnings": True,
+                "verbose": False,
+                "default_search": "auto",
+                # bind to ipv4 since ipv6 addresses cause issues sometimes
+                "source_address": "0.0.0.0",
+            }
+        )
 
     """ EVENTS """
 
@@ -159,24 +181,9 @@ class Dj(Cog, name="dj.play"):
             self,
             source,
             query: str = None,
+            audio_file: Attachment = None,
         ):
             """This check ensures that the bot and command author are in the same voicechannel."""
-            try:
-                player = self.bot.lavalink.player_manager.create(
-                    source.guild.id, endpoint=str(source.guild.region)
-                )
-            except NodeException:
-                if isinstance(source, Context):
-                    return await source.reply(
-                        f"⚠️ - {source.author.mention} - The player is not ready yet, please try again in a few seconds!",
-                        delete_after=20,
-                    )
-                else:
-                    return await source.response.send_message(
-                        f"⚠️ - {source.author.mention} - The player is not ready yet, please try again in a few seconds!",
-                        ephemeral=True,
-                    )
-
             # Create returns a player if one exists, otherwise creates.
             # This line is important because it ensures that a player always exists for a guild.
 
@@ -199,6 +206,22 @@ class Dj(Cog, name="dj.play"):
                 else:
                     return await source.response.send_message(
                         f"⚠️ - {source.author.mention} - Please connect to a voice room to play!",
+                        ephemeral=True,
+                    )
+
+            try:
+                player = self.bot.lavalink.player_manager.create(
+                    source.guild.id, endpoint=source.author.voice.channel.rtc_region
+                )
+            except NodeException:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - The player is not ready yet, please try again in a few seconds!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.response.send_message(
+                        f"⚠️ - {source.author.mention} - The player is not ready yet, please try again in a few seconds!",
                         ephemeral=True,
                     )
 
@@ -249,7 +272,7 @@ class Dj(Cog, name="dj.play"):
                             ephemeral=True,
                         )
 
-            return await function(self, source, query)
+            return await function(self, source, query, audio_file=audio_file)
 
         return check
 
@@ -259,7 +282,7 @@ class Dj(Cog, name="dj.play"):
         name="play",
         aliases=["sc_p"],
         usage="<link>|<Title>",
-        description="Plays a link or title from a SoundCloud/YouTube song! It can also play attachments! (supports playlists!)",
+        description="Plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)",
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
@@ -267,22 +290,22 @@ class Dj(Cog, name="dj.play"):
     @bot_has_permissions(send_messages=True, embed_links=True)
     @__ensure_voice
     @max_concurrency(1, per=BucketType.guild)
-    async def play_command(self, source: Context, query: str = None):
+    async def play_command(self, source: Context, query: str = None, **kwargs):
         """
-        This command plays a link or title from a SoundCloud/YouTube song! (supports playlists!)
+        This command plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)
 
         Parameters
         ----------
         source: :class:`disnake.ext.commands.Context`
             The command context
         query: :class:`str` optional
-            The SoundCloud/YouTube link or title
+            The link or YouTube/SoundCloud title
         """
         await self.handle_play(source, query)
 
     @slash_command(
         name="play",
-        description="Plays a link or title from a SoundCloud/YouTube song! (supports playlists!)",
+        description="Plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)",
     )
     @guild_only()
     @Utils.check_bot_starting()
@@ -295,18 +318,21 @@ class Dj(Cog, name="dj.play"):
         self,
         source: ApplicationCommandInteraction,
         query: str = None,
+        audio_file: Attachment = None,
     ):
         """
-        This slash command plays a link or title from a SoundCloud/YouTube song! (supports playlists!)
+        This slash command plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)
 
         Parameters
         ----------
         source: :class:`disnake.ext.commands.ApplicationCommandInteraction`
             The application command interaction
         query: :class:`str` optional
-            The link or title
+            The link or YouTube/SoundCloud title
+        audio_file: :class:`disnake.ext.commands.Attachment` optional
+            The audio file to play
         """
-        await self.handle_play(source, query)
+        await self.handle_play(source, query, attachment=audio_file)
 
     """ METHOD(S) """
 
@@ -314,6 +340,8 @@ class Dj(Cog, name="dj.play"):
         self,
         source: Union[Context, ApplicationCommandInteraction],
         query: str = None,
+        *,
+        attachment: Attachment = None,
     ):
         """Searches and plays a song from a given query."""
         # Get the player for this guild from cache.
@@ -366,13 +394,27 @@ class Dj(Cog, name="dj.play"):
 
         try:
             results = await player.node.get_tracks(
-                query if query else source.message.attachments[0].url
+                query if query else await source.message.attachments[0].read()
             )
         except TimeoutError:
             return await source.reply(
                 f"⚠️ - {source.author.mention} - Your query timed out!",
                 delete_after=20,
             )
+
+        if (
+            (not results or results and "exception" in results or not results["tracks"])
+            and query
+            and query.startswith("ytsearch:")
+        ):
+            query = query.replace("ytsearch:", "scsearch:")
+            try:
+                results = await player.node.get_tracks(query)
+            except TimeoutError:
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - Your query timed out!",
+                    delete_after=20,
+                )
 
         # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
         # ALternatively, results['tracks'] could be an empty array if the query yielded no tracks.
@@ -402,7 +444,7 @@ class Dj(Cog, name="dj.play"):
         # Valid loadTypes are:
         #   TRACK_LOADED    - single video/direct URL)
         #   PLAYLIST_LOADED - direct URL to playlist)
-        #   SEARCH_RESULT   - query prefixed with either ytsearch: or scsearch:.
+        #   SEARCH_RESULT   - query prefixed with either ytsearch:.
         #   NO_MATCHES      - query yielded no results
         #   LOAD_FAILED     - most likely, the video encountered an exception during loading.
         if results["loadType"] == "PLAYLIST_LOADED":
@@ -422,32 +464,80 @@ class Dj(Cog, name="dj.play"):
             else:
                 content = "🎶 - **Playing:** - 🎶"
 
+            yt_infos = None
+            try:
+                if self.yt_rx.match(track["info"]["uri"]):
+                    yt_infos = self.ytdl.extract_info(
+                        track["info"]["uri"], download=False
+                    )
+            except Exception as e:
+                if not f"{e}".endswith(
+                    "This video may be inappropriate for some users."
+                ):
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information, please try again in a few moments!",
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.followup.send(
+                            f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information, please try again in a few moments!",
+                            ephemeral=True,
+                        )
+                else:
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"⚠️ - {source.author.mention} - This video is not suitable for some users! (I can't play some age restricted videos)",
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.followup.send(
+                            f"⚠️ - {source.author.mention} - This video is not suitable for some users! (I can't play some age restricted videos)",
+                            ephemeral=True,
+                        )
+
             # You can attach additional information to audiotracks through kwargs, however this involves
             # constructing the AudioTrack class yourself.
             audio_track = AudioTrack(track, source.author.id, recommended=True)
             player.add(requester=source.author.id, track=audio_track)
 
-        title = (
-            track["info"]["title"]
-            if track["info"]["title"] != "Unknown title"
-            or not isinstance(source, Context)
-            or not source.message.attachments
-            else source.message.attachments[0].filename
-        )
-        url = (
-            query
-            if query and not query.startswith("ytsearch")
-            else track["info"]["uri"]
-        )
-        duration = self.bot.utils_class.duration(track["info"]["length"] / 1000)
+        if yt_infos:
+            colour = Colour(0xFF0000)
+            title = yt_infos["title"]
+            url = (
+                yt_infos["webpage_url"]
+                if "webpage_url" in yt_infos
+                else yt_infos["video_url"]
+            )
+            duration = self.bot.utils_class.duration(yt_infos["duration"])
+            author = f"Channel: {yt_infos['channel']}"
+        else:
+            colour = self.bot.color
+            title = (
+                track["info"]["title"]
+                if track["info"]["title"] != "Unknown title"
+                or not isinstance(source, Context)
+                or not source.message.attachments
+                else source.message.attachments[0].filename
+            )
+            url = (
+                query
+                if query and not query.startswith("ytsearch")
+                else track["info"]["uri"]
+            )
+            duration = self.bot.utils_class.duration(track["info"]["length"] / 1000)
+            author = track["info"]["author"]
 
         em = Embed(
-            colour=self.bot.color,
+            colour=colour,
             title=title,
             url=url,
         )
 
-        em.set_author(name=track["info"]["author"])
+        if yt_infos is not None:
+            em.set_thumbnail(url=yt_infos["thumbnail"])
+
+        em.set_author(name=author)
         em.set_footer(text=f"duration: {duration}")
 
         self.bot.playlists[source.guild.id].append(
@@ -461,8 +551,9 @@ class Dj(Cog, name="dj.play"):
                 ),
                 "title": title,
                 "url": url,
-                "author": track["info"]["author"],
+                "author": author,
                 "duration": duration,
+                "thumbnail": yt_infos["thumbnail"] if yt_infos is not None else None,
             }
         )
 
