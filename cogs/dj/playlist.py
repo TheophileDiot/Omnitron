@@ -119,7 +119,9 @@ class Dj(Cog, name="dj.playlist"):
 
             position -= 1
 
-            em.title = self.bot.playlists[source.guild.id][position]["title"]
+            em.title = self.bot.playlists[source.guild.id][position]["title"] + (
+                " - *currently playing*" if position == 0 else ""
+            )
             em.url = self.bot.playlists[source.guild.id][position]["url"]
 
             if self.bot.playlists[source.guild.id][position].get("thumbnail"):
@@ -161,6 +163,9 @@ class Dj(Cog, name="dj.playlist"):
         else:
             em.set_footer(text=self.bot.user.name)
 
+        if self.bot.playlists[source.guild.id][0].get("thumbnail"):
+            em.set_thumbnail(url=self.bot.playlists[source.guild.id][0]["thumbnail"])
+
         x = 0
         nl = "\n"
         while x < len(self.bot.playlists[source.guild.id]) and x <= 24:
@@ -172,7 +177,8 @@ class Dj(Cog, name="dj.playlist"):
                 )
             else:
                 em.add_field(
-                    name=f"**{x + 1}:** {self.bot.playlists[source.guild.id][x]['title']}",
+                    name=f"**{x + 1}:** {self.bot.playlists[source.guild.id][x]['title']}"
+                    + (" - *currently playing*" if x == 0 else ""),
                     value=f"**Type:** {self.bot.playlists[source.guild.id][x]['type']}{nl}**Author:** {self.bot.playlists[source.guild.id][x]['author']}{nl}**Duration:** {self.bot.playlists[source.guild.id][x]['duration']}{nl}**URL:** {self.bot.playlists[source.guild.id][x]['url']}",
                     inline=True,
                 )
