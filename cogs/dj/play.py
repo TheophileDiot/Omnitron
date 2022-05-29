@@ -393,21 +393,18 @@ class Dj(Cog, name="dj.play"):
             #             f"⚠️ - {source.author.mention} - YouTube links have been disabled due to violation of YouTube terms of service!",
             #             ephemeral=True,
             #         )
-        elif (
-            isinstance(source, Context)
-            and source.message.attachments
-            and (
-                not source.message.attachments[0].content_type
-                or not source.message.attachments[0].content_type.startswith("audio")
-            )
+
+        if isinstance(source, Context) and source.message.attachments:
+            attachment = source.message.attachments[0]
+
+        if attachment and (
+            not attachment.content_type
+            or not attachment.content_type.startswith("audio")
         ):
             return await source.reply(
                 f"⚠️ - {source.author.mention} - The file you attach to your message is not a valid playable file!",
                 delete_after=20,
             )
-
-        if source.message.attachments:
-            attachment = source.message.attachments[0]
 
         try:
             results = await player.node.get_tracks(query if query else attachment.url)
