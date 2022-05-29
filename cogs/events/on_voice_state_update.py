@@ -4,6 +4,7 @@ from disnake import Member, VoiceState
 from disnake.ext.commands import Cog
 
 from bot import Omnitron
+from cogs.dj.play import LavalinkVoiceClient
 from data import Utils, Xp_class
 
 
@@ -80,7 +81,7 @@ class Events(Cog, name="events.on_voice_state_update"):
             if _id in self.voice_intervals:
                 self.voice_intervals.pop(_id).cancel()
 
-        if after.channel != before.channel:
+        if before.channel is not None and after.channel != before.channel:
             if not [m for m in before.channel.members if not m.bot]:
                 if member.guild.voice_client:
                     await member.guild.voice_client.disconnect(force=True)

@@ -71,14 +71,23 @@ class LavalinkVoiceClient(VoiceClient):
         lavalink_data = {"t": "VOICE_STATE_UPDATE", "d": data}
         await self.lavalink.voice_update_handler(lavalink_data)
 
-    async def connect(self, *, timeout: float, reconnect: bool) -> None:
+    async def connect(
+        self,
+        *,
+        timeout: float,
+        reconnect: bool,
+        self_deaf: bool = True,
+        self_mute: bool = False,
+    ) -> None:
         """
         Connect the bot to the voice channel and create a player_manager
         if it doesn't exist yet.
         """
         # ensure there is a player_manager when creating a new voice_client
         self.lavalink.player_manager.create(guild_id=self.channel.guild.id)
-        await self.channel.guild.change_voice_state(channel=self.channel)
+        await self.channel.guild.change_voice_state(
+            channel=self.channel, self_mute=self_mute, self_deaf=self_deaf
+        )
 
     async def disconnect(self, *, force: bool) -> None:
         """
@@ -96,6 +105,13 @@ class LavalinkVoiceClient(VoiceClient):
 
         # notify lavalink we disconnected
         self.lavalink.player_manager.remove(self.channel.guild.id)
+
+        # Clear the queue to ensure old tracks don't start playing
+        player.queue.clear()
+        # Stop the current track so Lavalink consumes less resources.
+        await player.stop()
+        # update the channel_id of the player to None
+        player.channel_id = None
         self.cleanup()
 
 
