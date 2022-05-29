@@ -19,8 +19,6 @@ from data import Utils
 class Dj(Cog, name="dj.playlist"):
     def __init__(self, bot):
         self.bot = bot
-        self.url_rx = re_compile(r"https?://(?:www\.)?.+")
-        self.path = "temp/musics/"
 
     @command(
         name="playlist",

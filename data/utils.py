@@ -642,9 +642,7 @@ class Utils:
 
         """ INIT """
 
-        bot.moderators[guild.id] = list(
-            [int(k) for k in bot.config_repo.get_moderators(guild.id).keys()]
-        )  # Initialize moderators list for every guilds
+        bot.moderators[guild.id] = [int(k) for k in bot.config_repo.get_moderators(guild.id).keys()] # Initialize moderators list for every guilds
 
         bot.tasks[guild.id] = {"mute_completions": {}, "ban_completions": {}}
 
@@ -743,9 +741,7 @@ class Utils:
 
         bot.playlists[guild.id] = []
 
-        bot.djs[guild.id] = list(
-            [int(k) for k in bot.config_repo.get_djs(guild.id).keys()]
-        )  # Initialize moderators list for every guilds
+        bot.djs[guild.id] = [int(k) for k in bot.config_repo.get_djs(guild.id).keys()] # Initialize djs list for every guilds
 
         """ COMMANDS CHANNELS """
 
@@ -892,7 +888,7 @@ class Utils:
     @staticmethod
     def is_mod(member: Member, bot: Omnitron) -> bool:
         return (
-            set(member.roles) & set(bot.moderators[member.guild.id])
+            set(r.id for r in member.roles) & set(bot.moderators[member.guild.id])
             or member.id in set(bot.moderators[member.guild.id])
             or member.guild_permissions.administrator
         )
@@ -901,7 +897,7 @@ class Utils:
     def is_dj(member: Member, bot: Omnitron) -> bool:
         return (
             not bot.djs[member.guild.id]
-            or set(member.roles) & set(bot.djs[member.guild.id])
+            or set(r.id for r in member.roles) & set(bot.djs[member.guild.id])
             or member.id in set(bot.djs[member.guild.id])
             or member.guild_permissions.administrator
         )
