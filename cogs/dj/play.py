@@ -108,8 +108,6 @@ class LavalinkVoiceClient(VoiceClient):
 
         # Clear the queue to ensure old tracks don't start playing
         player.queue.clear()
-        # Stop the current track so Lavalink consumes less resources.
-        await player.stop()
         # update the channel_id of the player to None
         player.channel_id = None
         self.cleanup()
@@ -408,10 +406,11 @@ class Dj(Cog, name="dj.play"):
                 delete_after=20,
             )
 
+        if source.message.attachments:
+            attachment = source.message.attachments[0]
+
         try:
-            results = await player.node.get_tracks(
-                query if query else await source.message.attachments[0].read()
-            )
+            results = await player.node.get_tracks(query if query else attachment.url)
         except TimeoutError:
             return await source.reply(
                 f"⚠️ - {source.author.mention} - Your query timed out!",
@@ -567,7 +566,7 @@ class Dj(Cog, name="dj.play"):
                 ),
                 "title": title,
                 "url": url,
-                "author": author,
+                "author": author.replace("Channel: ", ""),
                 "duration": duration,
                 "thumbnail": yt_infos["thumbnail"] if yt_infos is not None else None,
             }
