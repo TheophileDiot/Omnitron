@@ -4,7 +4,6 @@ from disnake import Member, VoiceState
 from disnake.ext.commands import Cog
 
 from bot import Omnitron
-from cogs.dj.play import LavalinkVoiceClient
 from data import Utils, Xp_class
 
 

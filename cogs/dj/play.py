@@ -1,8 +1,13 @@
+from asyncio import sleep
 from cmath import atan
 from functools import wraps
 from inspect import Parameter
+from os import getenv
 from re import compile as re_compile
-from typing import List, Union
+from spotipy import Spotify
+from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.exceptions import SpotifyException
+from typing import List, Optional, Union
 from youtube_dl import utils, YoutubeDL
 
 from disnake import (
@@ -122,6 +127,9 @@ class Dj(Cog, name="dj.play"):
     def __init__(self, bot: Omnitron):
         self.bot = bot
         self.url_rx = re_compile(r"https?://(?:www\.)?.+")
+        self.sp_url_rx = re_compile(
+            r"^https:\/\/open.spotify.com\/(playlist|track)\/[a-zA-Z0-9]+.*$"
+        )
         self.yt_rx = re_compile(
             r"http(?:s?):\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?‌​[\w\?‌​=]*)?"
         )
@@ -144,6 +152,17 @@ class Dj(Cog, name="dj.play"):
                 "source_address": "0.0.0.0",
             }
         )
+
+        self.spotify_client: Optional[Spotify] = None
+        if getenv("SPOTIFY_CLIENT_ID", False) and getenv(
+            "SPOTIFY_CLIENT_SECRET", False
+        ):
+            self.spotify_client: Spotify = Spotify(
+                auth_manager=SpotifyClientCredentials(
+                    client_id=getenv("SPOTIFY_CLIENT_ID", ""),
+                    client_secret=getenv("SPOTIFY_CLIENT_SECRET", ""),
+                )
+            )
 
     """ EVENTS """
 
@@ -301,7 +320,7 @@ class Dj(Cog, name="dj.play"):
         name="play",
         aliases=["sc_p"],
         usage="<link>|<Title>",
-        description="Plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)",
+        description="Plays a link or title from a YouTube/SoundCloud or Spotify song or playlist or an audio file!",
     )
     @Utils.check_bot_starting()
     @Utils.check_dj()
@@ -311,7 +330,7 @@ class Dj(Cog, name="dj.play"):
     @max_concurrency(1, per=BucketType.guild)
     async def play_command(self, source: Context, query: str = None, **kwargs):
         """
-        This command plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)
+        This command plays a link or title from a YouTube/SoundCloud or Spotify song or playlist or an audio file!
 
         Parameters
         ----------
@@ -324,7 +343,7 @@ class Dj(Cog, name="dj.play"):
 
     @slash_command(
         name="play",
-        description="Plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)",
+        description="Plays a link or title from a YouTube/SoundCloud or Spotify song or playlist or an audio file!",
     )
     @guild_only()
     @Utils.check_bot_starting()
@@ -340,7 +359,7 @@ class Dj(Cog, name="dj.play"):
         audio_file: Attachment = None,
     ):
         """
-        This slash command plays a link or title from a YouTube/SoundCloud song or an audio file! (supports playlists!)
+        This slash command plays a link or title from a YouTube/SoundCloud or Spotify song or playlist or an audio file!
 
         Parameters
         ----------
@@ -355,6 +374,116 @@ class Dj(Cog, name="dj.play"):
 
     """ METHOD(S) """
 
+    async def add_song_to_queue(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        track: dict,
+        player,
+        query: str,
+        sleeping: float = 0.0,
+    ) -> Optional[dict]:
+        yt_infos = None
+        try:
+            if self.yt_rx.match(track["info"]["uri"]):
+                yt_infos = self.ytdl.extract_info(track["info"]["uri"], download=False)
+        except Exception as e:
+            if not f"{e}".endswith("This video may be inappropriate for some users."):
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.followup.send(
+                        f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
+                        ephemeral=True,
+                    )
+            else:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.followup.send(
+                        f"⚠️ - {source.author.mention} - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
+                        ephemeral=True,
+                    )
+
+        # You can attach additional information to audiotracks through kwargs, however this involves
+        # constructing the AudioTrack class yourself.
+        audio_track = AudioTrack(track, source.author.id, recommended=True)
+        player.add(requester=source.author.id, track=audio_track)
+
+        if yt_infos:
+            title = yt_infos["title"]
+            url = (
+                yt_infos["webpage_url"]
+                if "webpage_url" in yt_infos
+                else yt_infos["video_url"]
+            )
+            duration = self.bot.utils_class.duration(yt_infos["duration"])
+            author = f"Channel: {yt_infos['channel']}"
+        else:
+            title = (
+                track["info"]["title"]
+                if track["info"]["title"] != "Unknown title"
+                or not isinstance(source, Context)
+                or not source.message.attachments
+                else source.message.attachments[0].filename
+            )
+            url = (
+                query
+                if query and not query.startswith("ytsearch")
+                else track["info"]["uri"]
+            )
+            duration = self.bot.utils_class.duration(track["info"]["length"] / 1000)
+            author = track["info"]["author"]
+
+        self.bot.playlists[source.guild.id].append(
+            {
+                "type": "Attachment"
+                if isinstance(source, Context)
+                and source.message.attachments
+                and source.message.attachments[0].content_type
+                else (
+                    "Search query" if query.startswith("ytsearch") else "External link"
+                ),
+                "title": title,
+                "url": url,
+                "author": author.replace("Channel: ", ""),
+                "duration": duration,
+                "thumbnail": yt_infos["thumbnail"] if yt_infos is not None else None,
+            }
+        )
+
+        await sleep(sleeping)
+
+        return yt_infos
+
+    async def add_spotify_song_to_queue(
+        self,
+        source: Union[Context, ApplicationCommandInteraction],
+        track: dict,
+        player,
+        query: str = "ytsearch",
+        sleeping: float = 0.0,
+    ) -> Optional[dict]:
+        try:
+            results = await player.node.get_tracks(
+                f"ytsearch:{track['name']} {', '.join(a['name'] for a in track['artists'])}"
+            )
+        except TimeoutError:
+            return
+
+        if (
+            not results or results and "exception" in results or not results["tracks"]
+        ) or (results and "exception" in results):
+            return
+
+        track = results["tracks"][0]
+        return await self.add_song_to_queue(source, track, player, query, sleeping)
+
     async def handle_play(
         self,
         source: Union[Context, ApplicationCommandInteraction],
@@ -365,6 +494,7 @@ class Dj(Cog, name="dj.play"):
         """Searches and plays a song from a given query."""
         # Get the player for this guild from cache.
         player = self.bot.lavalink.player_manager.get(source.guild.id)
+        spotify_track: bool = False
 
         if not query and player.paused:
             await player.set_pause(False)
@@ -384,8 +514,64 @@ class Dj(Cog, name="dj.play"):
             # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
             query = query.strip("<>")
 
+            if self.sp_url_rx.search(query):
+                spotify_track = True
+                if self.spotify_client is None:
+                    if isinstance(source, Context):
+                        return await source.reply(
+                            f"⚠️ - {source.author.mention} - Cannot play Spotify songs right now!",
+                            delete_after=20,
+                        )
+                    else:
+                        return await source.followup.send(
+                            f"⚠️ - {source.author.mention} - Cannot play Spotify songs right now!",
+                            ephemeral=True,
+                        )
+
+                match = self.sp_url_rx.search(query)
+                url = match.group(0)
+                sp_type = match.group(1)
+
+                if sp_type == "track":
+                    try:
+                        track = self.spotify_client.track(url)
+                        query = f"ytsearch:{track['name']} {', '.join(a['name'] for a in track['artists'])}"
+                    except (ConnectionError, SpotifyException):
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"⚠️ - {source.author.mention} - Cannot find the spotify track {url}!",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.followup.send(
+                                f"⚠️ - {source.author.mention} - Cannot find the spotify track {url}!",
+                                ephemeral=True,
+                            )
+                elif sp_type == "playlist":
+                    try:
+                        playlist = self.spotify_client.user_playlist_tracks(
+                            user="", playlist_id=url
+                        )
+                        query = [
+                            {
+                                "name": track["track"]["name"],
+                                "artists": track["track"]["artists"],
+                            }
+                            for track in playlist["items"]
+                        ]
+                    except (ConnectionError, SpotifyException):
+                        if isinstance(source, Context):
+                            return await source.reply(
+                                f"⚠️ - {source.author.mention} - Cannot find the spotify playlist {url}! Is the playlist public?",
+                                delete_after=20,
+                            )
+                        else:
+                            return await source.followup.send(
+                                f"⚠️ - {source.author.mention} - Cannot find the spotify playlist {url}! Is the playlist public?",
+                                ephemeral=True,
+                            )
             # Check if the user input might be a URL. If it isn't, we can Lavalink do a search for it instead.
-            if not self.url_rx.match(query):
+            elif not self.url_rx.match(query):
                 query = f"ytsearch:{query}"
             # elif self.yt_rx.match(query):
             #     if isinstance(source, Context):
@@ -411,115 +597,120 @@ class Dj(Cog, name="dj.play"):
                 delete_after=20,
             )
 
-        try:
-            results = await player.node.get_tracks(query if query else attachment.url)
-        except TimeoutError:
-            return await source.reply(
-                f"⚠️ - {source.author.mention} - Your query timed out!",
-                delete_after=20,
-            )
-
-        if (
-            (not results or results and "exception" in results or not results["tracks"])
-            and query
-            and query.startswith("ytsearch:")
-        ):
-            query = query.replace("ytsearch:", "scsearch:")
+        if not isinstance(query, list):
             try:
-                results = await player.node.get_tracks(query)
+                results = await player.node.get_tracks(
+                    query if query else attachment.url
+                )
             except TimeoutError:
                 return await source.reply(
                     f"⚠️ - {source.author.mention} - Your query timed out!",
                     delete_after=20,
                 )
 
-        # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
-        # ALternatively, results['tracks'] could be an empty array if the query yielded no tracks.
-        if results and "exception" in results:
-            if isinstance(source, Context):
-                return await source.reply(
-                    f"⚠️ - {source.author.mention} - {results['exception']['message']}",
-                    delete_after=20,
+            if (
+                (
+                    not results
+                    or results
+                    and "exception" in results
+                    or not results["tracks"]
                 )
-            else:
-                return await source.followup.send(
-                    f"⚠️ - {source.author.mention} - {results['exception']['message']}",
-                    ephemeral=True,
-                )
-        elif not results or not results["tracks"]:
-            if isinstance(source, Context):
-                return await source.reply(
-                    f"⚠️ - {source.author.mention} - The video or playlist you are looking for does not exist!",
-                    delete_after=20,
-                )
-            else:
-                return await source.followup.send(
-                    f"⚠️ - {source.author.mention} - The video or playlist you are looking for does not exist!",
-                    ephemeral=True,
-                )
-
-        # Valid loadTypes are:
-        #   TRACK_LOADED    - single video/direct URL)
-        #   PLAYLIST_LOADED - direct URL to playlist)
-        #   SEARCH_RESULT   - query prefixed with either ytsearch:.
-        #   NO_MATCHES      - query yielded no results
-        #   LOAD_FAILED     - most likely, the video encountered an exception during loading.
-        if results["loadType"] == "PLAYLIST_LOADED":
-            tracks = results["tracks"]
-
-            for track in tracks:
-                # Add all of the tracks from the playlist to the queue.
-                audio_track = AudioTrack(track, source.author.id, recommended=True)
-                player.add(requester=source.author.id, track=audio_track)
-
-            content = "🎶 - **Adding the playlist to the server playlist:** - 🎶"
-        else:
-            track = results["tracks"][0]
-
-            if player.is_playing:
-                content = "🎶 - **Adding to the server playlist:** - 🎶"
-            else:
-                content = "🎶 - **Playing:** - 🎶"
-
-            yt_infos = None
-            try:
-                if self.yt_rx.match(track["info"]["uri"]):
-                    yt_infos = self.ytdl.extract_info(
-                        track["info"]["uri"], download=False
+                and query
+                and query.startswith("ytsearch:")
+            ):
+                query = query.replace("ytsearch:", "scsearch:")
+                try:
+                    results = await player.node.get_tracks(query)
+                except TimeoutError:
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - Your query timed out!",
+                        delete_after=20,
                     )
-            except Exception as e:
-                if not f"{e}".endswith(
-                    "This video may be inappropriate for some users."
-                ):
-                    if isinstance(source, Context):
-                        return await source.reply(
-                            f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information, please try again in a few moments!",
-                            delete_after=20,
-                        )
-                    else:
-                        return await source.followup.send(
-                            f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information, please try again in a few moments!",
-                            ephemeral=True,
-                        )
-                else:
-                    if isinstance(source, Context):
-                        return await source.reply(
-                            f"⚠️ - {source.author.mention} - This video is not suitable for some users! (I can't play some age restricted videos)",
-                            delete_after=20,
-                        )
-                    else:
-                        return await source.followup.send(
-                            f"⚠️ - {source.author.mention} - This video is not suitable for some users! (I can't play some age restricted videos)",
-                            ephemeral=True,
-                        )
 
-            # You can attach additional information to audiotracks through kwargs, however this involves
-            # constructing the AudioTrack class yourself.
-            audio_track = AudioTrack(track, source.author.id, recommended=True)
-            player.add(requester=source.author.id, track=audio_track)
+            # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
+            # ALternatively, results['tracks'] could be an empty array if the query yielded no tracks.
+            if results and "exception" in results:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - {results['exception']['message']}",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.followup.send(
+                        f"⚠️ - {source.author.mention} - {results['exception']['message']}",
+                        ephemeral=True,
+                    )
+            elif not results or not results["tracks"]:
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - The video or playlist you are looking for does not exist!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.followup.send(
+                        f"⚠️ - {source.author.mention} - The video or playlist you are looking for does not exist!",
+                        ephemeral=True,
+                    )
+
+            # Valid loadTypes are:
+            #   TRACK_LOADED    - single video/direct URL)
+            #   PLAYLIST_LOADED - direct URL to playlist)
+            #   SEARCH_RESULT   - query prefixed with either ytsearch:.
+            #   NO_MATCHES      - query yielded no results
+            #   LOAD_FAILED     - most likely, the video encountered an exception during loading.
+            if results["loadType"] == "PLAYLIST_LOADED":
+                tracks = results["tracks"]
+
+                yt_infos = await self.add_song_to_queue(
+                    source, tracks.pop(0), player, query
+                )
+
+                x = 1
+                for track in tracks:
+                    # Add all of the tracks from the playlist to the queue.
+                    self.bot.loop.create_task(
+                        self.add_song_to_queue(source, track, player, query, 2.0)
+                    )
+                    x += 1
+
+                    if x == 20:
+                        break
+
+                content = f"🎶 - **Adding the playlist to the server playlist{' (limited to 20 songs per playlists)' if x == 20 else ''}:** - 🎶"
+            else:
+                track = results["tracks"][0]
+
+                if player.is_playing:
+                    content = "🎶 - **Adding to the server playlist:** - 🎶"
+                else:
+                    content = "🎶 - **Playing:** - 🎶"
+
+                yt_infos = await self.add_song_to_queue(source, track, player, query)
+        else:
+            yt_infos = await self.add_spotify_song_to_queue(
+                source, query.pop(0), player
+            )
+
+            x = 1
+            for track in query:
+                # Add all of the tracks from the playlist to the queue.
+                self.bot.loop.create_task(
+                    self.add_spotify_song_to_queue(source, track, player, sleeping=2.0)
+                )
+                x += 1
+
+                if x == 20:
+                    break
+
+            content = f"🎶 - **Adding the spotify playlist to the server playlist{' (limited to 20 songs per playlists)' if x == 20 else ''}:** - 🎶"
+
+        # We don't want to call .play() if the player is playing as that will effectively skip
+        # the current track.
+        if not player.is_playing:
+            await player.play()
 
         if yt_infos:
-            colour = Colour(0xFF0000)
+            colour = Colour(0xFF0000) if not spotify_track else Colour(0x1DB954)
             title = yt_infos["title"]
             url = (
                 yt_infos["webpage_url"]
@@ -557,32 +748,10 @@ class Dj(Cog, name="dj.play"):
         em.set_author(name=author)
         em.set_footer(text=f"duration: {duration}")
 
-        self.bot.playlists[source.guild.id].append(
-            {
-                "type": "Attachment"
-                if isinstance(source, Context)
-                and source.message.attachments
-                and source.message.attachments[0].content_type
-                else (
-                    "Search query" if query.startswith("ytsearch") else "External link"
-                ),
-                "title": title,
-                "url": url,
-                "author": author.replace("Channel: ", ""),
-                "duration": duration,
-                "thumbnail": yt_infos["thumbnail"] if yt_infos is not None else None,
-            }
-        )
-
         if isinstance(source, Context):
             await source.send(content=content, embed=em)
         else:
             await source.followup.send(content=content, embed=em)
-
-        # We don't want to call .play() if the player is playing as that will effectively skip
-        # the current track.
-        if not player.is_playing:
-            await player.play()
 
 
 def setup(bot):
