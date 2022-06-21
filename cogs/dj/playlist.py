@@ -72,20 +72,6 @@ class Dj(Cog, name="dj.playlist"):
         source: Union[Context, ApplicationCommandInteraction],
         position: int = None,
     ):
-        player = self.bot.lavalink.player_manager.get(source.guild.id)
-
-        if not player or not player.is_playing:
-            if isinstance(source, Context):
-                return await source.reply(
-                    f"⚠️ - {source.author.mention} - The bot isn't playing!",
-                    delete_after=20,
-                )
-            else:
-                return await source.response.send_message(
-                    f"⚠️ - {source.author.mention} - The bot isn't playing!",
-                    ephemeral=True,
-                )
-
         em = Embed(colour=Colour(0xFF0000))  # YTB color
 
         if position is not None:
