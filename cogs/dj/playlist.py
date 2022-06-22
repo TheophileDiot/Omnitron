@@ -1,7 +1,6 @@
-from re import compile as re_compile
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Colour, Embed
+from disnake import Colour, Embed, GuildCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -51,14 +50,14 @@ class Dj(Cog, name="dj.playlist"):
     @bot_has_permissions(embed_links=True)
     @max_concurrency(1, per=BucketType.guild)
     async def playlist_slash_command(
-        self, inter: ApplicationCommandInteraction, position: int = None
+        self, inter: GuildCommandInteraction, position: int = None
     ):
         """
         This slash command displays the information for the music in the playlist or for a particular one.
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         position: :class:`int` optional
             The position of the music in the playlist
@@ -69,7 +68,7 @@ class Dj(Cog, name="dj.playlist"):
 
     async def handle_playlist(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         position: int = None,
     ):
         em = Embed(colour=Colour(0xFF0000))  # YTB color

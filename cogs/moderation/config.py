@@ -3,11 +3,11 @@ from time import time
 from typing import List, Literal, Union
 
 from disnake import (
-    ApplicationCommandInteraction,
     ButtonStyle,
     CategoryChannel,
     Embed,
     Forbidden,
+    GuildCommandInteraction,
     Member,
     NotFound,
     Role,
@@ -109,13 +109,13 @@ class Moderation(Cog, name="moderation.config"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def config_security_slash_group(self, inter: ApplicationCommandInteraction):
+    async def config_security_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's security
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -153,13 +153,13 @@ class Moderation(Cog, name="moderation.config"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def config_xp_slash_group(self, inter: ApplicationCommandInteraction):
+    async def config_xp_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's experience feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -197,13 +197,13 @@ class Moderation(Cog, name="moderation.config"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def config_channels_slash_group(self, inter: ApplicationCommandInteraction):
+    async def config_channels_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's special channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -250,13 +250,13 @@ class Moderation(Cog, name="moderation.config"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def config_moderators_slash_group(self, inter: ApplicationCommandInteraction):
+    async def config_moderators_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's moderators (role & members)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -267,14 +267,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_moderators_list_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command lists members/roles in the server's moderators list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_moderators(inter)
@@ -285,7 +285,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_moderators_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         mods: List[Union[Member, Role]] = Param(
             None, converter=Utils.mentionable_converter
         ),
@@ -295,7 +295,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         mods: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
             The moderators (that can be either roles or members) (mentions only)
@@ -309,7 +309,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_moderators_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         mods: List[Union[Member, Role]] = Param(
             default=None, converter=Utils.mentionable_converter
         ),
@@ -319,7 +319,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         mods: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
             The moderators (that can be either roles or members) (mentions only)
@@ -332,21 +332,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_moderators_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's moderators list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_moderators(inter, "purge")
 
     async def handle_moderators(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         *mods: Union[Member, Role],
     ):
@@ -606,13 +606,13 @@ class Moderation(Cog, name="moderation.config"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def config_djs_slash_group(self, inter: ApplicationCommandInteraction):
+    async def config_djs_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's djs (role & members)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -623,14 +623,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_djs_list_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group lists members/roles in the server's djs list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_djs(inter)
@@ -641,7 +641,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_djs_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         djs: List[Union[Member, Role]] = Param(converter=Utils.mentionable_converter),
     ):
         """
@@ -649,7 +649,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         djs: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
             The djs (that can be either roles or members) (mentions only)
@@ -663,7 +663,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_djs_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         djs: List[Union[Member, Role]] = Param(
             default=None, converter=Utils.mentionable_converter
         ),
@@ -673,7 +673,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         djs: :class:`typing.List[typing.Union[disnake.Member, disnake.Role]]` optional
             The djs (that can be either roles or members) (mentions only)
@@ -686,21 +686,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_djs_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's djs list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_djs(inter, "purge")
 
     async def handle_djs(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         *djs: Union[Member, Role],
     ):
@@ -955,13 +955,13 @@ class Moderation(Cog, name="moderation.config"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def config_prefix_slash_group(self, inter: ApplicationCommandInteraction):
+    async def config_prefix_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command manages the server's prefix
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -972,14 +972,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_prefix_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command display the current server's prefix
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prefix(inter)
@@ -990,7 +990,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_prefix_set_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         prefix: str,
     ):
         """
@@ -998,7 +998,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         prefix: :class:`str`
             The new prefix to set
@@ -1011,21 +1011,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_prefix_reset_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command reset the current server's prefix (o!)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prefix(inter, "reset")
 
     async def handle_prefix(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         prefix: str = None,
     ):
@@ -1127,14 +1127,14 @@ class Moderation(Cog, name="moderation.config"):
     @Utils.check_moderator()
     async def config_tickets_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's tickets channel and category
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -1145,14 +1145,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_tickets_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the state of the server's tickets feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_tickets(inter)
@@ -1163,7 +1163,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_tickets_on_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         tickets_channel: TextChannel,
         tickets_category: CategoryChannel,
     ):
@@ -1172,7 +1172,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         tickets_channel: :class:`disnake.TextChannel` optional
             The channel where the ticket message will be sent
@@ -1187,7 +1187,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_tickets_update_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         tickets_channel: TextChannel = None,
         tickets_category: CategoryChannel = None,
     ):
@@ -1196,7 +1196,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         tickets_channel: :class:`disnake.TextChannel` optional
             The channel where the ticket message will be sent
@@ -1215,14 +1215,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_tickets_resolve_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command resolves the server's tickets feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_tickets(inter, "resolve")
@@ -1233,21 +1233,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_tickets_off_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command turns the server's tickets feature off
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_tickets(inter, "off")
 
     async def handle_tickets(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         tickets_channel: Union[TextChannel, CategoryChannel] = None,
         tickets_category: CategoryChannel = None,
@@ -1608,14 +1608,14 @@ class Moderation(Cog, name="moderation.config"):
     @Utils.check_moderator()
     async def config_select_2_role_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's select_2_role feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -1626,14 +1626,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_select_2_role_list_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command lists all the select to roles
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_select_to_role(inter)
@@ -1644,7 +1644,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_select_2_role_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         title: str,
         role: Role,
         description: str,
@@ -1654,7 +1654,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         title: :class:`str`
             The title of the choice
@@ -1671,7 +1671,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_select_2_role_update_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         title: str,
         role: Role = None,
         description: str = "",
@@ -1681,7 +1681,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         title: :class:`str`
             The title of the choice
@@ -1698,14 +1698,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_select_2_role_resolve_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command resolves the select to role feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_select_to_role(inter, "resolve")
@@ -1716,7 +1716,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_select_2_role_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         title: str,
     ):
         """
@@ -1724,7 +1724,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         title: :class:`str`
             The title of the choice to remove
@@ -1737,21 +1737,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_select_2_role_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the select to role feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_select_to_role(inter, "purge")
 
     async def handle_select_to_role(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         title: str = None,
         role: Role = None,
@@ -2156,13 +2156,13 @@ class Moderation(Cog, name="moderation.config"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def config_muted_role_slash_group(self, inter: ApplicationCommandInteraction):
+    async def config_muted_role_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's muted role
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -2173,14 +2173,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_muted_role_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's muted role
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_muted_role(inter)
@@ -2191,7 +2191,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_muted_role_set_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         role: Role,
     ):
         """
@@ -2199,7 +2199,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         role: :class:`disnake.Role`
             The muted role
@@ -2212,21 +2212,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_muted_role_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command removes the server's muted role
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_muted_role(inter, "remove")
 
     async def handle_muted_role(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         muted: Role = None,
     ):
@@ -2405,14 +2405,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_prevent_invites_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's prevent invites feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -2423,14 +2423,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_prevent_invites_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the state of the server's prevent invites feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prevent_invites(inter)
@@ -2441,7 +2441,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_prevent_invites_on_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         notify_channel: TextChannel = None,
     ):
         """
@@ -2449,7 +2449,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         notify_channel: :class:`disnake.TextChannel` optional
             The channel where the events will be sent
@@ -2462,7 +2462,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_prevent_invites_update_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         notify_channel: TextChannel,
     ):
         """
@@ -2470,7 +2470,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         notify_channel: :class:`disnake.TextChannel`
             The channel where the events will be sent
@@ -2483,21 +2483,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_prevent_invites_off_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command turns the server's prevent invites feature off
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prevent_invites(inter, "off")
 
     async def handle_prevent_invites(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         notify_channel: TextChannel = None,
     ):
@@ -2631,14 +2631,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_mute_on_join_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's mute_on_join feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -2649,14 +2649,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_mute_on_join_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the state of the mute on join feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_mute_on_join(inter)
@@ -2667,7 +2667,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_mute_on_join_on_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         duration: Range[1, ...] = 10,
         duration_type: DurationType = "m",
         notify_channel: TextChannel = None,
@@ -2677,7 +2677,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         duration: :class:`disnake.ext.commands.Range` optional
             The mute's duration value (default: 10)
@@ -2696,7 +2696,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_mute_on_join_update_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         duration: Range[1, ...] = None,
         duration_type: DurationType = None,
         notify_channel: TextChannel = None,
@@ -2706,7 +2706,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         duration: :class:`disnake.ext.commands.Range` optional
             The mute's duration value
@@ -2725,21 +2725,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_security_mute_on_join_off_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command turns the mute on join feature off
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_mute_on_join(inter, "off")
 
     async def handle_mute_on_join(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         _duration: int = None,
         duration_type: str = None,
@@ -2910,14 +2910,14 @@ class Moderation(Cog, name="moderation.config"):
         description="Manages the server's experience feature",
     )
     async def config_xp_state_slash_command(
-        self, inter: ApplicationCommandInteraction, option: Literal["on", "off"] = None
+        self, inter: GuildCommandInteraction, option: Literal["on", "off"] = None
     ):
         """
         This slash command manages the server's experience feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         option: :class:`typing.Literal` optional
             Turns the feature on or off (if nothing's precised then it shows the feature's state )
@@ -2926,7 +2926,7 @@ class Moderation(Cog, name="moderation.config"):
 
     async def handle_switch(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
     ):
         if option:
@@ -3019,14 +3019,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_boost_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command manages the server's boosted roles | members
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -3037,14 +3037,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_boost_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the state of the server's boosted roles | members feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_boost(inter)
@@ -3055,7 +3055,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_boost_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         boosted: Snowflake,
         bonus: int = 20,
     ):
@@ -3064,7 +3064,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         boosted: :class:`disnake.Snowflake`
              The role / member that will be boosted
@@ -3079,7 +3079,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_boost_update_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         boosted: Snowflake,
         bonus: int,
     ):
@@ -3088,7 +3088,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         boosted: :class:`disnake.Snowflake`
              The role / member that is boosted
@@ -3103,7 +3103,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_boost_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         boosted: Snowflake,
     ):
         """
@@ -3111,7 +3111,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         boosted: :class:`disnake.Snowflake`
              The role / member that is boosted
@@ -3124,21 +3124,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_boost_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's boosted roles | members list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_boost(inter, "purge")
 
     async def handle_boost(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         boosted: Snowflake = None,
         bonus: int = None,
@@ -3387,14 +3387,14 @@ class Moderation(Cog, name="moderation.config"):
         description="Manages the server's max level",
     )
     async def config_xp_max_lvl_slash_command(
-        self, inter: ApplicationCommandInteraction, max_lvl: int = None
+        self, inter: GuildCommandInteraction, max_lvl: int = None
     ):
         """
         This slash command manages the server's max level
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         max_lvl: :class:`int` optional
             The maximum level value
@@ -3403,7 +3403,7 @@ class Moderation(Cog, name="moderation.config"):
 
     async def handle_max_lvl(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         max_lvl: int = None,
     ):
         try:
@@ -3504,14 +3504,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_lvl2role_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's level to role
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -3522,14 +3522,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_lvl2role_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the state of the server's level to role feature
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_level_to_role(inter)
@@ -3540,7 +3540,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_lvl2role_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         lvl: int,
         role: Role,
     ):
@@ -3549,7 +3549,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         lvl: :class:`int`
             The level that will have the role linked to it
@@ -3564,7 +3564,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_lvl2role_update_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         lvl: int,
         role: Role,
     ):
@@ -3573,7 +3573,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         lvl: :class:`int`
             The level that have a role linked to it
@@ -3588,7 +3588,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_lvl2role_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         lvl: int,
     ):
         """
@@ -3596,7 +3596,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         lvl: :class:`int`
             The level that have a role linked to it
@@ -3609,21 +3609,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_lvl2role_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's level to role list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_level_to_role(inter, "purge")
 
     async def handle_level_to_role(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         lvl: int = None,
         role: Role = None,
@@ -3887,14 +3887,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_prestiges_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's prestiges
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -3905,14 +3905,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_prestiges_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's prestiges
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prestiges(inter)
@@ -3923,7 +3923,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_prestiges_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         role: Role,
     ):
         """
@@ -3931,7 +3931,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         role: :class:`disnake.Role`
             The role that will be linked to the new prestige
@@ -3944,7 +3944,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_prestiges_update_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         role: Role,
         prestige: int,
     ):
@@ -3953,7 +3953,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         role: :class:`disnake.Role`
             The role that have a prestige linked to it
@@ -3968,14 +3968,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_prestiges_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command removes the last prestige from the server's prestiges list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prestiges(inter, "remove")
@@ -3986,21 +3986,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_xp_prestiges_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's prestiges list
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prestiges(inter, "purge")
 
     async def handle_prestiges(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         role: Role = None,
         prestige: int = None,
@@ -4324,14 +4324,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_commands_channels_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's commands channels (if there is no commands channel then commands can be used everywhere)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -4342,14 +4342,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_commands_channels_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's commands channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_commands_channels(inter)
@@ -4360,7 +4360,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_commands_channels_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channels: List[TextChannel] = Param(None, converter=Utils.channel_converter),
     ):
         """
@@ -4368,7 +4368,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channels: :class:`typing.List[disnake.TextChannel]` optional
             The channels that will be added to the server's commands channels (mentions or IDs)
@@ -4382,7 +4382,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_commands_channels_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channels: List[TextChannel] = Param(None, converter=Utils.channel_converter),
     ):
         """
@@ -4390,7 +4390,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channels: :class:`typing.List[disnake.TextChannel]` optional
             The channels that will be removed from the server's commands channels (mentions or IDs)
@@ -4404,21 +4404,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_commands_channels_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's commands channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_commands_channels(inter, "purge")
 
     async def handle_commands_channels(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         *channels: TextChannel,
     ):
@@ -4611,14 +4611,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_music_channels_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's music channels (if there is no music channel then music can be listened everywhere)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -4629,14 +4629,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_music_channels_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's music channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_music_channels(inter)
@@ -4647,7 +4647,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_music_channels_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channels: List[VoiceChannel] = Param(None, converter=Utils.channel_converter),
     ):
         """
@@ -4655,7 +4655,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channels: :class:`typing.List[disnake.VoiceChannel]` optional
             The channels that will be added to the server's music channels list (mentions or IDs)
@@ -4669,7 +4669,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_music_channels_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channels: List[VoiceChannel] = Param(None, converter=Utils.channel_converter),
     ):
         """
@@ -4677,7 +4677,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channels: :class:`typing.List[disnake.VoiceChannel]` optional
             The channels that will be removed from the server's music channels list (mentions or IDs)
@@ -4691,21 +4691,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_music_channels_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's music channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_music_channels(inter, "purge")
 
     async def handle_music_channels(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         *channels: VoiceChannel,
     ):
@@ -4921,14 +4921,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_gain_channels_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This command manages the server's xp gain channels (voice & text) (if there is no xp gain channels then xp can be gained everywhere)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -4939,14 +4939,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_gain_channels_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This command displays the server's xp gain channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_xp_gain_channels(inter)
@@ -4957,7 +4957,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_gain_channels_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
             None, converter=Utils.channel_converter
         ),
@@ -4967,7 +4967,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channels: :class:`typing.List[typing.Union[disnake.TextChannel, disnake.VoiceChannel]]` optional
             The channels that will be added to the server's xp gain channels list (mentions or IDs)
@@ -4981,7 +4981,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_gain_channels_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channels: List[Union[TextChannel, VoiceChannel]] = Param(
             None, converter=Utils.channel_converter
         ),
@@ -4991,7 +4991,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channels: :class:`typing.List[typing.Union[disnake.TextChannel, disnake.VoiceChannel]]` optional
             The channels that will be removed from the server's xp gain channels list (mentions or IDs)
@@ -5005,21 +5005,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_gain_channels_purge_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command purges the server's xp gain channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_xp_gain_channels(inter, "purge")
 
     async def handle_xp_gain_channels(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         *channels: Union[TextChannel, VoiceChannel],
     ):
@@ -5300,14 +5300,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_channel_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's xp channel where every xp event is sent
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -5318,14 +5318,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_channel_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's xp channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_xp_channel(inter)
@@ -5336,7 +5336,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_channel_set_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channel: TextChannel,
     ):
         """
@@ -5344,7 +5344,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channel: :class:`disnake.TextChannel`
             The channel that will be the xp channel
@@ -5357,21 +5357,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_xp_channel_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command removes the server's xp channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_xp_channel(inter, "remove")
 
     async def handle_xp_channel(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         xp_channel: TextChannel = None,
     ):
@@ -5512,14 +5512,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_polls_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's polls channel where every polls created will be sent
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -5530,14 +5530,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_polls_channel_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's poll channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_polls_channel(inter)
@@ -5548,7 +5548,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_polls_channel_set_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channel: TextChannel,
     ):
         """
@@ -5556,7 +5556,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channel: :class:`disnake.TextChannel`
             The channel that will be the polls channel
@@ -5569,21 +5569,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_polls_channel_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command removes the server's poll channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_polls_channel(inter, "remove")
 
     async def handle_polls_channel(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         polls_channel: TextChannel = None,
     ):
@@ -5835,14 +5835,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_select2role_channel_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's select 2 role channels where the select to role message is sent
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -5853,14 +5853,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_select2role_channel_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's select 2 role channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_select_to_role_channel(inter)
@@ -5871,7 +5871,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_select2role_channel_set_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channel: TextChannel,
     ):
         """
@@ -5879,7 +5879,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channel: :class:`disnake.TextChannel`
             The channel that will be the select 2 role channel
@@ -5892,21 +5892,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_select2role_channel_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command removes the server's select 2 role channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_select_to_role_channel(inter, "remove")
 
     async def handle_select_to_role_channel(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         select2role_channel: TextChannel = None,
     ):
@@ -6171,14 +6171,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_mods_channel_slash_group(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command group manages the server's mods channel where all the error messages and other information are sent
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -6189,14 +6189,14 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_mods_channel_display_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash command displays the server's mods channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_mods_channel(inter)
@@ -6207,7 +6207,7 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_mods_channel_set_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channel: TextChannel,
     ):
         """
@@ -6215,7 +6215,7 @@ class Moderation(Cog, name="moderation.config"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channel: :class:`disnake.TextChannel` optional
             The channel that will be the mods channel
@@ -6228,21 +6228,21 @@ class Moderation(Cog, name="moderation.config"):
     )
     async def config_channels_mods_channel_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This slash removes the server's mods channel
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_mods_channel(inter, "remove")
 
     async def handle_mods_channel(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: str = None,
         mods_channel: TextChannel = None,
     ):
@@ -6336,7 +6336,7 @@ class Moderation(Cog, name="moderation.config"):
     """ METHOD(S) """
 
     async def check_role_duplicates(
-        self, source: Union[Context, ApplicationCommandInteraction], role: Role
+        self, source: Union[Context, GuildCommandInteraction], role: Role
     ) -> bool:
         if (
             "muted_role" in self.bot.configs[source.guild.id]

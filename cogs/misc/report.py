@@ -1,4 +1,4 @@
-from disnake import ApplicationCommandInteraction, TextInputStyle
+from disnake import GuildCommandInteraction, TextInputStyle
 from disnake.ext.commands import (
     BucketType,
     Cog,
@@ -21,13 +21,13 @@ class Miscellaneous(Cog, name="misc.report"):
     @message_command(name="🛑 Report")
     @guild_only()
     @cooldown(rate=1, per=60, type=BucketType.member)
-    async def report_message_command(self, inter: ApplicationCommandInteraction):
+    async def report_message_command(self, inter: GuildCommandInteraction):
         """
         This message command reports a member's message
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await inter.response.send_modal(
@@ -52,13 +52,13 @@ class Miscellaneous(Cog, name="misc.report"):
     @user_command(name="🛑 Report")
     @guild_only()
     @cooldown(rate=1, per=60, type=BucketType.member)
-    async def report_user_command(self, inter: ApplicationCommandInteraction):
+    async def report_user_command(self, inter: GuildCommandInteraction):
         """
         This user command reports a member
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await inter.response.send_modal(

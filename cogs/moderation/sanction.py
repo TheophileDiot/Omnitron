@@ -3,9 +3,9 @@ from time import time
 from typing import Union
 
 from disnake import (
-    ApplicationCommandInteraction,
     Embed,
     Forbidden,
+    GuildCommandInteraction,
     Member,
     User,
 )
@@ -66,13 +66,13 @@ class Moderation(Cog, name="moderation.sanction"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def sanction_slash_group(self, inter: ApplicationCommandInteraction):
+    async def sanction_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's polls
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -109,13 +109,13 @@ class Moderation(Cog, name="moderation.sanction"):
         description="Manages the server's warns",
     )
     @max_concurrency(1, per=BucketType.guild)
-    async def sanction_warn_slash_group(self, inter: ApplicationCommandInteraction):
+    async def sanction_warn_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's warns
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -150,13 +150,13 @@ class Moderation(Cog, name="moderation.sanction"):
         description="Manages the server's mutes",
     )
     @max_concurrency(1, per=BucketType.guild)
-    async def sanction_mute_slash_group(self, inter: ApplicationCommandInteraction):
+    async def sanction_mute_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's mutes
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -190,13 +190,13 @@ class Moderation(Cog, name="moderation.sanction"):
         description="Manages the server's bans",
     )
     @max_concurrency(1, per=BucketType.guild)
-    async def sanction_ban_slash_group(self, inter: ApplicationCommandInteraction):
+    async def sanction_ban_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's bans
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -239,14 +239,14 @@ class Moderation(Cog, name="moderation.sanction"):
     @bot_has_guild_permissions(kick_members=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_kick_slash_command(
-        self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
+        self, inter: GuildCommandInteraction, member: Member, reason: str = None
     ):
         """
         This command kicks a member from the server with a reason attached if specified
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to kick
@@ -257,7 +257,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_kick(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member,
         reason: str = None,
     ):
@@ -327,14 +327,14 @@ class Moderation(Cog, name="moderation.sanction"):
     )
     @max_concurrency(1, per=BucketType.member)
     async def sanction_warn_add_slash_command(
-        self, inter: ApplicationCommandInteraction, member: Member, reason: str = None
+        self, inter: GuildCommandInteraction, member: Member, reason: str = None
     ):
         """
         This slash command warns a member with a reason attached if specified
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to warn
@@ -345,7 +345,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_warn_add(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member,
         reason: str = None,
     ):
@@ -483,14 +483,14 @@ class Moderation(Cog, name="moderation.sanction"):
         description="Shows the list of a member's warns or yours!",
     )
     async def sanction_warn_list_slash_command(
-        self, inter: ApplicationCommandInteraction, member: Member = None
+        self, inter: GuildCommandInteraction, member: Member = None
     ):
         """
         This slash command shows the list of a member's warns or yours!
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to list warns
@@ -499,7 +499,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_warn_list(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member = None,
     ):
         if not member:
@@ -573,14 +573,14 @@ class Moderation(Cog, name="moderation.sanction"):
         description="Clears the warns of a member!",
     )
     async def sanction_warn_clear_slash_command(
-        self, inter: ApplicationCommandInteraction, member: Member
+        self, inter: GuildCommandInteraction, member: Member
     ):
         """
         This slash command clears the warns of a member!
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to clear warns
@@ -589,7 +589,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_warn_clear(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member,
     ):
         warns = self.bot.user_repo.get_warns(source.guild.id, member.id)
@@ -681,7 +681,7 @@ class Moderation(Cog, name="moderation.sanction"):
     @max_concurrency(1, per=BucketType.member)
     async def sanction_mute_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member,
         reason: str = None,
         duration: Range[1, ...] = 10,
@@ -692,7 +692,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to mute
@@ -707,7 +707,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_mute_add(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member,
         reason: str,
         duration: int,
@@ -827,7 +827,7 @@ class Moderation(Cog, name="moderation.sanction"):
     )
     async def sanction_mute_list_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member = None,
     ):
         """
@@ -835,7 +835,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to list the mutes
@@ -844,7 +844,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_mute_list(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member = None,
     ):
         if not member:
@@ -930,7 +930,7 @@ class Moderation(Cog, name="moderation.sanction"):
     @max_concurrency(1, per=BucketType.member)
     async def sanction_mute_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member,
         *,
         reason: str = None,
@@ -940,7 +940,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to unmute
@@ -951,7 +951,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_mute_remove(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member,
         reason: str = None,
     ):
@@ -1052,7 +1052,7 @@ class Moderation(Cog, name="moderation.sanction"):
     @max_concurrency(1, per=BucketType.member)
     async def sanction_ban_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member,
         reason: str = None,
         duration: Range[1, ...] = 1,
@@ -1063,7 +1063,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to ban
@@ -1078,7 +1078,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_ban_add(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member,
         reason: str = None,
         duration: int = None,
@@ -1197,14 +1197,14 @@ class Moderation(Cog, name="moderation.sanction"):
     @bot_has_guild_permissions(ban_members=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_ban_remove_slash_command(
-        self, inter: ApplicationCommandInteraction, user: User, reason: str = None
+        self, inter: GuildCommandInteraction, user: User, reason: str = None
     ):
         """
         This slash command unban a user from the server with a reason attached if specified!
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         user: :class:`disnake.User`
             The user you want to ban
@@ -1215,7 +1215,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_ban_remove(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         user: User,
         reason: str = None,
     ):
@@ -1299,14 +1299,14 @@ class Moderation(Cog, name="moderation.sanction"):
     @bot_has_guild_permissions(ban_members=True)
     @max_concurrency(1, per=BucketType.member)
     async def sanction_ban_list_slash_command(
-        self, inter: ApplicationCommandInteraction, member: Member = None
+        self, inter: GuildCommandInteraction, member: Member = None
     ):
         """
         This slash command lists the bans from the server or for a specific member!
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member`
             The member you want to list bans
@@ -1315,7 +1315,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     async def handle_ban_list(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member = None,
     ):
         if member:
@@ -1423,7 +1423,7 @@ class Moderation(Cog, name="moderation.sanction"):
 
     def configure_embed(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         em: Embed,
         member: Member = None,
     ) -> Embed:

@@ -2,8 +2,8 @@ from inspect import Parameter
 from typing import Union
 
 from disnake import (
-    ApplicationCommandInteraction,
     Embed,
+    GuildCommandInteraction,
     Member,
     NotFound,
 )
@@ -64,13 +64,13 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @guild_only()
     @Utils.check_bot_starting()
-    async def xp_slash_group(self, inter: ApplicationCommandInteraction):
+    async def xp_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group contains every xp related commands
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -111,13 +111,13 @@ class Miscellaneous(Cog, name="misc.xp"):
         name="levels",
         description="Manages a member's levels",
     )
-    async def xp_levels_slash_group(self, inter: ApplicationCommandInteraction):
+    async def xp_levels_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages a member's levels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -128,7 +128,7 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     async def xp_levels_add_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member = None,
         value: int = 1,
     ):
@@ -137,7 +137,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member` optional
             The member you're adding the levels
@@ -154,7 +154,7 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     async def xp_levels_set_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         value: int,
         member: Member = None,
     ):
@@ -163,7 +163,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         value: :class:`int`
             The level value you want to set
@@ -180,7 +180,7 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     async def xp_levels_remove_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member = None,
         value: int = 1,
     ):
@@ -189,7 +189,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         value: :class:`int`
             The level value you want to remove
@@ -202,7 +202,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
     async def handle_levels(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         option: Utils.to_lower,
         member: Member,
         value: int = None,
@@ -374,20 +374,18 @@ class Miscellaneous(Cog, name="misc.xp"):
         description="Allows you to create a prestige level passage procedure!",
     )
     @max_concurrency(1, per=BucketType.member)
-    async def xp_prestige_slash_command(self, inter: ApplicationCommandInteraction):
+    async def xp_prestige_slash_command(self, inter: GuildCommandInteraction):
         """
         This slash command allows you to create a prestige level passage procedure!
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_prestige(inter)
 
-    async def handle_prestige(
-        self, source: Union[Context, ApplicationCommandInteraction]
-    ):
+    async def handle_prestige(self, source: Union[Context, GuildCommandInteraction]):
         """Command that creates a prestige level passage procedure
 
         Keyword arguments:
@@ -417,7 +415,7 @@ class Miscellaneous(Cog, name="misc.xp"):
                 resp = f"⛔ - {source.author.mention} - You cannot create two prestige pass-through procedures simultaneously."
                 ephemeral = True
             else:
-                if isinstance(source, ApplicationCommandInteraction):
+                if not isinstance(source, Context):
                     await source.response.send_message(
                         "Prestige level passage procedure confirmation!"
                     )
@@ -472,14 +470,14 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_info_slash_command(
-        self, inter: ApplicationCommandInteraction, member: Member = None
+        self, inter: GuildCommandInteraction, member: Member = None
     ):
         """
         This slash command displays information about the current level for yourself or someone on the server!
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member` optional
             The member you want to show the information from
@@ -488,7 +486,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
     async def handle_info(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member = None,
     ):
         """Command that displays the current level and the number of xp remaining before the next level for the member that invoked the command or a specified member
@@ -569,7 +567,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
         Parameters
         ----------
-        ctx: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        ctx: :class:`disnake.ext.commands.GuildCommandInteraction`
             The command context
         options: :class:`Utils.to_lower` optional
             The command options -> me if you want to show only your rank -> all if you want to include everyone in the server (even the moderators)
@@ -596,14 +594,14 @@ class Miscellaneous(Cog, name="misc.xp"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def xp_leaderboard_command(
-        self, inter: ApplicationCommandInteraction, me: bool = False, mods: bool = False
+        self, inter: GuildCommandInteraction, me: bool = False, mods: bool = False
     ):
         """
         This command displays the top 10 members of the server or your own rank (possibility to display the rank of the moderators)!
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         me: :class:`bool` optional
             Only displays your ranking
@@ -614,7 +612,7 @@ class Miscellaneous(Cog, name="misc.xp"):
 
     async def handle_leaderboard(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         me: bool = False,
         mods: bool = False,
     ):

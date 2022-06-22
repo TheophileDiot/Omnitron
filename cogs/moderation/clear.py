@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Member
+from disnake import GuildCommandInteraction, Member
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -17,7 +17,7 @@ from bot import Omnitron
 
 
 async def handle_clear(
-    source: Union[Context, ApplicationCommandInteraction],
+    source: Union[Context, GuildCommandInteraction],
     nbr_msgs: int,
     member: Member = None,
 ):
@@ -83,7 +83,7 @@ class Moderation(Cog, name="moderation.clear"):
     @max_concurrency(1, per=BucketType.channel)
     async def clear_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         number_messages: Range[1, ...] = 10,
         member: Member = None,
     ):
@@ -92,7 +92,7 @@ class Moderation(Cog, name="moderation.clear"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         number_messages: :class:`disnake.ext.commands.Range` optional
             The number of messages to delete (10 by default)

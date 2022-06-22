@@ -5,20 +5,18 @@ services:
     build:
       context: .
       dockerfile: DockerFile
-    container_name: bot
+    container_name: omnitron-bot
     volumes:
       - ./logs:/bot/logs
       - ./temp:/bot/temp
     environment:
-      - LAVALINK_URL=lavalink
       - PYTHONUNBUFFERED=1
     depends_on:
       - lavalink
-    network_mode: host
 
   lavalink:
     build: lavalink
     container_name: lavalink
     volumes:
       - ./lavalink/logs:/opt/Lavalink/logs
-    network_mode: host
+      - ./lavalink/logs/hs_err_pid1.log:/opt/Lavalink/hs_err_pid1.log

@@ -2,7 +2,7 @@ from itertools import chain
 from typing import Union
 
 from disnake import (
-    ApplicationCommandInteraction,
+    GuildCommandInteraction,
     Member,
     TextChannel,
     VoiceChannel,
@@ -61,13 +61,13 @@ class Moderation(Cog, name="moderation.stats"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def stats_slash_group(self, inter: ApplicationCommandInteraction):
+    async def stats_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's stats
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -114,7 +114,7 @@ class Moderation(Cog, name="moderation.stats"):
     )
     async def stats_message_count_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member = None,
         text_channel: TextChannel = None,
     ):
@@ -123,7 +123,7 @@ class Moderation(Cog, name="moderation.stats"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member` optional
             The member to count messages from
@@ -140,21 +140,21 @@ class Moderation(Cog, name="moderation.stats"):
     @Utils.check_moderator()
     async def stats_message_count_user_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This user command counts every messages a member has sent in this server
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_messages_count(inter, inter.target)
 
     async def handle_messages_count(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member = None,
         text_channel: TextChannel = None,
     ):
@@ -186,7 +186,7 @@ class Moderation(Cog, name="moderation.stats"):
         else:
             db_users = self.bot.user_repo.get_users(source.guild.id)
 
-            if isinstance(source, ApplicationCommandInteraction):
+            if not isinstance(source, Context):
                 await source.response.defer()
 
             if text_channel:
@@ -261,7 +261,7 @@ class Moderation(Cog, name="moderation.stats"):
     )
     async def stats_voice_time_count_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member = None,
         voice_channel: VoiceChannel = None,
     ):
@@ -270,7 +270,7 @@ class Moderation(Cog, name="moderation.stats"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member` optional
             The member to count every seconds passed in voice channels from
@@ -287,21 +287,21 @@ class Moderation(Cog, name="moderation.stats"):
     @Utils.check_moderator()
     async def stats_voice_time_count_user_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This user command counts every seconds the member has passed inside voice channels
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_voice_time_count(inter, inter.target)
 
     async def handle_voice_time_count(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member = None,
         voice_channel: VoiceChannel = None,
     ):
@@ -333,7 +333,7 @@ class Moderation(Cog, name="moderation.stats"):
         else:
             db_users = self.bot.user_repo.get_users(source.guild.id)
 
-            if isinstance(source, ApplicationCommandInteraction):
+            if not isinstance(source, Context):
                 await source.response.defer()
 
             if voice_channel:
@@ -411,7 +411,7 @@ class Moderation(Cog, name="moderation.stats"):
     )
     async def stats_commands_count_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         member: Member = None,
         details: bool = False,
     ):
@@ -420,7 +420,7 @@ class Moderation(Cog, name="moderation.stats"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         member: :class:`disnake.Member` optional
             The member to count commands executed from
@@ -437,21 +437,21 @@ class Moderation(Cog, name="moderation.stats"):
     @Utils.check_moderator()
     async def stats_commands_count_user_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
     ):
         """
         This user command counts the number of commands a member has executed in the server
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_commands_count(inter, inter.target)
 
     async def handle_commands_count(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         member: Member = None,
         details: bool = False,
     ):
@@ -523,14 +523,14 @@ class Moderation(Cog, name="moderation.stats"):
         description="Counts the members (including bots or not, default is False) in the server",
     )
     async def stats_members_count_slash_command(
-        self, inter: ApplicationCommandInteraction, bots: bool = False
+        self, inter: GuildCommandInteraction, bots: bool = False
     ):
         """
         This slash command counts the members (including bots or not, default is False) in the server
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         bots: :class:`bool` optional
             Count bots or not
@@ -538,7 +538,7 @@ class Moderation(Cog, name="moderation.stats"):
         await self.handle_members_count(inter, bots)
 
     async def handle_members_count(
-        self, source: Union[Context, ApplicationCommandInteraction], bots: bool = False
+        self, source: Union[Context, GuildCommandInteraction], bots: bool = False
     ):
         count = (
             source.guild.member_count

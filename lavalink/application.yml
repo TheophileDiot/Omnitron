@@ -17,7 +17,7 @@ lavalink:
     youtubePlaylistLoadLimit: 6 # Number of pages at 100 each
     playerUpdateInterval: 5 # How frequently to send player updates to clients, in seconds
     youtubeSearchEnabled: true
-    soundcloudSearchEnabled: false
+    soundcloudSearchEnabled: true
     gc-warnings: true
     #ratelimit:
       #ipBlocks: ["1.0.0.0/8", "..."] # list of ip blocks
