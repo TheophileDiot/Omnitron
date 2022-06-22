@@ -1,5 +1,4 @@
 from asyncio import sleep
-from cmath import atan
 from functools import wraps
 from inspect import Parameter
 from os import getenv
@@ -11,11 +10,11 @@ from typing import List, Optional, Union
 from youtube_dl import utils, YoutubeDL
 
 from disnake import (
-    ApplicationCommandInteraction,
     Attachment,
     Client as botClient,
     Colour,
     Embed,
+    GuildCommandInteraction,
     NotFound,
     VoiceClient,
 )
@@ -173,7 +172,7 @@ class Dj(Cog, name="dj.play"):
             self.bot.lavalink = Client(self.bot.user.id)
             # Host, Port, Password, Region, Name
             self.bot.lavalink.add_node(
-                "127.0.0.1", 2333, "youshallnotpass", "eu", "default-node"
+                "lavalink", 2333, "youshallnotpass", "eu", "default-node"
             )
             # self.bot.add_listener(
             #     self.bot.lavalink.voice_update_handler, "on_socket_response"
@@ -354,7 +353,7 @@ class Dj(Cog, name="dj.play"):
     @max_concurrency(1, per=BucketType.guild)
     async def play_slash_command(
         self,
-        source: ApplicationCommandInteraction,
+        source: GuildCommandInteraction,
         query: str = None,
         audio_file: Attachment = None,
     ):
@@ -363,34 +362,35 @@ class Dj(Cog, name="dj.play"):
 
         Parameters
         ----------
-        source: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        source: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         query: :class:`str` optional
             The link or YouTube/SoundCloud title
         audio_file: :class:`disnake.ext.commands.Attachment` optional
             The audio file to play
         """
-        await self.handle_play(source, query, attachment=audio_file)
+        await self.handle_play(source, query, audio_file=audio_file)
 
     """ METHOD(S) """
 
     async def add_song_to_queue(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         track: dict,
         player,
         query: str,
+        audio_file: Attachment = None,
         sleeping: float = 0.0,
     ) -> Optional[dict]:
         yt_infos = None
         try:
-            if self.yt_rx.match(track["info"]["uri"]):
+            if self.yt_rx.match(track["info"]["uri"]) and sleeping == 0.0:
                 yt_infos = self.ytdl.extract_info(track["info"]["uri"], download=False)
         except Exception as e:
             if not f"{e}".endswith("This video may be inappropriate for some users."):
                 if isinstance(source, Context):
-                    return await source.reply(
-                        f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
+                    return await source.channel.send(
+                        f"⚠️ - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
                         delete_after=20,
                     )
                 else:
@@ -400,8 +400,8 @@ class Dj(Cog, name="dj.play"):
                     )
             else:
                 if isinstance(source, Context):
-                    return await source.reply(
-                        f"⚠️ - {source.author.mention} - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
+                    return await source.channel.send(
+                        f"⚠️ - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
                         delete_after=20,
                     )
                 else:
@@ -427,10 +427,8 @@ class Dj(Cog, name="dj.play"):
         else:
             title = (
                 track["info"]["title"]
-                if track["info"]["title"] != "Unknown title"
-                or not isinstance(source, Context)
-                or not source.message.attachments
-                else source.message.attachments[0].filename
+                if track["info"]["title"] != "Unknown title" or audio_file is None
+                else audio_file.filename
             )
             url = (
                 query
@@ -443,9 +441,7 @@ class Dj(Cog, name="dj.play"):
         self.bot.playlists[source.guild.id].append(
             {
                 "type": "Attachment"
-                if isinstance(source, Context)
-                and source.message.attachments
-                and source.message.attachments[0].content_type
+                if audio_file and audio_file.content_type
                 else (
                     "Search query" if query.startswith("ytsearch") else "External link"
                 ),
@@ -463,7 +459,7 @@ class Dj(Cog, name="dj.play"):
 
     async def add_spotify_song_to_queue(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         track: dict,
         player,
         query: str = "ytsearch",
@@ -482,34 +478,40 @@ class Dj(Cog, name="dj.play"):
             return
 
         track = results["tracks"][0]
-        return await self.add_song_to_queue(source, track, player, query, sleeping)
+        return await self.add_song_to_queue(
+            source, track, player, query, sleeping=sleeping
+        )
 
     async def handle_play(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         query: str = None,
         *,
-        attachment: Attachment = None,
+        audio_file: Attachment = None,
     ):
         """Searches and plays a song from a given query."""
         # Get the player for this guild from cache.
         player = self.bot.lavalink.player_manager.get(source.guild.id)
         spotify_track: bool = False
 
+        if not isinstance(source, Context):
+            await source.response.defer()
+
+        if (
+            isinstance(source, Context)
+            and source.message.attachments
+            and audio_file is None
+        ):
+            audio_file = source.message.attachments[0]
+
         if not query and player.paused:
             await player.set_pause(False)
             return await source.send(f"▶️ - Resume Playing!")
-        elif not query and (
-            not isinstance(source, Context) or not source.message.attachments
-        ):
+        elif not query and audio_file is None:
             raise MissingRequiredArgument(
                 param=Parameter(name="query", kind=Parameter.KEYWORD_ONLY)
             )
-        elif query and (
-            not isinstance(source, Context) or not source.message.attachments
-        ):
-            if isinstance(source, ApplicationCommandInteraction):
-                await source.response.defer()
+        elif query and audio_file is None:
 
             # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
             query = query.strip("<>")
@@ -585,23 +587,35 @@ class Dj(Cog, name="dj.play"):
             #             ephemeral=True,
             #         )
 
-        if isinstance(source, Context) and source.message.attachments:
-            attachment = source.message.attachments[0]
+        if audio_file:
+            query = audio_file.url
 
-        if attachment and (
-            not attachment.content_type
-            or not attachment.content_type.startswith("audio")
-        ):
-            return await source.reply(
-                f"⚠️ - {source.author.mention} - The file you attach to your message is not a valid playable file!",
-                delete_after=20,
-            )
+            if not audio_file.content_type or not audio_file.content_type.startswith(
+                "audio"
+            ):
+                if isinstance(source, Context):
+                    return await source.reply(
+                        f"⚠️ - {source.author.mention} - The file you attach to your message is not a valid playable file!",
+                        delete_after=20,
+                    )
+                else:
+                    return await source.followup.send(
+                        f"⚠️ - {source.author.mention} - The file you attach to your message is not a valid playable file!",
+                        ephemeral=True,
+                    )
+
+        # if audio_file:
+        # if not isinstance(source, Context):
+        #     message = await source.channel.send(
+        #         f"💿 - `{audio_file.filename}` - 💿", file=await audio_file.to_file()
+        #     )
+        #     query = message.attachments[0].url
+        # else:
+        # query = audio_file.url
 
         if not isinstance(query, list):
             try:
-                results = await player.node.get_tracks(
-                    query if query else attachment.url
-                )
+                results = await player.node.get_tracks(query)
             except TimeoutError:
                 return await source.reply(
                     f"⚠️ - {source.author.mention} - Your query timed out!",
@@ -609,7 +623,8 @@ class Dj(Cog, name="dj.play"):
                 )
 
             if (
-                (
+                not audio_file
+                and (
                     not results
                     or results
                     and "exception" in results
@@ -660,23 +675,24 @@ class Dj(Cog, name="dj.play"):
             #   LOAD_FAILED     - most likely, the video encountered an exception during loading.
             if results["loadType"] == "PLAYLIST_LOADED":
                 tracks = results["tracks"]
+                max_length_reached = False
+
+                if len(tracks) > 40:
+                    tracks = tracks[:40]
 
                 yt_infos = await self.add_song_to_queue(
                     source, tracks.pop(0), player, query
                 )
 
-                x = 1
                 for track in tracks:
                     # Add all of the tracks from the playlist to the queue.
                     self.bot.loop.create_task(
-                        self.add_song_to_queue(source, track, player, query, 2.0)
+                        self.add_song_to_queue(
+                            source, track, player, query, sleeping=2.0
+                        )
                     )
-                    x += 1
 
-                    if x == 20:
-                        break
-
-                content = f"🎶 - **Adding the playlist to the server playlist{' (limited to 20 songs per playlists)' if x == 20 else ''}:** - 🎶"
+                content = f"🎶 - **Adding the playlist to the server playlist{' (the playlist was cropped because the max length for playlist queries is 40 songs)' if max_length_reached else ''}:** - 🎶"
             else:
                 track = results["tracks"][0]
 
@@ -685,24 +701,26 @@ class Dj(Cog, name="dj.play"):
                 else:
                     content = "🎶 - **Playing:** - 🎶"
 
-                yt_infos = await self.add_song_to_queue(source, track, player, query)
+                yt_infos = await self.add_song_to_queue(
+                    source, track, player, query, audio_file
+                )
         else:
             yt_infos = await self.add_spotify_song_to_queue(
                 source, query.pop(0), player
             )
 
-            x = 1
+            max_length_reached = False
+
+            if len(query) > 40:
+                query = query[:40]
+
             for track in query:
                 # Add all of the tracks from the playlist to the queue.
                 self.bot.loop.create_task(
                     self.add_spotify_song_to_queue(source, track, player, sleeping=2.0)
                 )
-                x += 1
 
-                if x == 20:
-                    break
-
-            content = f"🎶 - **Adding the spotify playlist to the server playlist{' (limited to 20 songs per playlists)' if x == 20 else ''}:** - 🎶"
+            content = f"🎶 - **Adding the spotify playlist to the server playlist{' (the playlist was cropped because the max length for playlist queries is 40 songs)' if max_length_reached else ''}:** - 🎶"
 
         # We don't want to call .play() if the player is playing as that will effectively skip
         # the current track.
@@ -723,10 +741,8 @@ class Dj(Cog, name="dj.play"):
             colour = self.bot.color
             title = (
                 track["info"]["title"]
-                if track["info"]["title"] != "Unknown title"
-                or not isinstance(source, Context)
-                or not source.message.attachments
-                else source.message.attachments[0].filename
+                if track["info"]["title"] != "Unknown title" or audio_file is None
+                else audio_file.filename
             )
             url = (
                 query

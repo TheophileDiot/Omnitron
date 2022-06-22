@@ -2,9 +2,9 @@ from time import time
 from typing import Union
 
 from disnake import (
-    ApplicationCommandInteraction,
     ButtonStyle,
     Embed,
+    GuildCommandInteraction,
     NotFound,
 )
 from disnake.ext.commands import (
@@ -63,13 +63,13 @@ class Moderation(Cog, name="moderation.poll"):
     @guild_only()
     @Utils.check_bot_starting()
     @Utils.check_moderator()
-    async def poll_slash_group(self, inter: ApplicationCommandInteraction):
+    async def poll_slash_group(self, inter: GuildCommandInteraction):
         """
         This slash command group manages the server's polls
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         pass
@@ -119,7 +119,7 @@ class Moderation(Cog, name="moderation.poll"):
     @max_concurrency(1, per=BucketType.guild)
     async def poll_create_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         title: str,
         choices: str,
         duration: Range[1, ...] = 10,
@@ -130,7 +130,7 @@ class Moderation(Cog, name="moderation.poll"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         title: :class:`str`
             The poll's title
@@ -151,7 +151,7 @@ class Moderation(Cog, name="moderation.poll"):
 
     async def handle_create(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         title: str,
         duration: int,
         type_duration: str,
@@ -272,14 +272,14 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_infos_slash_command(
-        self, inter: ApplicationCommandInteraction, id_message: int = None
+        self, inter: GuildCommandInteraction, id_message: int = None
     ):
         """
         This slash command retrieves information from the specified poll or every polls if none specified
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         id_message: :class:`int` optional
             The poll message id
@@ -293,7 +293,7 @@ class Moderation(Cog, name="moderation.poll"):
 
     async def handle_info(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         poll_id: int = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
@@ -502,14 +502,14 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_end_slash_command(
-        self, inter: ApplicationCommandInteraction, id_message: str
+        self, inter: GuildCommandInteraction, id_message: str
     ):
         """
         This slash command stops a poll prematurely
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         id_message: :class:`int` optional
             The poll message id
@@ -518,7 +518,7 @@ class Moderation(Cog, name="moderation.poll"):
 
     async def handle_end(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         poll_id: Union[int, str] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:
@@ -595,14 +595,14 @@ class Moderation(Cog, name="moderation.poll"):
     )
     @max_concurrency(1, per=BucketType.guild)
     async def poll_delete_slash_command(
-        self, inter: ApplicationCommandInteraction, id_message: str
+        self, inter: GuildCommandInteraction, id_message: str
     ):
         """
         This slash command deletes a poll prematurely (unlike the command end it will erase completely the poll and not just end it)
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         id_message: :class:`int` optional
             The poll message id
@@ -611,7 +611,7 @@ class Moderation(Cog, name="moderation.poll"):
 
     async def handle_delete(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         poll_id: Union[int, str] = None,
     ):
         if "polls_channel" not in self.bot.configs[source.guild.id]:

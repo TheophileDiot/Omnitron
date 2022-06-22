@@ -1,8 +1,8 @@
 from typing import Union, Optional
 
 from disnake import (
-    ApplicationCommandInteraction,
     Embed,
+    GuildCommandInteraction,
     HTTPException,
     PartyType,
     VoiceChannel,
@@ -55,7 +55,7 @@ class Miscellaneous(Cog, name="misc.activity"):
     @Utils.check_bot_starting()
     async def activity_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         channel: VoiceChannel,
         activity: PartyType = None,
         custom_activity: int = None,
@@ -65,7 +65,7 @@ class Miscellaneous(Cog, name="misc.activity"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         channel: :class:`disnake.VoiceChannel`
             The voice channel where the activity will take place
@@ -423,7 +423,7 @@ class Miscellaneous(Cog, name="misc.activity"):
 
     async def create_activity(
         self,
-        source: Union[Context, ApplicationCommandInteraction],
+        source: Union[Context, GuildCommandInteraction],
         channel: VoiceChannel,
         activity: int,
     ) -> Optional[Embed]:

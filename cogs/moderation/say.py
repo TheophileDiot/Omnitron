@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, TextChannel
+from disnake import GuildCommandInteraction, TextChannel
 from disnake.ext.commands import (
     bot_has_permissions,
     Context,
@@ -14,7 +14,7 @@ from data import Utils
 
 
 async def handle_say(
-    source: Union[Context, ApplicationCommandInteraction],
+    source: Union[Context, GuildCommandInteraction],
     channel: TextChannel,
     message: str,
 ):
@@ -38,7 +38,7 @@ async def handle_say(
     ):
         await source.message.delete()
 
-    if channel == source.channel and isinstance(source, ApplicationCommandInteraction):
+    if channel == source.channel and not isinstance(source, Context):
         await source.response.send_message(message)
     else:
         await channel.send(message)
@@ -93,7 +93,7 @@ class Moderation(Cog, name="moderation.say"):
     @bot_has_permissions(send_messages=True)
     async def say_slash_command(
         self,
-        inter: ApplicationCommandInteraction,
+        inter: GuildCommandInteraction,
         message: str,
         channel: TextChannel = None,
     ):
@@ -102,7 +102,7 @@ class Moderation(Cog, name="moderation.say"):
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         message: :class:`str`
             The message to send

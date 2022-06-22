@@ -1,6 +1,6 @@
 from typing import Union
 
-from disnake import ApplicationCommandInteraction, Embed
+from disnake import Embed, GuildCommandInteraction
 from disnake.ext.commands import (
     bot_has_permissions,
     Cog,
@@ -39,22 +39,20 @@ class Miscellaneous(Cog, name="misc.serverinfo"):
         description="Gets information about the current server",
     )
     @guild_only()
-    async def serverinfo_slash_command(self, inter: ApplicationCommandInteraction):
+    async def serverinfo_slash_command(self, inter: GuildCommandInteraction):
         """
         This slash command gets information about the current server
 
         Parameters
         ----------
-        inter: :class:`disnake.ext.commands.ApplicationCommandInteraction`
+        inter: :class:`disnake.ext.commands.GuildCommandInteraction`
             The application command interaction
         """
         await self.handle_serverinfo(inter)
 
     """ METHOD(S) """
 
-    async def handle_serverinfo(
-        self, source: Union[Context, ApplicationCommandInteraction]
-    ):
+    async def handle_serverinfo(self, source: Union[Context, GuildCommandInteraction]):
         em = Embed(
             title=f"{source.guild.name} server information", colour=self.bot.color
         )
