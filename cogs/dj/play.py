@@ -375,40 +375,28 @@ class Dj(Cog, name="dj.play"):
 
     async def add_song_to_queue(
         self,
-        source: Union[Context, GuildCommandInteraction],
+        source: GuildCommandInteraction,
         track: dict,
         player,
         query: str,
         audio_file: Attachment = None,
-        sleeping: float = 0.0,
+        multiple: bool = False,
     ) -> Optional[dict]:
         yt_infos = None
         try:
-            if self.yt_rx.match(track["info"]["uri"]) and sleeping == 0.0:
+            if self.yt_rx.match(track["info"]["uri"]) and multiple is False:
                 yt_infos = self.ytdl.extract_info(track["info"]["uri"], download=False)
         except Exception as e:
             if not f"{e}".endswith("This video may be inappropriate for some users."):
-                if isinstance(source, Context):
-                    return await source.channel.send(
-                        f"⚠️ - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
-                        delete_after=20,
-                    )
-                else:
-                    return await source.followup.send(
-                        f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
-                        ephemeral=True,
-                    )
+                return await source.followup.send(
+                    f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
+                    ephemeral=True,
+                )
             else:
-                if isinstance(source, Context):
-                    return await source.channel.send(
-                        f"⚠️ - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
-                        delete_after=20,
-                    )
-                else:
-                    return await source.followup.send(
-                        f"⚠️ - {source.author.mention} - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
-                        ephemeral=True,
-                    )
+                return await source.followup.send(
+                    f"⚠️ - {source.author.mention} - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
+                    ephemeral=True,
+                )
 
         # You can attach additional information to audiotracks through kwargs, however this involves
         # constructing the AudioTrack class yourself.
@@ -453,8 +441,6 @@ class Dj(Cog, name="dj.play"):
             }
         )
 
-        await sleep(sleeping)
-
         return yt_infos
 
     async def add_spotify_song_to_queue(
@@ -463,7 +449,7 @@ class Dj(Cog, name="dj.play"):
         track: dict,
         player,
         query: str = "ytsearch",
-        sleeping: float = 0.0,
+        multiple: bool = False,
     ) -> Optional[dict]:
         try:
             results = await player.node.get_tracks(
@@ -479,8 +465,31 @@ class Dj(Cog, name="dj.play"):
 
         track = results["tracks"][0]
         return await self.add_song_to_queue(
-            source, track, player, query, sleeping=sleeping
+            source, track, player, query, multiple=multiple
         )
+
+    async def add_songs_to_queue(
+        self,
+        source: Union[Context, GuildCommandInteraction],
+        tracks: List[dict],
+        player,
+        query: str = "ytsearch",
+        _type: str = "regular",
+    ):
+        for track in tracks:
+            if player.is_playing:
+                # Add all of the tracks from the playlist to the queue.
+                if _type == "regular":
+                    await self.add_song_to_queue(
+                        source, track, player, query, multiple=True
+                    )
+                else:
+                    await self.add_spotify_song_to_queue(
+                        source, track, player, multiple=True
+                    )
+
+        if not player.is_playing:
+            self.bot.playlists[source.guild.id] = []
 
     async def handle_play(
         self,
@@ -604,15 +613,6 @@ class Dj(Cog, name="dj.play"):
                         ephemeral=True,
                     )
 
-        # if audio_file:
-        # if not isinstance(source, Context):
-        #     message = await source.channel.send(
-        #         f"💿 - `{audio_file.filename}` - 💿", file=await audio_file.to_file()
-        #     )
-        #     query = message.attachments[0].url
-        # else:
-        # query = audio_file.url
-
         if not isinstance(query, list):
             try:
                 results = await player.node.get_tracks(query)
@@ -675,24 +675,16 @@ class Dj(Cog, name="dj.play"):
             #   LOAD_FAILED     - most likely, the video encountered an exception during loading.
             if results["loadType"] == "PLAYLIST_LOADED":
                 tracks = results["tracks"]
-                max_length_reached = False
-
-                if len(tracks) > 40:
-                    tracks = tracks[:40]
 
                 yt_infos = await self.add_song_to_queue(
                     source, tracks.pop(0), player, query
                 )
 
-                for track in tracks:
-                    # Add all of the tracks from the playlist to the queue.
-                    self.bot.loop.create_task(
-                        self.add_song_to_queue(
-                            source, track, player, query, sleeping=2.0
-                        )
-                    )
+                self.bot.loop.create_task(
+                    self.add_songs_to_queue(source, tracks, player)
+                )
 
-                content = f"🎶 - **Adding the playlist to the server playlist{' (the playlist was cropped because the max length for playlist queries is 40 songs)' if max_length_reached else ''}:** - 🎶"
+                content = f"🎶 - **Adding the playlist to the server playlist:** - 🎶"
             else:
                 track = results["tracks"][0]
 
@@ -709,18 +701,11 @@ class Dj(Cog, name="dj.play"):
                 source, query.pop(0), player
             )
 
-            max_length_reached = False
+            self.bot.loop.create_task(
+                self.add_songs_to_queue(source, query, player, _type="spotify")
+            )
 
-            if len(query) > 40:
-                query = query[:40]
-
-            for track in query:
-                # Add all of the tracks from the playlist to the queue.
-                self.bot.loop.create_task(
-                    self.add_spotify_song_to_queue(source, track, player, sleeping=2.0)
-                )
-
-            content = f"🎶 - **Adding the spotify playlist to the server playlist{' (the playlist was cropped because the max length for playlist queries is 40 songs)' if max_length_reached else ''}:** - 🎶"
+            content = f"🎶 - **Adding the spotify playlist to the server playlist:** - 🎶"
 
         # We don't want to call .play() if the player is playing as that will effectively skip
         # the current track.
