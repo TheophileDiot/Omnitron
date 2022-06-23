@@ -1,6 +1,13 @@
-from typing import Union
+from copy import deepcopy
+from typing import List, Union
 
-from disnake import Colour, Embed, GuildCommandInteraction
+from disnake import (
+    ButtonStyle,
+    Colour,
+    Embed,
+    GuildCommandInteraction,
+    MessageInteraction,
+)
 from disnake.ext.commands import (
     bot_has_permissions,
     BucketType,
@@ -11,8 +18,74 @@ from disnake.ext.commands import (
     max_concurrency,
     slash_command,
 )
+from disnake.ui import button, Button, View
 
 from data import Utils
+
+
+class Playlist(View):
+    def __init__(self, embeds: List[Embed]):
+        super().__init__(timeout=None)
+        self.embeds = embeds
+        self.embed_count = 0
+
+        self.first_page.disabled = True
+        self.prev_page.disabled = True
+
+        # Sets the footer of the embeds with their respective page numbers.
+        for i, embed in enumerate(self.embeds):
+            embed.set_footer(text=f"Page {i + 1} of {len(self.embeds)}")
+
+    @button(emoji="⏪", style=ButtonStyle.blurple)
+    async def first_page(self, button: Button, interaction: MessageInteraction):
+        self.embed_count = 0
+        embed = self.embeds[self.embed_count]
+        embed.set_footer(text=f"Page 1 of {len(self.embeds)}")
+
+        self.first_page.disabled = True
+        self.prev_page.disabled = True
+        self.next_page.disabled = False
+        self.last_page.disabled = False
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @button(emoji="◀", style=ButtonStyle.secondary)
+    async def prev_page(self, button: button, interaction: MessageInteraction):
+        self.embed_count -= 1
+        embed = self.embeds[self.embed_count]
+
+        self.next_page.disabled = False
+        self.last_page.disabled = False
+        if self.embed_count == 0:
+            self.first_page.disabled = True
+            self.prev_page.disabled = True
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @button(emoji="❌", style=ButtonStyle.red)
+    async def remove(self, button: button, interaction: MessageInteraction):
+        await interaction.response.edit_message(view=None)
+
+    @button(emoji="▶", style=ButtonStyle.secondary)
+    async def next_page(self, button: button, interaction: MessageInteraction):
+        self.embed_count += 1
+        embed = self.embeds[self.embed_count]
+
+        self.first_page.disabled = False
+        self.prev_page.disabled = False
+        if self.embed_count == len(self.embeds) - 1:
+            self.next_page.disabled = True
+            self.last_page.disabled = True
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @button(emoji="⏩", style=ButtonStyle.blurple)
+    async def last_page(self, button: button, interaction: MessageInteraction):
+        self.embed_count = len(self.embeds) - 1
+        embed = self.embeds[self.embed_count]
+
+        self.first_page.disabled = False
+        self.prev_page.disabled = False
+        self.next_page.disabled = True
+        self.last_page.disabled = True
+        await interaction.response.edit_message(embed=embed, view=self)
 
 
 class Dj(Cog, name="dj.playlist"):
@@ -71,6 +144,23 @@ class Dj(Cog, name="dj.playlist"):
         source: Union[Context, GuildCommandInteraction],
         position: int = None,
     ):
+        if not self.bot.playlists.get(source.guild.id):
+            if isinstance(source, Context):
+                return await source.reply(
+                    f"⚠️ - {source.author.mention} - There is no playlist in this server.",
+                    delete_after=20,
+                )
+            else:
+                return await source.followup.send(
+                    f"⚠️ - {source.author.mention} - There is no playlist in this server.",
+                    ephemeral=True,
+                )
+
+        if not isinstance(source, Context):
+            await source.response.defer()
+
+        print(self.bot.playlists.get(source.guild.id))
+
         em = Embed(colour=Colour(0xFF0000))  # YTB color
 
         if position is not None:
@@ -149,28 +239,27 @@ class Dj(Cog, name="dj.playlist"):
         if self.bot.playlists[source.guild.id][0].get("thumbnail"):
             em.set_thumbnail(url=self.bot.playlists[source.guild.id][0]["thumbnail"])
 
-        x = 0
+        default_em = deepcopy(em)
+        playlist = deepcopy(self.bot.playlists[source.guild.id])
+
         nl = "\n"
-        while x < len(self.bot.playlists[source.guild.id]) and x <= 24:
-            if x == 24:
-                em.add_field(
-                    name="**Too many sounds to display them all**",
-                    value="...",
-                    inline=False,
-                )
-            else:
-                em.add_field(
-                    name=f"**{x + 1}:** {self.bot.playlists[source.guild.id][x]['title']}"
-                    + (" - *currently playing*" if x == 0 else ""),
-                    value=f"**Type:** {self.bot.playlists[source.guild.id][x]['type']}{nl}**Author:** {self.bot.playlists[source.guild.id][x]['author']}{nl}**Duration:** {self.bot.playlists[source.guild.id][x]['duration']}{nl}**URL:** {self.bot.playlists[source.guild.id][x]['url']}",
-                    inline=True,
-                )
-                x += 1
+        embeds = []
+        for x in range(len(playlist)):
+            if x != 0 and x % 25 == 0:
+                embeds.append(em.copy())
+                em = default_em.copy()
+
+            em.add_field(
+                name=f"**{x + 1}:** {playlist[x]['title']}"
+                + (" - *currently playing*" if x == 0 else ""),
+                value=f"**Type:** {playlist[x]['type']}{nl}**Author:** {playlist[x]['author']}{nl}**Duration:** {playlist[x]['duration']}{nl}**URL:** {playlist[x]['url']}",
+                inline=True,
+            )
 
         if isinstance(source, Context):
-            await source.send(embed=em)
+            await source.send(embed=embeds[0], view=Playlist(embeds))
         else:
-            await source.response.send_message(embed=em)
+            await source.response.send_message(embed=embeds[0], view=Playlist(embeds))
 
 
 def setup(bot):
