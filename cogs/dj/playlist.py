@@ -159,8 +159,6 @@ class Dj(Cog, name="dj.playlist"):
         if not isinstance(source, Context):
             await source.response.defer()
 
-        print(self.bot.playlists.get(source.guild.id))
-
         em = Embed(colour=Colour(0xFF0000))  # YTB color
 
         if position is not None:

@@ -2601,7 +2601,7 @@ class Moderation(Cog, name="moderation.config"):
         self,
         ctx: Context,
         option: Utils.to_lower = None,
-        duration: Range[1, ...] = None,
+        duration: Range[int, 1, ...] = None,
         duration_type: str = None,
         notify_channel: TextChannel = None,
     ):
@@ -2668,7 +2668,7 @@ class Moderation(Cog, name="moderation.config"):
     async def config_security_mute_on_join_on_slash_command(
         self,
         inter: GuildCommandInteraction,
-        duration: Range[1, ...] = 10,
+        duration: Range[int, 1, ...] = 10,
         duration_type: DurationType = "m",
         notify_channel: TextChannel = None,
     ):
@@ -2697,7 +2697,7 @@ class Moderation(Cog, name="moderation.config"):
     async def config_security_mute_on_join_update_slash_command(
         self,
         inter: GuildCommandInteraction,
-        duration: Range[1, ...] = None,
+        duration: Range[int, 1, ...] = None,
         duration_type: DurationType = None,
         notify_channel: TextChannel = None,
     ):

@@ -9,7 +9,16 @@
 from asyncio import new_event_loop
 from datetime import date
 from itertools import chain
-from logging import basicConfig, DEBUG, error, info, INFO
+from logging import (
+    Formatter,
+    StreamHandler,
+    basicConfig,
+    DEBUG,
+    error,
+    getLogger,
+    info,
+    INFO,
+)
 from multiprocessing import Process
 from os import getenv, listdir, makedirs, name, path, system, remove
 from subprocess import PIPE, call
@@ -27,7 +36,7 @@ from disnake import (
     Message,
     OptionType,
 )
-from disnake.ext.commands import Bot, Context
+from disnake.ext.commands import Bot, CommandSyncFlags, Context
 from disnake.ext.commands.errors import (
     BotMissingPermissions,
     BadArgument,
@@ -68,13 +77,18 @@ class Omnitron(Bot):
     def __init__(self, **kwargs):
         """Initialize the bot"""
         super().__init__(
-            command_prefix=Utils.get_guild_pre or BOT_PREFIX,
+            command_prefix="b!",
             intents=self.get_intents(),
             help_command=None,
             case_insensitive=True,
             strip_after_prefix=True,
-            self_bot=False,
-            sync_commands_debug=True,
+            command_sync_flags=CommandSyncFlags(
+                sync_commands=True,
+                sync_commands_debug=getenv("ENV") == "DEVELOPMENT",
+                sync_global_commands=True,
+                sync_guild_commands=True,
+                sync_on_cog_actions=getenv("ENV") == "DEVELOPMENT",
+            ),
             asyncio_debug=True,
             test_guilds=[872500404540280893, 874311358018105385]
             if getenv("ENV") == "DEVELOPMENT"
@@ -401,11 +415,24 @@ if __name__ == "__main__":
 
     basicConfig(
         filename=f"logs/{date.today().strftime('%d-%m-%Y_')}app.log",
-        filemode="w" if getenv("ENV") == "DEVELOPMENT" else "a",
+        filemode="w"
+        if getenv("ENV") == "DEVELOPMENT"
+        or not path.exists(f"logs/{date.today().strftime('%d-%m-%Y_')}app.log")
+        else "a",
         format="%(asctime)s - %(levelname)s - %(message)s",
-        datefmt="%d-%m-%y %H:%M:%S",
+        datefmt="%d/%m/%Y %H:%M:%S",
         level=DEBUG if getenv("ENV") == "DEVELOPMENT" else INFO,
     )  # Configure the logging
+
+    # set up logging to console
+    console = StreamHandler()
+    console.setLevel(INFO)
+    # set a format which is simpler for console use
+    formatter = Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s", datefmt="%d/%m/%Y %H:%M:%S"
+    )
+    console.setFormatter(formatter)
+    getLogger("").addHandler(console)
 
     # system("cls" if name == "nt" else "clear")
     print("Omnitron is starting...")

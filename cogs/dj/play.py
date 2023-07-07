@@ -1,4 +1,3 @@
-from asyncio import sleep
 from functools import wraps
 from inspect import Parameter
 from os import getenv
@@ -34,7 +33,6 @@ from disnake.ext.commands import (
 from disnake.ext.commands.errors import MissingRequiredArgument
 from lavalink import add_event_hook, Client
 from lavalink.events import NodeConnectedEvent, QueueEndEvent, TrackEndEvent
-from lavalink.exceptions import NodeException
 from lavalink.models import AudioTrack
 
 from bot import Omnitron
@@ -250,7 +248,7 @@ class Dj(Cog, name="dj.play"):
                 player = self.bot.lavalink.player_manager.create(
                     source.guild.id, endpoint=source.author.voice.channel.rtc_region
                 )
-            except NodeException:
+            except:
                 if isinstance(source, Context):
                     return await source.reply(
                         f"⚠️ - {source.author.mention} - The player is not ready yet, please try again in a few seconds!",
@@ -388,10 +386,7 @@ class Dj(Cog, name="dj.play"):
                 yt_infos = self.ytdl.extract_info(track["info"]["uri"], download=False)
         except Exception as e:
             if not f"{e}".endswith("This video may be inappropriate for some users."):
-                return await source.followup.send(
-                    f"⚠️ - {source.author.mention} - An error occurred while retrieving the video information ({track['info']['uri']}), please try again in a few moments!",
-                    ephemeral=True,
-                )
+                pass
             else:
                 return await source.followup.send(
                     f"⚠️ - {source.author.mention} - This video is not suitable for some users ({track['info']['uri']})! (I can't play some age restricted videos)",
@@ -423,7 +418,7 @@ class Dj(Cog, name="dj.play"):
                 if query and not query.startswith("ytsearch")
                 else track["info"]["uri"]
             )
-            duration = self.bot.utils_class.duration(track["info"]["length"] / 1000)
+            duration = self.bot.utils_class.duration(track["info"]["duration"] / 1000)
             author = track["info"]["author"]
 
         self.bot.playlists[source.guild.id].append(
@@ -521,7 +516,6 @@ class Dj(Cog, name="dj.play"):
                 param=Parameter(name="query", kind=Parameter.KEYWORD_ONLY)
             )
         elif query and audio_file is None:
-
             # Remove leading and trailing <>. <> may be used to suppress embedding links in Discord.
             query = query.strip("<>")
 
@@ -624,12 +618,7 @@ class Dj(Cog, name="dj.play"):
 
             if (
                 not audio_file
-                and (
-                    not results
-                    or results
-                    and "exception" in results
-                    or not results["tracks"]
-                )
+                and (not results or not results["tracks"])
                 and query
                 and query.startswith("ytsearch:")
             ):
@@ -644,18 +633,7 @@ class Dj(Cog, name="dj.play"):
 
             # Results could be None if Lavalink returns an invalid response (non-JSON/non-200 (OK)).
             # ALternatively, results['tracks'] could be an empty array if the query yielded no tracks.
-            if results and "exception" in results:
-                if isinstance(source, Context):
-                    return await source.reply(
-                        f"⚠️ - {source.author.mention} - {results['exception']['message']}",
-                        delete_after=20,
-                    )
-                else:
-                    return await source.followup.send(
-                        f"⚠️ - {source.author.mention} - {results['exception']['message']}",
-                        ephemeral=True,
-                    )
-            elif not results or not results["tracks"]:
+            if not results or not results["tracks"]:
                 if isinstance(source, Context):
                     return await source.reply(
                         f"⚠️ - {source.author.mention} - The video or playlist you are looking for does not exist!",
@@ -712,8 +690,8 @@ class Dj(Cog, name="dj.play"):
         if not player.is_playing:
             await player.play()
 
-        if yt_infos:
-            colour = Colour(0xFF0000) if not spotify_track else Colour(0x1DB954)
+        colour = Colour(0xFF0000) if not spotify_track else Colour(0x1DB954)
+        if yt_infos and isinstance(yt_infos, dict):
             title = yt_infos["title"]
             url = (
                 yt_infos["webpage_url"]
@@ -723,7 +701,6 @@ class Dj(Cog, name="dj.play"):
             duration = self.bot.utils_class.duration(yt_infos["duration"])
             author = f"Channel: {yt_infos['channel']}"
         else:
-            colour = self.bot.color
             title = (
                 track["info"]["title"]
                 if track["info"]["title"] != "Unknown title" or audio_file is None
@@ -734,7 +711,7 @@ class Dj(Cog, name="dj.play"):
                 if query and not query.startswith("ytsearch")
                 else track["info"]["uri"]
             )
-            duration = self.bot.utils_class.duration(track["info"]["length"] / 1000)
+            duration = self.bot.utils_class.duration(track["info"]["duration"] / 1000)
             author = track["info"]["author"]
 
         em = Embed(
@@ -743,7 +720,7 @@ class Dj(Cog, name="dj.play"):
             url=url,
         )
 
-        if yt_infos is not None:
+        if yt_infos and isinstance(yt_infos, dict):
             em.set_thumbnail(url=yt_infos["thumbnail"])
 
         em.set_author(name=author)

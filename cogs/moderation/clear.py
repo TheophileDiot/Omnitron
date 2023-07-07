@@ -58,7 +58,7 @@ class Moderation(Cog, name="moderation.clear"):
     )
     @max_concurrency(1, per=BucketType.channel)
     async def clear_command(
-        self, ctx: Context, number_messages: Range[1, ...] = 10, member: Member = None
+        self, ctx: Context, number_messages: Range[int, 1, ...] = 10, member: Member = None
     ):
         """
         This command deletes a given number of messages in the channel from everyone or a certain member! (default: 10)
@@ -84,7 +84,7 @@ class Moderation(Cog, name="moderation.clear"):
     async def clear_command(
         self,
         inter: GuildCommandInteraction,
-        number_messages: Range[1, ...] = 10,
+        number_messages: Range[int, 1, ...] = 10,
         member: Member = None,
     ):
         """

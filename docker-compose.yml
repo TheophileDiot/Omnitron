@@ -11,12 +11,14 @@ services:
       - ./temp:/bot/temp
     environment:
       - PYTHONUNBUFFERED=1
+      - ENV=DEVELOPMENT
+    restart: always
     depends_on:
       - lavalink
 
   lavalink:
-    build: lavalink
+    image: fredboat/lavalink:64d4f12-alpine
     container_name: lavalink
+    restart: always
     volumes:
-      - ./lavalink/logs:/opt/Lavalink/logs
-      - ./lavalink/logs/hs_err_pid1.log:/opt/Lavalink/hs_err_pid1.log
+      - ./lavalink:/opt/Lavalink

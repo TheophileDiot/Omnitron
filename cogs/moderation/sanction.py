@@ -684,7 +684,7 @@ class Moderation(Cog, name="moderation.sanction"):
         inter: GuildCommandInteraction,
         member: Member,
         reason: str = None,
-        duration: Range[1, ...] = 10,
+        duration: Range[int, 1, ...] = 10,
         type_duration: DurationType = "m",
     ):
         """
@@ -1055,7 +1055,7 @@ class Moderation(Cog, name="moderation.sanction"):
         inter: GuildCommandInteraction,
         member: Member,
         reason: str = None,
-        duration: Range[1, ...] = 1,
+        duration: Range[int, 1, ...] = 1,
         type_duration: DurationType = "d",
     ):
         """

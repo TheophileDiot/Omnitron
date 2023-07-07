@@ -90,7 +90,7 @@ class Moderation(Cog, name="moderation.poll"):
         self,
         ctx: Context,
         title: str,
-        duration: Range[1, ...],
+        duration: Range[int, 1, ...],
         type_duration: Utils.to_lower,
         *choices: str,
     ):
@@ -122,7 +122,7 @@ class Moderation(Cog, name="moderation.poll"):
         inter: GuildCommandInteraction,
         title: str,
         choices: str,
-        duration: Range[1, ...] = 10,
+        duration: Range[int, 1, ...] = 10,
         type_duration: DurationType = "m",
     ):
         """

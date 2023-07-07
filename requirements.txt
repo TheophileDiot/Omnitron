@@ -1,8 +1,8 @@
-disnake @ git+https://github.com/DisnakeDev/disnake.git@72d8e478cc16a89f40a6ee1bdfe72ae36ec4faf1
-python-dotenv==0.20.0
-firebase_admin==5.2.0
-pandas==1.4.2
-lavalink @ git+https://github.com/Devoxin/Lavalink.py.git@685cca2972a7df8e7a89b8ad1075dc6457961ca6
+disnake==2.9.0
+python-dotenv==1.0.0
+firebase_admin==6.2.0
+pandas==2.0.3
+lavalink==4.0.6
 youtube_dl==2021.12.17
-spotipy==2.20.0
+spotipy==2.23.0
 PyNaCl==1.5.0

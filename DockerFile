@@ -1,11 +1,12 @@
-FROM python:3-alpine
+FROM python:3.11.4-alpine
 
 COPY requirements.txt /bot/
 WORKDIR /bot
 
 RUN apk add --no-cache --virtual deps gcc musl-dev libffi-dev g++ git && \
-  pip3 install pip --no-cache-dir --upgrade && pip3 install setuptools wheel --no-cache-dir --upgrade && \
-  pip3 install -r requirements.txt --upgrade
+  pip install pip --no-cache-dir --upgrade && \
+  pip install setuptools wheel --no-cache-dir --upgrade && \
+  MAKEFLAGS="-j $(nproc)" pip install -r requirements.txt --upgrade
 
 COPY *.py /bot/
 COPY *.env /bot/
@@ -13,4 +14,4 @@ COPY *.env /bot/
 ADD data /bot/data
 ADD cogs /bot/cogs
 
-ENTRYPOINT ["/usr/local/bin/python3", "bot.py"]
+ENTRYPOINT ["python", "bot.py"]
